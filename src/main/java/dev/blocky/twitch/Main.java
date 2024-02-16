@@ -1,0 +1,235 @@
+/**
+ * ApuJar - A useful bot for Twitch with many cool utility features.
+ * Copyright (C) 2024 BlockyDotJar (aka. Dominic R.)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package dev.blocky.twitch;
+
+import com.github.philippheuer.credentialmanager.CredentialManager;
+import com.github.philippheuer.credentialmanager.CredentialManagerBuilder;
+import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
+import com.github.philippheuer.events4j.core.EventManager;
+import com.github.philippheuer.events4j.simple.SimpleEventHandler;
+import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.TwitchClientBuilder;
+import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
+import com.github.twitch4j.chat.TwitchChat;
+import com.github.twitch4j.common.exception.UnauthorizedException;
+import com.github.twitch4j.common.util.ThreadUtils;
+import dev.blocky.twitch.manager.CommandManager;
+import dev.blocky.twitch.manager.TwitchConfigurator;
+import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.timer.BotAdditionAndPartageTimer;
+import io.github.cdimascio.dotenv.Dotenv;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.sql.SQLException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+public class Main
+{
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
+    private static TwitchClient client;
+    private static long startedAt;
+
+    public static void main(String[] args) throws SQLException
+    {
+        startedAt = System.currentTimeMillis();
+        new Main();
+    }
+
+    public Main() throws SQLException
+    {
+        SQLite.connect().initDatabase();
+
+        Dotenv env = Dotenv.configure().filename(".twitch").load();
+
+        String clientID = env.get("CLIENT_ID");
+        String accessToken = env.get("ACCESS_TOKEN");
+        String refreshToken = env.get("REFRESH_TOKEN");
+
+        TwitchIdentityProvider tip = new TwitchIdentityProvider(clientID, null, null);
+
+        Supplier<OAuth2Credential> readCredentialFromFile = () ->
+        {
+            OAuth2Credential cred = new OAuth2Credential("twitch", accessToken);
+            cred.setRefreshToken(refreshToken);
+            return cred;
+        };
+
+        Consumer<OAuth2Credential> saveCredentialToFile = token ->
+        {
+            try
+            {
+                File envFile = new File("src/main/resources/.twitch");
+
+                String refrehedAccessToken = token.getAccessToken();
+                String refreshedRefreshToken = token.getRefreshToken();
+
+                String newEnvContent = STR.
+                        """
+                                ACCESS_TOKEN=\{refrehedAccessToken}
+                                REFRESH_TOKEN=\{refreshedRefreshToken}
+                                CLIENT_ID=\{clientID}
+                                """;
+
+                Files.writeString(envFile.toPath(), newEnvContent);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        };
+
+        OAuth2Credential initialToken = readCredentialFromFile.get();
+        OAuth2Credential credential = tip.getAdditionalCredentialInformation(initialToken)
+                .orElseGet
+                        (
+                                () -> tip.refreshCredential(initialToken)
+                                        .flatMap(tip::getAdditionalCredentialInformation)
+                                        .orElse(null)
+                        );
+
+        if (credential == null)
+        {
+            logger.error("Invalid Twitch access-token specified.", new UnauthorizedException());
+            return;
+        }
+
+        if (credential != initialToken)
+        {
+            saveCredentialToFile.accept(credential);
+        }
+
+        Runtime runtime = Runtime.getRuntime();
+        ScheduledThreadPoolExecutor exec = ThreadUtils.getDefaultScheduledThreadPoolExecutor("twitch4j", runtime.availableProcessors());
+
+        if (credential.getExpiresIn() > 0)
+        {
+            exec.scheduleAtFixedRate(
+                    () -> tip.refreshCredential(credential)
+                            .ifPresent(cr ->
+                                    {
+                                        String refreshedAccessToken = cr.getAccessToken();
+                                        String refreshedRefreshToken = cr.getRefreshToken();
+                                        int expiresIn = cr.getExpiresIn();
+
+                                        credential.setAccessToken(refreshedAccessToken);
+                                        credential.setRefreshToken(refreshedRefreshToken);
+                                        credential.setExpiresIn(expiresIn);
+
+                                        saveCredentialToFile.accept(credential);
+                                    }
+                            ), credential.getExpiresIn() / 2, 3600, SECONDS);
+        }
+
+        CredentialManager credentialManager = CredentialManagerBuilder.builder().build();
+        credentialManager.registerIdentityProvider(tip);
+
+        TwitchClientBuilder clientBuilder = TwitchClientBuilder.builder()
+                .withDefaultAuthToken(credential)
+                .withChatAccount(credential)
+                .withEnableHelix(true)
+                .withEnableChat(true);
+
+        client = clientBuilder.build();
+
+        TwitchConfigurator configurator = new TwitchConfigurator(client);
+        configurator.configure();
+
+        EventManager eventManager = client.getEventManager();
+        SimpleEventHandler eventHandler = eventManager.getEventHandler(SimpleEventHandler.class);
+        new CommandManager(eventHandler, client);
+
+        new BotAdditionAndPartageTimer(client);
+
+        cli();
+    }
+
+    private static void cli()
+    {
+        new Thread(() ->
+        {
+            InputStreamReader streamReader = new InputStreamReader(System.in);
+            BufferedReader reader = new BufferedReader(streamReader);
+
+            try
+            {
+                TwitchChat chat = client.getChat();
+                String line = reader.readLine();
+
+                while (line != null)
+                {
+                    if (line.equalsIgnoreCase("exit"))
+                    {
+                        chat.sendMessage("ApuJar", "ManFeels Preparing to shutdown...");
+
+                        for (int i = 5; i > 0; i--)
+                        {
+                            if (i != 1)
+                            {
+                                logger.info(STR."Bot stops in \{i} seconds.");
+                            }
+
+                            if (i == 1)
+                            {
+                                chat.sendMessage("ApuJar", "GigaSignal Disconnecting from Twitch websocket...");
+
+                                logger.info("Bot stops in 1 second.");
+                            }
+
+                            Thread.sleep(1000);
+                        }
+
+                        line = null;
+
+                        client.close();
+                        SQLite.disconnect();
+
+                        System.exit(0);
+                    }
+
+                    if (line.equalsIgnoreCase("reconnect"))
+                    {
+                        logger.info("Trying to reconnect to Twitch websocket.");
+
+                        chat.reconnect();
+
+                        chat.sendMessage("ApuJar", "Successfully reconncted to Twitch websocket...");
+                    }
+                }
+            }
+            catch (IOException | InterruptedException | SQLException e)
+            {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    public static long getStartedAt()
+    {
+        return startedAt;
+    }
+}
