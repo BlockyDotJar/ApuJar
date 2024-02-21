@@ -20,6 +20,7 @@ package dev.blocky.twitch.commands.admin;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -34,17 +35,19 @@ public class DeleteGlobalCommandCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String[] msgParts = event.getMessage().split(" ");
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
+        String channelID = channel.getId();
 
-        if (msgParts.length == 1)
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a global command to delete.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a global command.");
             return;
         }
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
+        String actualPrefix = SQLUtils.getActualPrefix(channelID);
 
-        String gcName = msgParts[1].strip();
+        String gcName = messageParts[1].strip();
 
         if (gcName.startsWith(actualPrefix))
         {
@@ -55,12 +58,12 @@ public class DeleteGlobalCommandCommand implements ICommand
 
         if (!globalCommands.containsKey(gcName))
         {
-            chat.sendMessage(event.getChannel().getName(), STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
+            chat.sendMessage(channelName, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
             return;
         }
 
         SQLite.onUpdate(STR."DELETE FROM globalCommands WHERE name = '\{gcName}'");
 
-        chat.sendMessage(event.getChannel().getName(), STR."SeemsGood Successfully deleted global command '\{gcName}'");
+        chat.sendMessage(channelName, STR."SeemsGood Successfully deleted global command '\{gcName}'");
     }
 }

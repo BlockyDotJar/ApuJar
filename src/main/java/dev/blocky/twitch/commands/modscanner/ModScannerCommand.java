@@ -24,7 +24,7 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScanner;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -68,7 +68,7 @@ public class ModScannerCommand implements ICommand
 
         if (Arrays.stream(messageParts).noneMatch("-channel"::equalsIgnoreCase) && Arrays.stream(messageParts).noneMatch("-ch"::equalsIgnoreCase))
         {
-            ModScanner modScanner = ServiceProvider.createModScannerUser(userToLookup);
+            ModScanner modScanner = ServiceProvider.getModScannerUser(userToLookup);
 
             String userDisplayName = user.getDisplayName();
             String userLogin = user.getLogin();
@@ -82,7 +82,7 @@ public class ModScannerCommand implements ICommand
 
         if (Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase) || Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase))
         {
-            ModScanner modScanner = ServiceProvider.createModScannerChannel(userToLookup);
+            ModScanner modScanner = ServiceProvider.getModScannerChannel(userToLookup);
 
             String userDisplayName = user.getDisplayName();
 

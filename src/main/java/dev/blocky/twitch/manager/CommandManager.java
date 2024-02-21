@@ -28,6 +28,7 @@ import dev.blocky.twitch.commands.admin.*;
 import dev.blocky.twitch.commands.ivr.*;
 import dev.blocky.twitch.commands.modscanner.*;
 import dev.blocky.twitch.commands.owner.*;
+import dev.blocky.twitch.commands.seventv.SevenTVAddCommand;
 import dev.blocky.twitch.commands.spotify.*;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -110,7 +111,7 @@ public class CommandManager
         commands.put(List.of("checkname", "cn"), new CheckNameCommand());
 
         commands.put(List.of("followage", "fa"), new FollowageCommand());
-        commands.put(List.of("subage", "sa"), new SubAgeCommand());
+        commands.put(List.of("subage", "sa"), new SubageCommand());
 
         commands.put(List.of("crossban", "cb"), new CrossbanCommand());
         commands.put(List.of("crossunban", "cub"), new CrossunbanCommand());
@@ -130,6 +131,8 @@ public class CommandManager
         commands.put(Collections.singletonList("repeat"), new RepeatCommand());
         commands.put(Collections.singletonList("shuffle"), new ShuffleCommand());
         commands.put(Collections.singletonList("yoink"), new YoinkSongCommand());
+
+        commands.put(List.of("7tvadd", "siebentvhinzufuegung"), new SevenTVAddCommand());
     }
 
     boolean onMessage(String commandOrAlias, ChannelMessageEvent event, String[] prefixedMessageParts, String[] messageParts) throws Exception
@@ -158,10 +161,10 @@ public class CommandManager
         String channelName = channel.getName();
         String channelID = channel.getId();
 
-        String message = event.getMessage();
-
         try
         {
+            String message = event.getMessage();
+
             String actualPrefix = SQLUtils.getActualPrefix(channelID);
             int prefixLength = actualPrefix.length();
 

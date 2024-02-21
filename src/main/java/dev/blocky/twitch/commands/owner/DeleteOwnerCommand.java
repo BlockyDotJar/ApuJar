@@ -42,7 +42,7 @@ public class DeleteOwnerCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user to demote.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
             return;
         }
 

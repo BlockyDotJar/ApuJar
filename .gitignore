@@ -49,3 +49,8 @@ src/main/resources/.twitch
 ### Databse
 
 src/main/resources/database.db
+
+### Netflix related files
+
+src/main/resources/application.properties
+src/main/resources/config.properties

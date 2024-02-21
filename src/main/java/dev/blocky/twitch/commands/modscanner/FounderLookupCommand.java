@@ -17,7 +17,6 @@
  */
 package dev.blocky.twitch.commands.modscanner;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
@@ -25,7 +24,8 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScannerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -81,7 +81,7 @@ public class FounderLookupCommand implements ICommand
 
         if (Arrays.stream(messageParts).noneMatch("-channel"::equalsIgnoreCase) && Arrays.stream(messageParts).noneMatch("-ch"::equalsIgnoreCase))
         {
-            ModScanner modScanner = ServiceProvider.createModScannerUser(userToLookup);
+            ModScanner modScanner = ServiceProvider.getModScannerUser(userToLookup);
 
             int affiliateCount = 0;
             int partnerCount = 0;
@@ -89,11 +89,11 @@ public class FounderLookupCommand implements ICommand
 
             long follower = 0;
 
-            for (JsonNode founder : modScanner.getUserFounders())
+            for (ModScannerUser msUser : modScanner.getUserFounders())
             {
-                follower += founder.get("followers").asInt();
+                follower += msUser.getFollowers();
 
-                String founderLogin = founder.get("login").asText();
+                String founderLogin = msUser.getLogin();
 
                 List<User> founderUsers = retrieveUserList(client, founderLogin);
                 User founderUser = founderUsers.getFirst();
@@ -125,7 +125,7 @@ public class FounderLookupCommand implements ICommand
 
         if (Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase) || Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase))
         {
-            ModScanner modScanner = ServiceProvider.createModScannerChannel(userToLookup);
+            ModScanner modScanner = ServiceProvider.getModScannerChannel(userToLookup);
 
             int affiliateCount = 0;
             int partnerCount = 0;
@@ -133,11 +133,11 @@ public class FounderLookupCommand implements ICommand
 
             long follower = 0;
 
-            for (JsonNode founder : modScanner.getChannelFounders())
+            for (ModScannerUser msUser : modScanner.getChannelFounders())
             {
-                follower += founder.get("followers").asInt();
+                follower += msUser.getFollowers();
 
-                String founderLogin = founder.get("login").asText();
+                String founderLogin = msUser.getLogin();
 
                 List<User> founderUsers = retrieveUserList(client, founderLogin);
                 User founderUser = founderUsers.getFirst();

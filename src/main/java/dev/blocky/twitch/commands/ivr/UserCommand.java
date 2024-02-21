@@ -17,18 +17,20 @@
  */
 package dev.blocky.twitch.commands.ivr;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRUser;
+import dev.blocky.api.entities.ivr.IVRUserBadge;
+import dev.blocky.api.entities.ivr.IVRUserRoles;
+import dev.blocky.api.entities.ivr.IVRUserStream;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -42,13 +44,13 @@ public class UserCommand implements ICommand
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
-        String channelName = event.getChannel().getName();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
-        String userToGet = getUserAsString(msgParts, event.getUser());
+        EventUser eventUser = event.getUser();
+
+        String userToGet = getUserAsString(messageParts, eventUser);
 
         if (!isValidUsername(userToGet))
         {
@@ -56,54 +58,56 @@ public class UserCommand implements ICommand
             return;
         }
 
-        List<IVRFI> ivrfiList = ServiceProvider.createIVRFIUser(userToGet);
+        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToGet);
 
-        if (ivrfiList.isEmpty())
+        if (ivrUsers.isEmpty())
         {
             chat.sendMessage(channelName, STR.":| No user called '\{userToGet}' found.");
             return;
         }
 
-        IVRFI ivrfi = ivrfiList.getFirst();
+        IVRUser ivrUser = ivrUsers.getFirst();
 
-        Instant creationInstant = Instant.parse(ivrfi.getCreatedAt());
-        Date createDate = Date.from(creationInstant);
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        Date creationDate = ivrUser.getCreatedAt();
+        String readableCreationDate = formatter.format(creationDate);
 
-        String userInfo = "";
+        String userInfo = null;
 
-        if (ivrfi.isTwitchGlobalBanned())
+        if (ivrUser.isBanned())
         {
-            String globalBanReason = ivrfi.getTwitchGlobalBanReason();
-            userInfo = STR."\u26D4 BANNED \u26D4 (Reason: \{globalBanReason}) ";
+            String banReason = ivrUser.getBanReason();
+            userInfo = STR."\u26D4 BANNED \u26D4 (Reason: \{banReason}) ";
         }
 
-        String login = ivrfi.getLogin();
-        String displayName = ivrfi.getDisplayName();
-        String id = ivrfi.getId();
-        String creationDate = formatter.format(createDate);
-        String chatColor = ivrfi.getChatColor() == null ? "#FFFFFF" : ivrfi.getChatColor();
+        String userLogin = ivrUser.getLogin();
+        String userDisplayName = ivrUser.getDisplayName();
+        String userID = ivrUser.getId();
+        String userChatColor = ivrUser.getChatColor() == null ? "#FFFFFF" : ivrUser.getChatColor();
 
-        userInfo = STR."\{userInfo} \uD83D\uDC49 Login: \{login}, Display: \{displayName}, ID: \{id}, Created: \{creationDate}, Chat-Color: \{chatColor}";
+        userInfo = STR."\{userInfo} \uD83D\uDC49 Login: \{userLogin}, Display: \{userDisplayName}, ID: \{userID}, Created: \{readableCreationDate}, Chat-Color: \{userChatColor}";
 
-        ArrayList<JsonNode> badges = ivrfi.getBadges();
+        ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getBadges();
 
-        if (!badges.isEmpty())
+        if (!ivrUserBadges.isEmpty())
         {
-            String globalBadge = ivrfi.getBadges().getFirst().get("title").asText();
-            userInfo = STR."\{userInfo}, Global-Badge: \{globalBadge}";
+            IVRUserBadge ivrUserBadge = ivrUserBadges.getFirst();
+            String badgeTitle = ivrUserBadge.getTitle();
+            userInfo = STR."\{userInfo}, Global-Badge: \{badgeTitle}";
         }
 
-        if (!ivrfi.isTwitchGlobalBanned())
+        if (!ivrUser.isBanned())
         {
-            int follower = ivrfi.getFollowers();
-            int chatterCount = ivrfi.getChatterCount();
+            int followers = ivrUser.getFollowers();
+            int chatterCount = ivrUser.getChatterCount();
 
-            userInfo = STR."\{userInfo}, Follower: \{follower}, Chatter: \{chatterCount}";
+            userInfo = STR."\{userInfo}, Follower: \{followers}, Chatter: \{chatterCount}";
         }
 
-        boolean isAffiliate = ivrfi.getRoles().get("isAffiliate").asBoolean();
-        boolean isPartner = ivrfi.getRoles().get("isPartner").asBoolean();
+        IVRUserRoles ivrUserRoles = ivrUser.getRoles();
+
+        boolean isAffiliate = ivrUserRoles.isAffiliate();
+        boolean isPartner = ivrUserRoles.isPartner();
 
         if (isAffiliate || isPartner)
         {
@@ -111,22 +115,20 @@ public class UserCommand implements ICommand
             userInfo = STR."\{userInfo}, Broadcaster-Type: \{broadcasterType}";
         }
 
-        boolean isStaff = ivrfi.getRoles().get("isStaff").asBoolean();
+        boolean isStaff = ivrUserRoles.isStaff();
 
         if (isStaff)
         {
             userInfo = STR."\{userInfo}, Type: staff";
         }
 
-        JsonNode lastStream = ivrfi.getLastBroadcast().get("startedAt");
+        IVRUserStream ivrUserStream = ivrUser.getLastBroadcast();
+        Date startedAt = ivrUserStream.getStartedAt();
 
-        if (!lastStream.isNull())
+        if (startedAt != null)
         {
-            Instant lastStreamInstant = Instant.parse(lastStream.asText());
-            Date lastStreamDate = Date.from(lastStreamInstant);
-            String startedAt = formatter.format(lastStreamDate);
-
-            userInfo = STR."\{userInfo}, Last-Stream: \{startedAt}";
+            String readableStartedAt = formatter.format(startedAt);
+            userInfo = STR."\{userInfo}, Last-Stream: \{readableStartedAt}";
         }
 
         channelName = getActualChannel(channelToSend, channelName);

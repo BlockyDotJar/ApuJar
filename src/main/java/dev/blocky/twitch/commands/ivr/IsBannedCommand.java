@@ -20,10 +20,10 @@ package dev.blocky.twitch.commands.ivr;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -38,43 +38,44 @@ public class IsBannedCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
-
-        if (msgParts.length == 1)
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a user to check.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
             return;
         }
 
-        String userToCheck = getUserAsString(msgParts, 1);
+        String userToCheck = getUserAsString(messageParts, 1);
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), "o_O Username doesn't match with RegEx R-)");
+            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<IVRFI> ivrfiList = ServiceProvider.createIVRFIUser(userToCheck);
+        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrfiList.isEmpty())
+        if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), STR.":| No user called '\{userToCheck}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
-        IVRFI ivrfi = ivrfiList.getFirst();
+        IVRUser ivrUser = ivrUsers.getFirst();
+        String userDisplayName = ivrUser.getDisplayName();
 
-        if (!ivrfi.isTwitchGlobalBanned())
+        if (!ivrUser.isBanned())
         {
-            chat.sendMessage(event.getChannel().getName(), STR."Saved \{ivrfi.getDisplayName()} is not banned from Twitch at the moment.");
+            chat.sendMessage(channelName, STR."Saved \{userDisplayName} is not banned from Twitch at the moment.");
             return;
         }
 
-        String channelName = getActualChannel(channelToSend, event.getChannel().getName());
+        String userBanReason = ivrUser.getBanReason();
 
-        chat.sendMessage(channelName, STR."monakS \{ivrfi.getDisplayName()} is banned from Twitch \u26D4 (Reason: \{ivrfi.getTwitchGlobalBanReason()}) \u26D4");
+        channelName = getActualChannel(channelToSend, channelName);
+
+        chat.sendMessage(channelName, STR."monakS \{userDisplayName} is banned from Twitch \u26D4 (Reason: \{userBanReason}) \u26D4");
     }
 }

@@ -17,7 +17,6 @@
  */
 package dev.blocky.twitch.commands.modscanner;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
@@ -25,13 +24,14 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
-import dev.blocky.api.entities.ModScanner;
+import dev.blocky.api.entities.ivr.IVR;
+import dev.blocky.api.entities.ivr.IVRModVIP;
+import dev.blocky.api.entities.modscanner.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScannerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -95,14 +95,14 @@ public class VIPageCommand implements ICommand
         String secondUserLogin = secondUser.getLogin();
         String secondUserDisplayName = secondUser.getDisplayName();
 
-        IVRFI ivrfi = ServiceProvider.createIVRFIModVip(secondUserLogin);
+        IVR ivr = ServiceProvider.getIVRModVip(secondUserLogin);
         boolean isVIP = false;
 
-        String grantedAt = null;
+        Date grantedAt = null;
 
-        for (JsonNode vip : ivrfi.getVips())
+        for (IVRModVIP ivrModVIP : ivr.getVIPs())
         {
-            String vipLogin = vip.get("login").asText();
+            String vipLogin = ivrModVIP.getLogin();
 
             if (!vipLogin.equals(userLogin))
             {
@@ -110,24 +110,24 @@ public class VIPageCommand implements ICommand
             }
 
             isVIP = true;
-            grantedAt = vip.get("grantedAt").asText();
+            grantedAt = ivrModVIP.getGrantedAt();
             break;
         }
 
-        ModScanner modScanner = ServiceProvider.createModScannerChannel(secondUserLogin);
+        ModScanner modScanner = ServiceProvider.getModScannerChannel(secondUserLogin);
 
-        for (JsonNode vip : modScanner.getChannelVIPs())
+        for (ModScannerUser msUser : modScanner.getChannelVIPs())
         {
-            String vipLogin = vip.get("login").asText();
+            String vipLogin = msUser.getLogin();
 
             if (!vipLogin.equals(userLogin))
             {
                 continue;
             }
 
-            if (grantedAt.equals("null"))
+            if (grantedAt == null)
             {
-                grantedAt = vip.get("grantedAt").asText();
+                grantedAt = msUser.getGrantedAt();
             }
             break;
         }
@@ -140,13 +140,10 @@ public class VIPageCommand implements ICommand
 
         String readableGrantDate = "(UNKNOWN_GRANT_DATE)";
 
-        if (!grantedAt.equals("null"))
+        if (grantedAt != null)
         {
             SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-
-            Instant grantInstant = Instant.parse(grantedAt);
-            Date grantDate = Date.from(grantInstant);
-            readableGrantDate = formatter.format(grantDate);
+            readableGrantDate = formatter.format(grantedAt);
         }
 
         String messageToSend = STR."NOWAYING \{userDisplayName} is vip in \{secondUserDisplayName}'s chat since \{readableGrantDate} PogU";

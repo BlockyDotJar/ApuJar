@@ -20,14 +20,14 @@ package dev.blocky.twitch.commands.ivr;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -41,34 +41,36 @@ public class CreatedAtCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
-        String userToCheck = getUserAsString(msgParts, event.getUser());
+        EventUser eventUser = event.getUser();
+
+        String userToCheck = getUserAsString(messageParts, eventUser);
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), "o_O Username doesn't match with RegEx R-)");
+            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<IVRFI> ivrfiList = ServiceProvider.createIVRFIUser(userToCheck);
+        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrfiList.isEmpty())
+        if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), STR.":| No user called '\{userToCheck}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
-        IVRFI ivrfi = ivrfiList.getFirst();
+        IVRUser ivrUser = ivrUsers.getFirst();
+        String ivrUserDisplayName = ivrUser.getDisplayName();
 
-        Instant creationInstant = Instant.parse(ivrfi.getCreatedAt());
-        Date createDate = Date.from(creationInstant);
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        Date creationDate = ivrUser.getCreatedAt();
+        String readableCreationDate = formatter.format(creationDate);
 
-        String channelName = getActualChannel(channelToSend, event.getChannel().getName());
+        channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."FeelsOldMan \{ivrfi.getDisplayName()} created its account at \{formatter.format(createDate)}");
+        chat.sendMessage(channelName, STR."FeelsOldMan \{ivrUserDisplayName} created its account at \{readableCreationDate}");
     }
 }

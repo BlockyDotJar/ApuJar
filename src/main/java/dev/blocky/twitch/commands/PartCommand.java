@@ -17,17 +17,17 @@
  */
 package dev.blocky.twitch.commands;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
@@ -53,19 +53,8 @@ public class PartCommand implements ICommand
 
         if (!chatToPart.equals(eventUserName))
         {
-            IVRFI ivrfi = ServiceProvider.createIVRFIModVip(chatToPart);
-
-            boolean hasModeratorPerms = false;
-
-            for (JsonNode mod : ivrfi.getMods())
-            {
-                String login = mod.get("login").asText();
-
-                if (login.equals(eventUserName))
-                {
-                    hasModeratorPerms = true;
-                }
-            }
+            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
             HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
 

@@ -17,7 +17,6 @@
  */
 package dev.blocky.twitch.commands.admin;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
@@ -25,10 +24,11 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.*;
@@ -47,7 +47,6 @@ public class UserSayCommand implements ICommand
 
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
-        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -99,29 +98,13 @@ public class UserSayCommand implements ICommand
                 return;
             }
 
-            IVRFI ivrfi = ServiceProvider.createIVRFIModVip(eventUserName);
-
-            boolean hasModeratorPerms = false;
-            boolean selfModeratorPerms = false;
-
-            for (JsonNode mod : ivrfi.getMods())
-            {
-                String login = mod.get("login").asText();
-
-                if (login.equalsIgnoreCase("ApuJar"))
-                {
-                    selfModeratorPerms = true;
-                }
-
-                if (login.equals(eventUserName))
-                {
-                    hasModeratorPerms = true;
-                }
-            }
+            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or a moderator.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or moderator.");
                 return;
             }
 

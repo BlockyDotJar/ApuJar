@@ -20,14 +20,15 @@ package dev.blocky.twitch.commands.ivr;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRUser;
+import dev.blocky.api.entities.ivr.IVRUserStream;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -41,45 +42,40 @@ public class LastStreamCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
-        String userToCheck = getUserAsString(msgParts, event.getUser());
+        EventUser eventUser = event.getUser();
+
+        String userToCheck = getUserAsString(messageParts, eventUser);
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), "o_O Username doesn't match with RegEx R-)");
+            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<IVRFI> ivrfiList = ServiceProvider.createIVRFIUser(userToCheck);
+        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrfiList.isEmpty())
+        if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), STR.":| No user called '\{userToCheck}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
-        IVRFI ivrfi = ivrfiList.getFirst();
-
-        String lastStream = ivrfi.getLastBroadcast().get("startedAt").asText(null);
-        Instant lastStreamInstant = null;
-        Date lastStreamDate = null;
-
-        if (lastStream != null && !lastStream.isEmpty())
-        {
-            lastStreamInstant = Instant.parse(lastStream);
-            lastStreamDate = Date.from(lastStreamInstant);
-        }
+        IVRUser ivrUser = ivrUsers.getFirst();
+        String ivrUserDisplayName = ivrUser.getDisplayName();
+        IVRUserStream ivrUserStream = ivrUser.getLastBroadcast();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        Date startedAt = ivrUserStream.getStartedAt();
+        String readableStartedAt = formatter.format(startedAt);
 
-        String messageToSend = lastStreamInstant == null ?
-                STR."Sadge \{ivrfi.getDisplayName()} never actually streamed." :
-                STR."Okay \{ivrfi.getDisplayName()}'s last stream was on \{formatter.format(lastStreamDate)}";
+        String messageToSend = ivrUserStream == null ?
+                STR."Sadge \{ivrUserDisplayName} never streamed before." :
+                STR."Okay \{ivrUserDisplayName}'s last stream was on \{readableStartedAt}";
 
-        String channelName = getActualChannel(channelToSend, event.getChannel().getName());
+        channelName = getActualChannel(channelToSend, channelName);
 
         chat.sendMessage(channelName, messageToSend);
     }

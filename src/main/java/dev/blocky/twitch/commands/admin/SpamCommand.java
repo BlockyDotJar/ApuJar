@@ -17,21 +17,23 @@
  */
 package dev.blocky.twitch.commands.admin;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.chat.events.channel.IRCMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
+
+import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
 
 public class SpamCommand implements ICommand
 {
@@ -40,85 +42,77 @@ public class SpamCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String[] msgParts = event.getMessage().split(" ");
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        if (msgParts.length == 1)
+        EventUser eventUser = event.getUser();
+        String eventUserName = eventUser.getName();
+        String eventUserID = eventUser.getId();
+        int eventUserIID = Integer.parseInt(eventUserID);
+
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a number of messages to spam.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a number of messages.");
+            return;
+        }
+        
+        String spamCount = messageParts[1];
+
+        if (!StringUtils.isNumeric(spamCount))
+        {
+            chat.sendMessage(channelName, "ManFeels The first parameter is not an integer.");
             return;
         }
 
-        if (!StringUtils.isNumeric(msgParts[1]))
+        if (messageParts.length == 2)
         {
-            chat.sendMessage(event.getChannel().getName(), "ManFeels The first parameter is not even an integer.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a message.");
             return;
         }
 
-        if (msgParts.length == 2)
+        int messageCount = Integer.parseInt(spamCount);
+
+        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+
+        if (messageCount > 100 && !ownerIDs.contains(eventUserIID))
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a message to spam in the chat.");
+            chat.sendMessage(channelName, "ManFeels Number can't be bigger than 100, because you aren't an owner.");
             return;
         }
 
-        int messageCount = Integer.parseInt(msgParts[1]);
-
-        if (messageCount > 100 && !SQLUtils.getOwnerIDs().contains(Integer.parseInt(event.getUser().getId())))
+        String messageToSend = removeElements(messageParts, 3);
+        
+        if (messageToSend.startsWith("/"))
         {
-            chat.sendMessage(event.getChannel().getName(), "ManFeels Number can't be bigger than 100, because you aren't an owner.");
-            return;
-        }
-
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-
-        String spamMessage = event.getMessage().substring(actualPrefix.length() + 5 + msgParts[1].length() + 1).strip();
-
-        if (spamMessage.startsWith("/") && !SQLUtils.getOwnerIDs().contains(Integer.parseInt(event.getUser().getId())))
-        {
-            chat.sendMessage(event.getChannel().getName(), "DatSheffy You don't have permission to spam any kind of / (slash) commands through my account.");
-            return;
-        }
-
-        IRCMessageEvent irc = event.getMessageEvent();
-        Map<String, String> badges = irc.getBadges();
-        Set<String> badgeKeys = badges.keySet();
-
-        if (spamMessage.startsWith("/"))
-        {
-            if (!SQLUtils.getOwnerIDs().contains(Integer.parseInt(event.getUser().getId())))
+            if (!ownerIDs.contains(eventUserIID))
             {
-                chat.sendMessage(event.getChannel().getName(), "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
+                chat.sendMessage(channelName, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
                 return;
             }
 
-            IVRFI ivrfi = ServiceProvider.createIVRFIModVip(event.getUser().getName().toLowerCase());
+            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 
-            boolean isModSelf = false;
-
-            for (JsonNode mod : ivrfi.getMods())
+            if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                if (mod.get("login").asText().equals("apujar"))
-                {
-                    isModSelf = true;
-                }
-            }
-
-            if (!badgeKeys.contains("broadcaster") && !badgeKeys.contains("moderator"))
-            {
-                chat.sendMessage(event.getChannel().getName(), "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or a moderator.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or moderator.");
                 return;
             }
 
-            if (!isModSelf)
+            if (!selfModeratorPerms)
             {
-                chat.sendMessage(event.getChannel().getName(), "ManFeels You can't use / (slash) commands, because i'm not a broadcaster or a moderator of this chat.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
                 return;
             }
         }
 
         for (int i = 0; i < messageCount; i++)
         {
-            chat.sendMessage(event.getChannel().getName(), spamMessage);
-            TimeUnit.MILLISECONDS.sleep(500);
+            chat.sendMessage(channelName, messageToSend);
+            TimeUnit.MILLISECONDS.sleep(50);
         }
+
+        chat.sendMessage(channelName, STR."SeemsGood Successfully spammed \{messageCount} messages.");
     }
 }

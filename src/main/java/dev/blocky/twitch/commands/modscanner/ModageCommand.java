@@ -17,7 +17,6 @@
  */
 package dev.blocky.twitch.commands.modscanner;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
@@ -25,13 +24,14 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
-import dev.blocky.api.entities.ModScanner;
+import dev.blocky.api.entities.ivr.IVR;
+import dev.blocky.api.entities.ivr.IVRModVIP;
+import dev.blocky.api.entities.modscanner.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScannerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -95,14 +95,14 @@ public class ModageCommand implements ICommand
         String secondUserLogin = secondUser.getLogin();
         String secondUserDisplayName = secondUser.getDisplayName();
 
-        IVRFI ivrfi = ServiceProvider.createIVRFIModVip(secondUserLogin);
+        IVR ivr = ServiceProvider.getIVRModVip(secondUserLogin);
         boolean hasModeratorPerms = false;
 
-        String grantedAt = null;
+        Date grantedAt = null;
 
-        for (JsonNode mod : ivrfi.getMods())
+        for (IVRModVIP ivrModVIP : ivr.getMods())
         {
-            String modLogin = mod.get("login").asText();
+            String modLogin = ivrModVIP.getLogin();
 
             if (!modLogin.equals(userLogin))
             {
@@ -110,24 +110,24 @@ public class ModageCommand implements ICommand
             }
 
             hasModeratorPerms = true;
-            grantedAt = mod.get("grantedAt").asText();
+            grantedAt = ivrModVIP.getGrantedAt();
             break;
         }
 
-        ModScanner modScanner = ServiceProvider.createModScannerChannel(secondUserLogin);
+        ModScanner modScanner = ServiceProvider.getModScannerChannel(secondUserLogin);
 
-        for (JsonNode mod : modScanner.getChannelModerators())
+        for (ModScannerUser msUser : modScanner.getChannelModerators())
         {
-            String modLogin = mod.get("login").asText();
+            String modLogin = msUser.getLogin();
 
             if (!modLogin.equals(userLogin))
             {
                 continue;
             }
 
-            if (grantedAt.equals("null"))
+            if (grantedAt == null)
             {
-                grantedAt = mod.get("grantedAt").asText();
+                grantedAt = msUser.getGrantedAt();
             }
             break;
         }
@@ -140,13 +140,10 @@ public class ModageCommand implements ICommand
 
         String readableGrantDate = "(UNKNOWN_GRANT_DATE)";
 
-        if (!grantedAt.equals("null"))
+        if (grantedAt != null)
         {
             SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-
-            Instant grantInstant = Instant.parse(grantedAt);
-            Date grantDate = Date.from(grantInstant);
-            String formattedGrantDate = formatter.format(grantDate);
+            String formattedGrantDate = formatter.format(grantedAt);
             readableGrantDate = STR."since \{formattedGrantDate}";
         }
 

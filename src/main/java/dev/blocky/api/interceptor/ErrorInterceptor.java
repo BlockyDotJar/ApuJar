@@ -29,7 +29,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-public class ErrorResponseInterceptor implements Interceptor
+public class ErrorInterceptor implements Interceptor
 {
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException

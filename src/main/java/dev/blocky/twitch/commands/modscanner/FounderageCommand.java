@@ -17,7 +17,6 @@
  */
 package dev.blocky.twitch.commands.modscanner;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
@@ -25,13 +24,14 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
-import dev.blocky.api.entities.ModScanner;
+import dev.blocky.api.entities.ivr.IVR;
+import dev.blocky.api.entities.ivr.IVRFounder;
+import dev.blocky.api.entities.modscanner.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScannerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -102,17 +102,17 @@ public class FounderageCommand implements ICommand
             return;
         }
 
-        IVRFI ivrfi = ServiceProvider.createIVRFIFounders(secondUserLogin);
+        IVR ivr = ServiceProvider.getIVRFounders(secondUserLogin);
 
         boolean isFounder = false;
         boolean isSubscribed = false;
-        String entitlementStart = null;
+        Date entitlementStart = null;
 
-        if (ivrfi != null)
+        if (ivr != null)
         {
-            for (JsonNode founder : ivrfi.getFounders())
+            for (IVRFounder ivrFounder : ivr.getFounders())
             {
-                String founderLogin = founder.get("login").asText();
+                String founderLogin = ivrFounder.getLogin();
 
                 if (!founderLogin.equals(userLogin))
                 {
@@ -120,25 +120,25 @@ public class FounderageCommand implements ICommand
                 }
 
                 isFounder = true;
-                isSubscribed = founder.get("isSubscribed").asBoolean();
-                entitlementStart = founder.get("entitlementStart").asText();
+                isSubscribed = ivrFounder.isSubscribed();
+                entitlementStart = ivrFounder.getEntitlementStart();
                 break;
             }
 
-            ModScanner modScanner = ServiceProvider.createModScannerChannel(secondUserLogin);
+            ModScanner modScanner = ServiceProvider.getModScannerChannel(secondUserLogin);
 
-            for (JsonNode founder : modScanner.getChannelFounders())
+            for (ModScannerUser msUser : modScanner.getChannelFounders())
             {
-                String founderLogin = founder.get("login").asText();
+                String founderLogin = msUser.getLogin();
 
                 if (!founderLogin.equals(userLogin))
                 {
                     continue;
                 }
 
-                if (entitlementStart.equals("null"))
+                if (entitlementStart == null)
                 {
-                    entitlementStart = founder.get("grantedAt").asText();
+                    entitlementStart = msUser.getGrantedAt();
                 }
                 break;
             }
@@ -152,13 +152,10 @@ public class FounderageCommand implements ICommand
 
         String readableGrantDate = "(UNKNOWN_GRANT_DATE)";
 
-        if (!entitlementStart.equals("null"))
+        if (entitlementStart != null)
         {
             SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-
-            Instant grantInstant = Instant.parse(entitlementStart);
-            Date grantDate = Date.from(grantInstant);
-            readableGrantDate = formatter.format(grantDate);
+            readableGrantDate = formatter.format(entitlementStart);
         }
 
         String messageToSend = STR."NOWAYING \{userDisplayName} is founder in \{secondUserDisplayName}'s chat since \{readableGrantDate} (Active sub: \{isSubscribed}) PogU";

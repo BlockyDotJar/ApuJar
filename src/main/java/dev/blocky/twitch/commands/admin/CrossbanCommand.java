@@ -17,16 +17,18 @@
  */
 package dev.blocky.twitch.commands.admin;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.helix.TwitchHelix;
 import com.github.twitch4j.helix.domain.BanUserInput;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
@@ -41,18 +43,16 @@ public class CrossbanCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String channelName = event.getChannel().getName();
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String message = event.getMessage();
-        String[] msgParts = message.split(" ");
-
-        if (msgParts.length == 1)
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "MEGALUL Please specify a user to crossban.");
+            chat.sendMessage(channelName, "MEGALUL Please specify a user.");
             return;
         }
 
-        String userToBan = getUserAsString(msgParts, 1);
+        String userToBan = getUserAsString(messageParts, 1);
 
         if (!isValidUsername(userToBan))
         {
@@ -70,17 +70,13 @@ public class CrossbanCommand implements ICommand
 
         String reason = null;
 
-        if (msgParts.length >= 3)
+        if (messageParts.length >= 3)
         {
-            String command = msgParts[0];
-            String user = msgParts[1];
-
-            int extraLength = user.startsWith("@") ? 1 : 0;
-
-            reason = message.substring(command.length() + userToBan.length() + 2 + extraLength).strip();
+            reason = removeElements(messageParts, 2);
         }
 
         User user = usersToBan.getFirst();
+        String userID = user.getId();
 
         HashSet<String> openedChats = SQLUtils.getOpenedChats();
         int bannedChats = openedChats.size();
@@ -88,28 +84,18 @@ public class CrossbanCommand implements ICommand
         for (String openedChat : openedChats)
         {
             BanUserInput banUserInput = BanUserInput.builder()
-                    .userId(user.getId())
+                    .userId(userID)
                     .reason(reason)
                     .build();
 
             List<User> chatUsers = retrieveUserList(client, openedChat);
             User chatUser = chatUsers.getFirst();
+            String chatUserID = chatUser.getId();
 
-            IVRFI ivrfi = ServiceProvider.createIVRFIModVip(openedChat);
+            IVR ivr = ServiceProvider.getIVRModVip(openedChat);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 
-            boolean isMod = false;
-
-            for (JsonNode mod : ivrfi.getMods())
-            {
-                String login = mod.get("login").asText();
-
-                if (login.equalsIgnoreCase("ApuJar"))
-                {
-                    isMod = true;
-                }
-            }
-
-            if (!isMod)
+            if (!selfModeratorPerms)
             {
                 bannedChats--;
                 continue;
@@ -117,7 +103,8 @@ public class CrossbanCommand implements ICommand
 
             try
             {
-                client.getHelix().banUser(null, chatUser.getId(), "896181679", banUserInput).execute();
+                TwitchHelix twitchHelix = client.getHelix();
+                twitchHelix.banUser(null, chatUserID, "896181679", banUserInput).execute();
             }
             catch (Exception ignored)
             {

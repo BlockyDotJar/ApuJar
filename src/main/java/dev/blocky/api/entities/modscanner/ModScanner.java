@@ -15,61 +15,58 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities;
+package dev.blocky.api.entities.modscanner;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ModScanner
 {
-    @JsonProperty("moderating")
-    public final ArrayList<JsonNode> moderating = new ArrayList<>();
+    @SerializedName("moderating")
+    public final ArrayList<ModScannerUser> moderating = new ArrayList<>();
 
-    @JsonProperty("viping")
-    public final ArrayList<JsonNode> viping = new ArrayList<>();
+    @SerializedName("viping")
+    public final ArrayList<ModScannerUser> viping = new ArrayList<>();
 
-    @JsonProperty("founding")
-    public final ArrayList<JsonNode> founding = new ArrayList<>();
+    @SerializedName("founding")
+    public final ArrayList<ModScannerUser> founding = new ArrayList<>();
 
-    @JsonProperty("moderators")
-    public final ArrayList<JsonNode> moderators = new ArrayList<>();
+    @SerializedName("moderators")
+    public final ArrayList<ModScannerUser> moderators = new ArrayList<>();
 
-    @JsonProperty("vips")
-    public final ArrayList<JsonNode> vips = new ArrayList<>();
+    @SerializedName("vips")
+    public final ArrayList<ModScannerUser> vips = new ArrayList<>();
 
-    @JsonProperty("founders")
-    public final ArrayList<JsonNode> founders = new ArrayList<>();
+    @SerializedName("founders")
+    public final ArrayList<ModScannerUser> founders = new ArrayList<>();
 
-    public ArrayList<JsonNode> getChannelModerators()
+    public ArrayList<ModScannerUser> getChannelModerators()
     {
         return moderators;
     }
 
-    public ArrayList<JsonNode> getChannelVIPs()
+    public ArrayList<ModScannerUser> getChannelVIPs()
     {
         return vips;
     }
 
-    public ArrayList<JsonNode> getChannelFounders()
+    public ArrayList<ModScannerUser> getChannelFounders()
     {
         return founders;
     }
 
-    public ArrayList<JsonNode> getUserModerators()
+    public ArrayList<ModScannerUser> getUserModerators()
     {
         return moderating;
     }
 
-    public ArrayList<JsonNode> getUserVIPs()
+    public ArrayList<ModScannerUser> getUserVIPs()
     {
         return viping;
     }
 
-    public ArrayList<JsonNode> getUserFounders()
+    public ArrayList<ModScannerUser> getUserFounders()
     {
         return founding;
     }

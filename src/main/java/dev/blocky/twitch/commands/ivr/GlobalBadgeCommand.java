@@ -20,12 +20,15 @@ package dev.blocky.twitch.commands.ivr;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRUser;
+import dev.blocky.api.entities.ivr.IVRUserBadge;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
@@ -38,36 +41,42 @@ public class GlobalBadgeCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
-        String userToCheck = getUserAsString(msgParts, event.getUser());
+        EventUser eventUser = event.getUser();
+
+        String userToCheck = getUserAsString(messageParts, eventUser);
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), "o_O Username doesn't match with RegEx R-)");
+            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<IVRFI> ivrfiList = ServiceProvider.createIVRFIUser(userToCheck);
+        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrfiList.isEmpty())
+        if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), STR.":| No user called '\{userToCheck}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
-        IVRFI ivrfi = ivrfiList.getFirst();
+        IVRUser ivrUser = ivrUsers.getFirst();
+        String userDisplayName = ivrUser.getDisplayName();
+        ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getBadges();
 
-        if (ivrfi.getBadges().isEmpty())
+        if (ivrUserBadges.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), STR."eeeh \{ivrfi.getDisplayName()} has no global badge.");
+            chat.sendMessage(channelName, STR."eeeh \{userDisplayName} has no global badge.");
             return;
         }
 
-        String channelName = getActualChannel(channelToSend, event.getChannel().getName());
+        IVRUserBadge ivrUserBadge = ivrUserBadges.getFirst();
+        String ivrUserBadgeTitle = ivrUserBadge.getTitle();
 
-        chat.sendMessage(channelName, STR."GivePLZ \{ivrfi.getDisplayName()} currently has the \{ivrfi.getBadges().getFirst().get("title").asText()} badge equipped.");
+        channelName = getActualChannel(channelToSend, channelName);
+
+        chat.sendMessage(channelName, STR."GivePLZ \{userDisplayName} currently has equipped the \{ivrUserBadgeTitle} badge.");
     }
 }

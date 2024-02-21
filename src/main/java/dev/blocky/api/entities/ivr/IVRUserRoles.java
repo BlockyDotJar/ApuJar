@@ -15,27 +15,41 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.services;
+package dev.blocky.api.entities.ivr;
 
-import dev.blocky.api.entities.IVRFI;
-import retrofit2.Call;
-import retrofit2.http.GET;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
+import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.List;
-
-public interface IVRFIService
+public class IVRUserRoles
 {
-    @GET("twitch/user")
-    Call<List<IVRFI>> getUser(@Query("login") String login);
+    @SerializedName("isAffiliate")
+    public boolean isAffiliate;
 
-    @GET("twitch/subage/{user}/{channel}")
-    Call<IVRFI> getSubage(@Path("user") String user, @Path("channel") String channel);
+    @SerializedName("isPartner")
+    public boolean isPartner;
 
-    @GET("twitch/modvip/{channel}")
-    Call<IVRFI> getModVip(@Path("channel") String channel);
+    @SerializedName("isStaff")
+    public boolean isStaff;
 
-    @GET("twitch/founders/{login}")
-    Call<IVRFI> getFounders(@Path("login") String login);
+    @NonNull
+    public boolean isAffiliate()
+    {
+        return isAffiliate;
+    }
+
+    @NonNull
+    public boolean isPartner()
+    {
+        return isPartner;
+    }
+
+    @NonNull
+    public boolean isStaff()
+    {
+        return isStaff;
+    }
+
+    IVRUserRoles()
+    {
+    }
 }

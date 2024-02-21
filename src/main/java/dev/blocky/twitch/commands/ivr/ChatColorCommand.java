@@ -20,10 +20,11 @@ package dev.blocky.twitch.commands.ivr;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -38,31 +39,33 @@ public class ChatColorCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
-        String userToCheck = getUserAsString(msgParts, event.getUser());
+        EventUser eventUser = event.getUser();
+
+        String userToCheck = getUserAsString(messageParts, eventUser);
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), "o_O Username doesn't match with RegEx R-)");
+            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<IVRFI> ivrfiList = ServiceProvider.createIVRFIUser(userToCheck);
+        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrfiList.isEmpty())
+        if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), STR.":| No user called '\{userToCheck}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
-        IVRFI ivrfi = ivrfiList.getFirst();
-        String chatColor = ivrfi.getChatColor() == null ? "#FFFFFF" : ivrfi.getChatColor();
+        IVRUser ivrUser = ivrUsers.getFirst();
+        String userDisplayName = ivrUser.getDisplayName();
+        String userChatColor = ivrUser.getChatColor() == null ? "#FFFFFF" : ivrUser.getChatColor();
 
-        String channelName = getActualChannel(channelToSend, event.getChannel().getName());
+        channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."Gayge \{ivrfi.getDisplayName()}'s chat color is \{chatColor}");
+        chat.sendMessage(channelName, STR."Gayge \{userDisplayName}'s chat color is \{userChatColor}");
     }
 }

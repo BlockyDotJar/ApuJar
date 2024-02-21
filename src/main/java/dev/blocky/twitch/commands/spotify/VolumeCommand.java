@@ -46,11 +46,7 @@ public class VolumeCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
 
-        String actualPrefix = SQLUtils.getActualPrefix(channel.getId());
-        String message = getSayableMessage(event.getMessage());
-        String[] msgParts = message.split(" ");
-
-        String userToGetSongFrom = getUserAsString(msgParts, event.getUser());
+        String userToGetSongFrom = getUserAsString(messageParts, event.getUser());
 
         if (!isValidUsername(userToGetSongFrom))
         {

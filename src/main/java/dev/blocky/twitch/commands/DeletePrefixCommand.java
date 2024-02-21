@@ -17,17 +17,17 @@
  */
 package dev.blocky.twitch.commands;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 public class DeletePrefixCommand implements ICommand
@@ -44,23 +44,12 @@ public class DeletePrefixCommand implements ICommand
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
 
-        IVRFI ivrfi = ServiceProvider.createIVRFIModVip(eventUserName);
-
-        boolean hasModeratorPerms = false;
-
-        for (JsonNode mod : ivrfi.getMods())
-        {
-            String login = mod.get("login").asText();
-
-            if (login.equals(eventUserName))
-            {
-                hasModeratorPerms = true;
-            }
-        }
+        IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "ManFeels You can't delete a prefix, because you aren't a broadcaster or a moderator.");
+            chat.sendMessage(channelName, "ManFeels You can't delete a prefix, because you aren't a broadcaster or moderator.");
             return;
         }
 

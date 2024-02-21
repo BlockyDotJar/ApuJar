@@ -21,7 +21,7 @@ dependencies {
     api("com.github.twitch4j:twitch4j:1.19.0")
 
     api("com.squareup.retrofit2:retrofit:2.9.0")
-    api("com.squareup.retrofit2:converter-jackson:2.9.0")
+    api("com.squareup.retrofit2:converter-gson:2.9.0")
 
     api("se.michaelthelin.spotify:spotify-web-api-java:8.3.5")
 
@@ -38,7 +38,7 @@ dependencies {
     api("org.apache.commons:commons-collections4:4.4")
 
     api("org.slf4j:slf4j-api:2.0.12")
-    api("ch.qos.logback:logback-classic:1.4.14")
+    api("ch.qos.logback:logback-classic:1.5.0")
 
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.3")
 }

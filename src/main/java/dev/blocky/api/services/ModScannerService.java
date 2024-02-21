@@ -17,7 +17,7 @@
  */
 package dev.blocky.api.services;
 
-import dev.blocky.api.entities.ModScanner;
+import dev.blocky.api.entities.modscanner.ModScanner;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;

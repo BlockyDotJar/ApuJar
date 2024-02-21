@@ -29,7 +29,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import io.github.cdimascio.dotenv.Dotenv;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.SpotifyHttpManager;
-import se.michaelthelin.spotify.exceptions.detailed.BadRequestException;
 import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest;
 
@@ -77,38 +76,30 @@ public class AddSpotifyUserCommand implements ICommand
                 .build();
 
         AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(authCode).build();
+        AuthorizationCodeCredentials authCodeCredentials = authorizationCodeRequest.execute();
 
-        try
+        String accessToken = authCodeCredentials.getAccessToken();
+        String refreshToken = authCodeCredentials.getRefreshToken();
+        int expiresIn = authCodeCredentials.getExpiresIn();
+
+        LocalDateTime expiresOn = LocalDateTime.now().plusSeconds(expiresIn);
+
+        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
+
+        EventUser user = event.getUser();
+        String userID = user.getId();
+        int id = Integer.parseInt(userID);
+
+        if (!spotifyUserIDs.contains(id))
         {
-            AuthorizationCodeCredentials authCodeCredentials = authorizationCodeRequest.execute();
+            SQLite.onUpdate(STR."INSERT INTO spotifyCredentials(userID, accessToken, refreshToken, expiresOn) VALUES(\{id}, '\{accessToken}', '\{refreshToken}', '\{expiresOn}')");
 
-            String accessToken = authCodeCredentials.getAccessToken();
-            String refreshToken = authCodeCredentials.getRefreshToken();
-            int expiresIn = authCodeCredentials.getExpiresIn();
-
-            LocalDateTime expiresOn = LocalDateTime.now().plusSeconds(expiresIn);
-
-            HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
-
-            EventUser user = event.getUser();
-            String userID = user.getId();
-            int id = Integer.parseInt(userID);
-
-            if (!spotifyUserIDs.contains(id))
-            {
-                SQLite.onUpdate(STR."INSERT INTO spotifyCredentials(userID, accessToken, refreshToken, expiresOn) VALUES(\{id}, '\{accessToken}', '\{refreshToken}', '\{expiresOn}')");
-                chat.sendMessage(channelName, "SeemsGood Successfully added Spotify credentials.");
-                return;
-            }
-
-            SQLite.onUpdate(STR."UPDATE spotifyCredentials SET accessToken = '\{accessToken}', refreshToken = '\{refreshToken}', expiresOn = '\{expiresOn}' WHERE userID = \{id}");
-
-            chat.sendMessage(channelName, "SeemsGood Successfully updated Spotify user in the database.");
+            chat.sendMessage(channelName, "SeemsGood Successfully added Spotify credentials.");
+            return;
         }
-        catch (BadRequestException e)
-        {
-            String error = e.getMessage();
-            chat.sendMessage(channelName, STR."FeelsOkayMan \{error}.");
-        }
+
+        SQLite.onUpdate(STR."UPDATE spotifyCredentials SET accessToken = '\{accessToken}', refreshToken = '\{refreshToken}', expiresOn = '\{expiresOn}' WHERE userID = \{id}");
+
+        chat.sendMessage(channelName, "SeemsGood Successfully updated Spotify user in the database.");
     }
 }

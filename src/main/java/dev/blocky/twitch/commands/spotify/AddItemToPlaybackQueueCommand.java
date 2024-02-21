@@ -26,7 +26,6 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
-import se.michaelthelin.spotify.exceptions.detailed.NotFoundException;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
@@ -77,39 +76,32 @@ public class AddItemToPlaybackQueueCommand implements ICommand
 
         SpotifyApi spotifyApi = SpotifyUtils.getSpotifyAPI(userID);
 
-        try
+        GetUsersAvailableDevicesRequest devicesRequest = spotifyApi.getUsersAvailableDevices().build();
+        Device[] devices = devicesRequest.execute();
+
+        if (devices.length == 0)
         {
-            GetUsersAvailableDevicesRequest devicesRequest = spotifyApi.getUsersAvailableDevices().build();
-            Device[] devices = devicesRequest.execute();
-
-            if (devices.length == 0)
-            {
-                chat.sendMessage(event.getChannel().getName(), STR."AlienUnpleased \{user.getName()} is not active at the moment.");
-                return;
-            }
-
-            GetTrackRequest trackRequest = spotifyApi.getTrack(spotifyTrack).build();
-            Track track = trackRequest.execute();
-
-            AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyApi.addItemToUsersPlaybackQueue(STR."spotify:track:\{spotifyTrack}").build();
-            addItemToPlaybackQueueRequest.execute();
-
-            CharSequence[] artistsArray = Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).toArray(CharSequence[]::new);
-            String artists = String.join(", ", artistsArray);
-
-            DecimalFormat decimalFormat = new DecimalFormat("00");
-
-            int durationMs = track.getDurationMs();
-            int durationS = (durationMs / 1000) % 60;
-            int durationM = (durationMs / 1000) / 60;
-
-            String queueItem = STR."notee Added '\{track.getName()}' by \{artists} donkJAM (\{decimalFormat.format(durationM)}:\{decimalFormat.format(durationS)}) to \{user.getName()}'s queue https://open.spotify.com/track/\{track.getId()}";
-
-            chat.sendMessage(event.getChannel().getName(), queueItem);
+            chat.sendMessage(event.getChannel().getName(), STR."AlienUnpleased \{user.getName()} is not active at the moment.");
+            return;
         }
-        catch (NotFoundException e)
-        {
-            chat.sendMessage(event.getChannel().getName(), "AlienUnpleased Song was not found by Spotify API.");
-        }
+
+        GetTrackRequest trackRequest = spotifyApi.getTrack(spotifyTrack).build();
+        Track track = trackRequest.execute();
+
+        AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyApi.addItemToUsersPlaybackQueue(STR."spotify:track:\{spotifyTrack}").build();
+        addItemToPlaybackQueueRequest.execute();
+
+        CharSequence[] artistsArray = Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).toArray(CharSequence[]::new);
+        String artists = String.join(", ", artistsArray);
+
+        DecimalFormat decimalFormat = new DecimalFormat("00");
+
+        int durationMs = track.getDurationMs();
+        int durationS = (durationMs / 1000) % 60;
+        int durationM = (durationMs / 1000) / 60;
+
+        String queueItem = STR."notee Added '\{track.getName()}' by \{artists} donkJAM (\{decimalFormat.format(durationM)}:\{decimalFormat.format(durationS)}) to \{user.getName()}'s queue https://open.spotify.com/track/\{track.getId()}";
+
+        chat.sendMessage(event.getChannel().getName(), queueItem);
     }
 }

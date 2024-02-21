@@ -27,6 +27,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TimeUnit;
+
 public class ExitCommand implements ICommand
 {
     private final Logger logger = LoggerFactory.getLogger(ExitCommand.class);
@@ -55,7 +57,7 @@ public class ExitCommand implements ICommand
                 logger.info("Bot stops in 1 second.");
             }
 
-            Thread.sleep(1000);
+            TimeUnit.SECONDS.sleep(1);
         }
 
         client.close();

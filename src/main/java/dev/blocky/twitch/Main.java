@@ -43,6 +43,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.sql.SQLException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -53,6 +54,8 @@ public class Main
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
     private static TwitchClient client;
     private static long startedAt;
+
+    public static String sevenTVAccessToken;
 
     public static void main(String[] args) throws SQLException
     {
@@ -69,6 +72,7 @@ public class Main
         String clientID = env.get("CLIENT_ID");
         String accessToken = env.get("ACCESS_TOKEN");
         String refreshToken = env.get("REFRESH_TOKEN");
+        sevenTVAccessToken = env.get("SEVENTV_ACCESS_TOKEN");
 
         TwitchIdentityProvider tip = new TwitchIdentityProvider(clientID, null, null);
 
@@ -93,6 +97,7 @@ public class Main
                                 ACCESS_TOKEN=\{refrehedAccessToken}
                                 REFRESH_TOKEN=\{refreshedRefreshToken}
                                 CLIENT_ID=\{clientID}
+                                SEVENTV_ACCESS_TOKEN=\{sevenTVAccessToken}
                                 """;
 
                 Files.writeString(envFile.toPath(), newEnvContent);
@@ -172,15 +177,15 @@ public class Main
     {
         new Thread(() ->
         {
-            InputStreamReader streamReader = new InputStreamReader(System.in);
-            BufferedReader reader = new BufferedReader(streamReader);
-
             try
             {
+                InputStreamReader streamReader = new InputStreamReader(System.in);
+                BufferedReader reader = new BufferedReader(streamReader);
+
                 TwitchChat chat = client.getChat();
                 String line = reader.readLine();
 
-                while (line != null)
+                while (true)
                 {
                     if (line.equalsIgnoreCase("exit"))
                     {
@@ -200,10 +205,8 @@ public class Main
                                 logger.info("Bot stops in 1 second.");
                             }
 
-                            Thread.sleep(1000);
+                            TimeUnit.SECONDS.sleep(1);
                         }
-
-                        line = null;
 
                         client.close();
                         SQLite.disconnect();

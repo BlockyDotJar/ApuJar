@@ -20,6 +20,8 @@ package dev.blocky.twitch.commands.admin;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -28,6 +30,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.HashMap;
 
 import static dev.blocky.twitch.utils.SQLUtils.removeApostrophe;
+import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
 
 public class EditGlobalCommandCommand implements ICommand
 {
@@ -36,28 +39,37 @@ public class EditGlobalCommandCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String[] msgParts = event.getMessage().split(" ");
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
+        String channelID = channel.getId();
 
-        if (msgParts.length == 1)
+        EventUser eventUser = event.getUser();
+        String eventUserName = eventUser.getName();
+        String eventUserID = eventUser.getId();
+
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a global command name.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a global command name.");
             return;
         }
 
-        if (msgParts.length == 2)
+        if (messageParts.length == 2)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsGoodMan Please specify a message for the global command.");
+            chat.sendMessage(channelName, "FeelsGoodMan Please specify a message.");
             return;
         }
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
+        String actualPrefix = SQLUtils.getActualPrefix(channelID);
 
-        String gcName = removeApostrophe(msgParts[1].strip());
-        String gcMessage = removeApostrophe(event.getMessage().substring(actualPrefix.length() + msgParts[0].substring(actualPrefix.length()).length() + 1 + gcName.length()).strip());
+        String gcNameRaw = messageParts[1].strip();
+        String gcMessageRaw = removeElements(messageParts, 2);
+
+        String gcName = removeApostrophe(gcNameRaw);
+        String gcMessage = removeApostrophe(gcMessageRaw);
 
         if (gcMessage.isBlank())
         {
-            chat.sendMessage(event.getChannel().getName(), "monkaLaugh The global command message can't contain ' because of some weird sql things.");
+            chat.sendMessage(channelName, "monkaLaugh The global command name/message can't contain the character ' haha");
             return;
         }
 
@@ -70,18 +82,18 @@ public class EditGlobalCommandCommand implements ICommand
 
         if (!globalCommands.containsKey(gcName))
         {
-            chat.sendMessage(event.getChannel().getName(), STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
+            chat.sendMessage(channelName, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
             return;
         }
 
-        if (globalCommands.containsKey(gcName) && globalCommands.containsValue(gcMessage) && globalCommands.get(gcName).equals(gcMessage))
+        if (globalCommands.containsKey(gcName) && globalCommands.get(gcName).equals(gcMessage))
         {
-            chat.sendMessage(event.getChannel().getName(), STR."4Head The new value for '\{gcName}' does exactly match with the old one.");
+            chat.sendMessage(channelName, STR."4Head The new value for '\{gcName}' does exactly match with the old one.");
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE globalCommands SET message = '\{gcMessage}', userID = \{event.getUser().getId()}, loginName = '\{event.getUser().getName().toLowerCase()}' WHERE name = '\{gcName}'");
+        SQLite.onUpdate(STR."UPDATE globalCommands SET message = '\{gcMessage}', userID = \{eventUserID}, loginName = '\{eventUserName}' WHERE name = '\{gcName}'");
 
-        chat.sendMessage(event.getChannel().getName(), STR."SeemsGood Successfully edited global command '\{gcName}'");
+        chat.sendMessage(channelName, STR."SeemsGood Successfully edited global command '\{gcName}'");
     }
 }

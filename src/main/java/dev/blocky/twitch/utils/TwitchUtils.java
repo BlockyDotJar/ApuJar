@@ -21,6 +21,8 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.UserList;
+import dev.blocky.api.entities.ivr.IVR;
+import dev.blocky.api.entities.ivr.IVRModVIP;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.RegExUtils;
@@ -95,13 +97,6 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String getSayableMessage(@NonNull String message)
-    {
-        String[] msgParts = message.split(" ");
-        return removeElements(msgParts, 3);
-    }
-
-    @NonNull
     public static String removeElements(@NonNull String[] msgParts, int start)
     {
         msgParts = Arrays.copyOfRange(msgParts, start, msgParts.length);
@@ -112,5 +107,19 @@ public class TwitchUtils
     public static String getActualChannel(@Nullable String sendChannel, @NonNull String channelName)
     {
         return sendChannel == null ? channelName : sendChannel;
+    }
+
+    public static boolean hasModeratorPerms(@NonNull IVR ivr, @NonNull String userName)
+    {
+        for (IVRModVIP ivrModVIP : ivr.getMods())
+        {
+            String login = ivrModVIP.getLogin();
+
+            if (login.equals(userName))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

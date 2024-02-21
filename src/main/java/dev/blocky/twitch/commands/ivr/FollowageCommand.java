@@ -20,15 +20,15 @@ package dev.blocky.twitch.commands.ivr;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.IVRFI;
+import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -42,35 +42,36 @@ public class FollowageCommand implements ICommand
     {
         TwitchChat chat = client.getChat();
 
-        String actualPrefix = SQLUtils.getActualPrefix(event.getChannel().getId());
-        String message = getSayableMessage(event.getMessage());
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        String[] msgParts = message.split(" ");
+        EventUser eventUser = event.getUser();
+        String eventUserName = eventUser.getName();
 
-        if (msgParts.length == 1)
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a user to check.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
             return;
         }
 
-        String userToCheck = getUserAsString(msgParts, 1);
-        String secondUserToCheck = getSecondUserAsString(msgParts, event.getUser());
+        String userToCheck = getUserAsString(messageParts, 1);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
 
-        if (userToCheck.equalsIgnoreCase(event.getUser().getName().toLowerCase()) && secondUserToCheck.equalsIgnoreCase(event.getUser().getName().toLowerCase()))
+        if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equals(eventUserName))
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan You can't follow yourself");
+            chat.sendMessage(channelName, "FeelsMan You can't follow yourself.");
             return;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), STR."FeelsDankMan \{userToCheck} can't follow hisself/herself.");
+            chat.sendMessage(channelName, STR."FeelsDankMan \{userToCheck} can't follow hisself/herself.");
             return;
         }
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
-            chat.sendMessage(event.getChannel().getName(), "o_O One or both usernames aren't matching with RegEx R-)");
+            chat.sendMessage(channelName, "o_O One or both usernames aren't matching with RegEx R-)");
             return;
         }
 
@@ -79,27 +80,31 @@ public class FollowageCommand implements ICommand
 
         if (users.isEmpty() || secondUsers.isEmpty())
         {
-            chat.sendMessage(event.getChannel().getName(), ":| One or both users not found.");
+            chat.sendMessage(channelName, ":| One or both users not found.");
             return;
         }
 
         User user = users.getFirst();
+        String userDisplayName = user.getDisplayName();
+
         User secondUser = secondUsers.getFirst();
+        String secondUserDisplayName = secondUser.getDisplayName();
+        String secondUserLogin = secondUser.getLogin();
 
-        IVRFI ivrfi = ServiceProvider.createIVRFISubAge(user.getDisplayName(), secondUser.getLogin());
+        IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userDisplayName, secondUserLogin);
+        Date followedAt = ivrSubage.getFollowedAt();
 
-        if (ivrfi.getFollowedAt() == null)
+        if (followedAt == null)
         {
-            chat.sendMessage(event.getChannel().getName(), STR."Bad \{user.getDisplayName()} is not following \{secondUser.getDisplayName()} at the moment.");
+            chat.sendMessage(channelName, STR."Bad \{userDisplayName} is not following \{secondUserDisplayName} at the moment.");
             return;
         }
 
-        Instant creationInstant = Instant.parse(ivrfi.getFollowedAt());
-        Date followDate = Date.from(creationInstant);
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        String readableFollowedAt = formatter.format(followedAt);
 
-        String channelName = getActualChannel(channelToSend, event.getChannel().getName());
+        channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."Strong \{user.getDisplayName()} follows \{secondUser.getDisplayName()} since \{formatter.format(followDate)} Gladge");
+        chat.sendMessage(channelName, STR."Strong \{userDisplayName} follows \{secondUserDisplayName} since \{readableFollowedAt} Gladge");
     }
 }
