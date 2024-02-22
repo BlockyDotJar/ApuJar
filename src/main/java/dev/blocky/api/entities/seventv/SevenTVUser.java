@@ -37,6 +37,9 @@ public class SevenTVUser
     @SerializedName("connections")
     ArrayList<SevenTVConnection> connections;
 
+    @SerializedName("editors")
+    ArrayList<SevenTVUser> editors;
+
     @NonNull
     public String getID()
     {
@@ -59,6 +62,12 @@ public class SevenTVUser
     public ArrayList<SevenTVConnection> getConnections()
     {
         return connections;
+    }
+
+    @Nullable
+    public ArrayList<SevenTVUser> getEditors()
+    {
+        return editors;
     }
 
     SevenTVUser()

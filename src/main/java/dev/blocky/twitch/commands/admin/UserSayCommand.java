@@ -115,7 +115,7 @@ public class UserSayCommand implements ICommand
             }
         }
 
-        ConcurrentHashMap<List<String>, ICommand> commands = CommandManager.getCommands();
+        ConcurrentHashMap<List<String>, ICommand> commands = CommandManager.getConcurrentCommands();
         Set<Map.Entry<List<String>, ICommand>> entries = commands.entrySet();
 
         String actualPrefix = SQLUtils.getActualPrefix(userID);

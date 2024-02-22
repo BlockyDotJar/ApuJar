@@ -220,8 +220,10 @@ public class Main
 
                         chat.reconnect();
 
-                        chat.sendMessage("ApuJar", "Successfully reconncted to Twitch websocket...");
+                        chat.sendMessage("ApuJar", "GigaSignal Successfully reconncted to Twitch websocket...");
                     }
+
+                    line = null;
                 }
             }
             catch (IOException | InterruptedException | SQLException e)

@@ -61,7 +61,7 @@ public class DeletePrefixCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."DELETE FROM prefixes WHERE userID = \{channelID}");
+        SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
         chat.sendMessage(channelName, "8-) Successfully deleted prefix.");
     }

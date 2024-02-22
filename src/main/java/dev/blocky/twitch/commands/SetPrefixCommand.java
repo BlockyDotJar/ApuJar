@@ -79,7 +79,7 @@ public class SetPrefixCommand implements ICommand
 
         if (!actualPrefix.equals("kok!") && prefix.equals("kok!"))
         {
-            SQLite.onUpdate(STR."DELETE FROM prefixes WHERE userID = \{channelID}");
+            SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
             chat.sendMessage(channelName, "8-) Successfully deleted prefix.");
             return;
@@ -87,13 +87,13 @@ public class SetPrefixCommand implements ICommand
 
         if (actualPrefix.equals("kok!"))
         {
-            SQLite.onUpdate(STR."INSERT INTO prefixes(userID, customPrefix) VALUES(\{channelID}, '\{prefix}')");
+            SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix) VALUES(\{channelID}, '\{prefix}')");
 
             chat.sendMessage(channelName, STR."8-) Successfully set prefix to \{prefix}");
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE prefixes SET customPrefix = '\{prefix}' WHERE userID = \{channelID}");
+        SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{prefix}' WHERE userID = \{channelID}");
 
         chat.sendMessage(channelName, STR."8-) Successfully set prefix to \{prefix}");
     }

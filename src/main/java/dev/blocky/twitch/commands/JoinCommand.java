@@ -94,7 +94,7 @@ public class JoinCommand implements ICommand
         String userLogin = user.getLogin();
         String userID = user.getId();
 
-        SQLite.onUpdate(STR."INSERT INTO chats(userID, loginName) VALUES(\{userID}, '\{userLogin}')");
+        SQLite.onUpdate(STR."INSERT INTO chats(userID) VALUES(\{userID})");
 
         chat.sendMessage(chatToJoin, "BatChest Hello guys!");
         chat.sendMessage(channelName, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood");

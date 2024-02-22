@@ -17,14 +17,18 @@
  */
 package dev.blocky.twitch.utils;
 
+import com.github.twitch4j.chat.TwitchChat;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.SevenTV;
+import dev.blocky.api.entities.seventv.SevenTVData;
 import dev.blocky.api.entities.seventv.SevenTVEmoteChangeAction;
+import dev.blocky.api.entities.seventv.SevenTVUser;
 import dev.blocky.api.gql.SevenTVGQLBody;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.io.IOException;
-import java.util.Map;
+import java.sql.SQLException;
+import java.util.*;
 
 public class SevenTVUtils
 {
@@ -71,7 +75,7 @@ public class SevenTVUtils
 
         Map<String, Object> filter = Map.of
                 (
-                        "exact_match", true,
+                        "exact_match", false,
                         "case_sensitive", true,
                         "ignore_tags", true,
                         "zero_width", false,
@@ -118,5 +122,86 @@ public class SevenTVUtils
         SevenTVGQLBody gql = new SevenTVGQLBody("ChangeEmoteInSet", variables, query);
 
         return ServiceProvider.postSevenTVGQL(gql);
+    }
+
+    public static boolean isAllowedEditor(int channelID, int userID) throws SQLException
+    {
+        String allowedUserIDsRaw = SQLUtils.getSevenTVAllowedUserIDs(channelID);
+
+        if (allowedUserIDsRaw != null)
+        {
+            List<Integer> allowedUserIIDs = null;
+
+            if (allowedUserIDsRaw.contains(","))
+            {
+                String[] allowedUserIDs = allowedUserIDsRaw.split(",");
+                allowedUserIIDs = Arrays.stream(allowedUserIDs)
+                        .mapToInt(Integer::parseInt)
+                        .boxed()
+                        .toList();
+            }
+
+            if (allowedUserIIDs == null)
+            {
+                int allowedUserIID = Integer.parseInt(allowedUserIDsRaw);
+                allowedUserIIDs = Collections.singletonList(allowedUserIID);
+            }
+
+            for (int allowedUserIID : allowedUserIIDs)
+            {
+                if (allowedUserIID == userID)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isAllowedEditor(@NonNull TwitchChat chat, int channelID, int userID, @NonNull String sevenTVUserID, @NonNull String channelName, @NonNull String userName) throws SQLException, IOException
+    {
+        boolean isAllowedEditor = isAllowedEditor(channelID, userID);
+
+        if (isAllowedEditor)
+        {
+            return true;
+        }
+
+        SevenTVUser sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
+        ArrayList<SevenTVUser> sevenTVEditors = sevenTVUser.getEditors();
+
+        SevenTV sevenTV = SevenTVUtils.getUser(userName);
+        SevenTVData sevenTVEventUserData = sevenTV.getData();
+        ArrayList<SevenTVUser> sevenTVEventUsers = sevenTVEventUserData.getUsers();
+        List<SevenTVUser> sevenTVEventUsersSorted = sevenTVEventUsers.stream()
+                .filter(sevenTVEventUser ->
+                {
+                    String sevenTVUsername = sevenTVEventUser.getUsername();
+                    return sevenTVUsername.equalsIgnoreCase(channelName);
+                })
+                .toList();
+
+        if (sevenTVEventUsersSorted.isEmpty())
+        {
+            chat.sendMessage(channelName, STR."undefined No user with name '\{userName}' found.");
+            return false;
+        }
+
+        SevenTVUser sevenTVEventUser = sevenTVEventUsersSorted.getFirst();
+        String sevenTVEventUserID = sevenTVEventUser.getID();
+
+        for (SevenTVUser sevenTVEditor : sevenTVEditors)
+        {
+            String sevenTVEditorID = sevenTVEditor.getID();
+
+            if (!sevenTVEditorID.equals(sevenTVEventUserID))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 }

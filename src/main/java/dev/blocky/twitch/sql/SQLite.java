@@ -72,14 +72,15 @@ public class SQLite
 
     public void initDatabase() throws SQLException
     {
-        onUpdate("CREATE TABLE IF NOT EXISTS chats(userID INTEGER, loginName VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS admins(userID INTEGER, loginName VARCHAR, isOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS prefixes(customPrefix VARCHAR, userID INTEGER)");
-        onUpdate("CREATE TABLE IF NOT EXISTS commandPermissions(command VARCHAR, requiresAdmin BOOLEAN, requiresOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS bible(ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, entry VARCHAR, userID INTEGER, loginName VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customCommands(name VARCHAR, message VARCHAR, userID INTEGER, loginName VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name VARCHAR, message VARCHAR, userID INTEGER, loginName VARCHAR)");
+        onUpdate("CREATE TABLE IF NOT EXISTS chats(userID INTEGER)");
+        onUpdate("CREATE TABLE IF NOT EXISTS admins(userID INTEGER, isOwner BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customPrefixes(userID INTEGER, prefix VARCHAR)");
+        onUpdate("CREATE TABLE IF NOT EXISTS adminCommands(command VARCHAR, requiresOwner BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS bible(ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, userID INTEGER, entry VARCHAR)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name VARCHAR, message VARCHAR)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name VARCHAR, message VARCHAR, equals BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name VARCHAR, message VARCHAR)");
         onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken VARCHAR, refreshToken VARCHAR, expiresOn VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS chatFilter(RegEx VARCHAR)");
+        onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs VARCHAR)");
     }
 }

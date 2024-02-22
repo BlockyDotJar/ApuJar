@@ -76,39 +76,27 @@ public class SQLUtils
     }
 
     @NonNull
-    public static HashSet<String> getOpenedChats() throws SQLException
+    public static HashSet<Integer> getOpenedChatIDs() throws SQLException
     {
-        return getAll("SELECT * from chats", "loginName", String.class);
-    }
-
-    @NonNull
-    public static HashSet<String> getAdminNames() throws SQLException
-    {
-        return getAll("SELECT * from admins", "loginName", String.class);
+        return getAll("SELECT * from chats", "userID", Integer.class);
     }
 
     @NonNull
     public static HashSet<Integer> getAdminIDs() throws SQLException
     {
-        return getAll("SELECT * from admins", "userID", Integer.class);
+        return getAll("SELECT * from admins WHERE isOwner = FALSE", "userID", Integer.class);
     }
 
     @NonNull
     public static HashSet<String> getAdminCommands() throws SQLException
     {
-        return getAll("SELECT * from commandPermissions WHERE requiresAdmin = TRUE", "command", String.class);
+        return getAll("SELECT * from adminCommands WHERE requiresOwner = FALSE", "command", String.class);
     }
 
     @NonNull
     public static HashSet<String> getOwnerCommands() throws SQLException
     {
-        return getAll("SELECT * from commandPermissions WHERE requiresOwner = TRUE", "command", String.class);
-    }
-
-    @NonNull
-    public static HashSet<String> getOwnerNames() throws SQLException
-    {
-        return getAll("SELECT * from admins WHERE isOwner = TRUE", "loginName", String.class);
+        return getAll("SELECT * from adminCommands WHERE requiresOwner = TRUE", "command", String.class);
     }
 
     @NonNull
@@ -120,19 +108,13 @@ public class SQLUtils
     @NonNull
     public static String getPrefix(int userID) throws SQLException
     {
-        return get(STR."SELECT * from prefixes WHERE userID = \{userID}", "customPrefix", String.class);
+        return get(STR."SELECT * from customPrefixes WHERE userID = \{userID}", "prefix", String.class);
     }
 
     @NonNull
     public static HashMap<String, String> getGlobalCommands() throws SQLException
     {
         return getAllMapped("SELECT * from globalCommands", List.of("name", "message"), String.class);
-    }
-
-    @NonNull
-    public static HashSet<String> getCommands() throws SQLException
-    {
-        return getAll("SELECT * from commandPermissions", "command", String.class);
     }
 
     @NonNull
@@ -160,6 +142,18 @@ public class SQLUtils
     }
 
     @NonNull
+    public static HashSet<Integer> getSevenTVUserIDs() throws SQLException
+    {
+        return getAll("SELECT * from sevenTVUsers", "userID", Integer.class);
+    }
+
+    @NonNull
+    public static String getSevenTVAllowedUserIDs(int userID) throws SQLException
+    {
+        return get(STR."SELECT * from sevenTVUsers WHERE userID = \{userID}", "allowedUserIDs", String.class);
+    }
+
+    @NonNull
     public static String removeApostrophe(@NonNull String prefix)
     {
         return StringUtils.remove(prefix, "'");
@@ -171,30 +165,5 @@ public class SQLUtils
         int userIID = Integer.parseInt(userID);
         String customPrefix = getPrefix(userIID);
         return customPrefix == null ? "kok!" : customPrefix;
-    }
-
-    public static void correctLoginName(int userID, @NonNull String currentLoginName) throws SQLException
-    {
-        String[] tables = {
-                "chats", "admins", "bible", "customCommands", "globalCommands"
-        };
-
-        for (String table : tables)
-        {
-            try (ResultSet result = SQLite.onQuery(STR."SELECT * from \{table} WHERE userID = \{userID}"))
-            {
-                if (result.getString("loginName") == null)
-                {
-                    continue;
-                }
-
-                if (result.getString("loginName").equals(currentLoginName))
-                {
-                    continue;
-                }
-
-                SQLite.onUpdate(STR."UPDATE \{table} SET loginName = '\{currentLoginName}' WHERE userID = \{userID}");
-            }
-        }
     }
 }

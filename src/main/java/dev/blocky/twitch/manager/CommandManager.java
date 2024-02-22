@@ -29,6 +29,8 @@ import dev.blocky.twitch.commands.ivr.*;
 import dev.blocky.twitch.commands.modscanner.*;
 import dev.blocky.twitch.commands.owner.*;
 import dev.blocky.twitch.commands.seventv.SevenTVAddCommand;
+import dev.blocky.twitch.commands.seventv.SevenTVAllowCommand;
+import dev.blocky.twitch.commands.seventv.SevenTVRemoveCommand;
 import dev.blocky.twitch.commands.spotify.*;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -132,7 +134,9 @@ public class CommandManager
         commands.put(Collections.singletonList("shuffle"), new ShuffleCommand());
         commands.put(Collections.singletonList("yoink"), new YoinkSongCommand());
 
+        commands.put(List.of("7tvallow", "siebentverlaubung"), new SevenTVAllowCommand());
         commands.put(List.of("7tvadd", "siebentvhinzufuegung"), new SevenTVAddCommand());
+        commands.put(List.of("7tvremove", "siebentventfernung"), new SevenTVRemoveCommand());
     }
 
     boolean onMessage(String commandOrAlias, ChannelMessageEvent event, String[] prefixedMessageParts, String[] messageParts) throws Exception
@@ -196,11 +200,8 @@ public class CommandManager
             }
 
             EventUser eventUser = event.getUser();
-            String eventUserName = eventUser.getName();
             String eventUserID = eventUser.getId();
             int eventUserIID = Integer.parseInt(eventUserID);
-
-            SQLUtils.correctLoginName(eventUserIID, eventUserName);
 
             String commandRaw = message.substring(prefixLength).strip();
             String[] messageParts = commandRaw.split(" ");
@@ -215,7 +216,7 @@ public class CommandManager
                 HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
                 HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
 
-                if ((!adminIDs.contains(eventUserIID) && adminCommands.contains(command)) || (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command)))
+                if ((!adminIDs.contains(eventUserIID) && adminCommands.contains(command)) && (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command)))
                 {
                     chat.sendMessage(channelName, "4Head You don't have any permission to do that :P");
                     return;
@@ -239,8 +240,23 @@ public class CommandManager
     }
 
     @NonNull
-    public static ConcurrentHashMap<List<String>, ICommand> getCommands()
+    public static ConcurrentHashMap<List<String>, ICommand> getConcurrentCommands()
     {
         return commands;
+    }
+
+    @NonNull
+    public static HashSet<String> getCommands()
+    {
+        Set<Map.Entry<List<String>, ICommand>> entries = commands.entrySet();
+        HashSet<String> commandSet = new HashSet<>();
+
+        for (Map.Entry<List<String>, ICommand> entry : entries)
+        {
+            List<String> commandsAndAliases = entry.getKey();
+            commandSet.addAll(commandsAndAliases);
+        }
+
+        return commandSet;
     }
 }

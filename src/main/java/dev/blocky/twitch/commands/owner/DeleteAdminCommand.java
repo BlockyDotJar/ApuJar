@@ -22,14 +22,17 @@ import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
+import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
+import static dev.blocky.twitch.utils.TwitchUtils.retrieveUserList;
 
 public class DeleteAdminCommand implements ICommand
 {
@@ -42,7 +45,7 @@ public class DeleteAdminCommand implements ICommand
         String channelName = channel.getName();
 
         EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserID = eventUser.getId();
 
         if (messageParts.length == 1)
         {
@@ -50,25 +53,32 @@ public class DeleteAdminCommand implements ICommand
             return;
         }
 
-        HashSet<String> ownerNames = SQLUtils.getOwnerNames();
+        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
 
-        if (!ownerNames.contains(eventUserName))
+        if (!ownerIDs.contains(eventUserID))
         {
             chat.sendMessage(channelName, "TriHard Won't demote an owner.");
             return;
         }
 
-        HashSet<String> adminNames = SQLUtils.getAdminNames();
+        HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
+
         String adminToDemote = getUserAsString(messageParts, 1);
 
-        if (!adminNames.contains(adminToDemote))
+        List<User> adminsToDemote = retrieveUserList(client, adminToDemote);
+        User user = adminsToDemote.getFirst();
+        String userDisplayName = user.getDisplayName();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
+
+        if (!adminIDs.contains(userIID))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob \{adminToDemote} is not even an admin.");
+            chat.sendMessage(channelName, STR."CoolStoryBob \{userDisplayName} is not even an admin.");
             return;
         }
 
-        SQLite.onUpdate(STR."DELETE FROM admins WHERE loginName = '\{adminToDemote}'");
+        SQLite.onUpdate(STR."DELETE FROM admins WHERE userID = '\{userIID}'");
 
-        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{adminToDemote}.");
+        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{userDisplayName}.");
     }
 }

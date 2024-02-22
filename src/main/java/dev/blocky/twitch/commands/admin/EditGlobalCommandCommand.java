@@ -44,7 +44,6 @@ public class EditGlobalCommandCommand implements ICommand
         String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
         String eventUserID = eventUser.getId();
 
         if (messageParts.length == 1)
@@ -92,7 +91,7 @@ public class EditGlobalCommandCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE globalCommands SET message = '\{gcMessage}', userID = \{eventUserID}, loginName = '\{eventUserName}' WHERE name = '\{gcName}'");
+        SQLite.onUpdate(STR."UPDATE globalCommands SET userID = \{eventUserID}, message = '\{gcMessage}' WHERE name = '\{gcName}'");
 
         chat.sendMessage(channelName, STR."SeemsGood Successfully edited global command '\{gcName}'");
     }

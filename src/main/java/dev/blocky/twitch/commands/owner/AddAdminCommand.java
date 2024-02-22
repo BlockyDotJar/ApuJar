@@ -79,7 +79,7 @@ public class AddAdminCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."INSERT INTO admins(userID, loginName, isOwner) VALUES(\{userID}, '\{userLogin}', FALSE)");
+        SQLite.onUpdate(STR."INSERT INTO admins(userID, isOwner) VALUES(\{userID}, FALSE)");
 
         chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
     }

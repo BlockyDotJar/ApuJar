@@ -23,6 +23,7 @@ import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -45,7 +46,6 @@ public class AddGlobalCommandCommand implements ICommand
         String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
         String eventUserID = eventUser.getId();
 
         if (messageParts.length == 1)
@@ -87,7 +87,7 @@ public class AddGlobalCommandCommand implements ICommand
             return;
         }
 
-        HashSet<String> commands = SQLUtils.getCommands();
+        HashSet<String> commands = CommandManager.getCommands();
 
         if (commands.contains(gcName))
         {
@@ -95,7 +95,7 @@ public class AddGlobalCommandCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."INSERT INTO globalCommands(name, message, userID, loginName) VALUES('\{gcName}', '\{gcMessage}', \{eventUserID}, '\{eventUserName}')");
+        SQLite.onUpdate(STR."INSERT INTO globalCommands(userID, name, message) VALUES(\{eventUserID}, '\{gcName}', '\{gcMessage}')");
 
         chat.sendMessage(channelName, STR."SeemsGood Successfully created global command '\{gcName}'");
     }

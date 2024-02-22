@@ -56,8 +56,6 @@ public class YoinkSongCommand implements ICommand
 
         String channelName = event.getChannel().getName();
 
-        // TODO: display name
-
         EventUser user = event.getUser();
         String userName = user.getName();
         int userID = Integer.parseInt(user.getId());

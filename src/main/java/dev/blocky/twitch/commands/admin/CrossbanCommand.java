@@ -78,21 +78,22 @@ public class CrossbanCommand implements ICommand
         User user = usersToBan.getFirst();
         String userID = user.getId();
 
-        HashSet<String> openedChats = SQLUtils.getOpenedChats();
-        int bannedChats = openedChats.size();
+        HashSet<Integer> openedChatIDs = SQLUtils.getOpenedChatIDs();
+        int bannedChats = openedChatIDs.size();
 
-        for (String openedChat : openedChats)
+        for (int openedChatID : openedChatIDs)
         {
             BanUserInput banUserInput = BanUserInput.builder()
                     .userId(userID)
                     .reason(reason)
                     .build();
 
-            List<User> chatUsers = retrieveUserList(client, openedChat);
+            List<User> chatUsers = retrieveUserListByID(client, openedChatID);
             User chatUser = chatUsers.getFirst();
+            String chatUserDisplayName = chatUser.getDisplayName();
             String chatUserID = chatUser.getId();
 
-            IVR ivr = ServiceProvider.getIVRModVip(openedChat);
+            IVR ivr = ServiceProvider.getIVRModVip(chatUserDisplayName);
             boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 
             if (!selfModeratorPerms)

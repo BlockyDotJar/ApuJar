@@ -72,7 +72,7 @@ public class UserCommand implements ICommand
         Date creationDate = ivrUser.getCreatedAt();
         String readableCreationDate = formatter.format(creationDate);
 
-        String userInfo = null;
+        String userInfo = "";
 
         if (ivrUser.isBanned())
         {

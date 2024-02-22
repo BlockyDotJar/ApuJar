@@ -54,8 +54,8 @@ public class PingCommand implements ICommand
 
         long ping = chat.getLatency();
 
-        HashSet<String> openedChats = SQLUtils.getOpenedChats();
-        int realChats = openedChats.size() + 1;
+        HashSet<Integer> openedChatIDs = SQLUtils.getOpenedChatIDs();
+        int realChats = openedChatIDs.size() + 1;
 
         String messageToSend = STR."ppPong Chat-Ping: \{ping}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
         channelName = getActualChannel(channelToSend, channelName);

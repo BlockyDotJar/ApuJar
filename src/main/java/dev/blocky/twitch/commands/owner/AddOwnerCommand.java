@@ -88,7 +88,7 @@ public class AddOwnerCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."INSERT INTO admins(userID, loginName, isOwner) VALUES(\{userID}, '\{userLogin}', TRUE)");
+        SQLite.onUpdate(STR."INSERT INTO admins(userID, isOwner) VALUES(\{userID}, TRUE)");
 
         chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
     }

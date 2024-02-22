@@ -24,7 +24,6 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.*;
-import dev.blocky.comparator.SevenTVEmoteComparator;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SevenTVUtils;
@@ -34,7 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class SevenTVAddCommand implements ICommand
+public class SevenTVRemoveCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -57,13 +56,7 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        String emoteToAdd = messageParts[1];
-        String emoteAlias = emoteToAdd;
-
-        if (messageParts.length == 3)
-        {
-            emoteAlias = messageParts[2];
-        }
+        String emoteToRemove = messageParts[1];
 
         HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
 
@@ -92,37 +85,9 @@ public class SevenTVAddCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
-            chat.sendMessage(channelName, "ManFeels You can't add emotes, because you aren't a broadcaster, 7tv editor or a broadcaster allowed user.");
+            chat.sendMessage(channelName, "ManFeels You can't remove emotes, because you aren't a broadcaster, 7tv editor or a broadcaster allowed user.");
             return;
         }
-
-        SevenTV sevenTVEmoteSearch = SevenTVUtils.searchEmotes(emoteToAdd);
-        SevenTVData sevenTVEmoteSearchData = sevenTVEmoteSearch.getData();
-        SevenTVEmoteSearch seventTVEmoteSearchEmotes = sevenTVEmoteSearchData.getEmotes();
-        ArrayList<SevenTVEmote> sevenTVEmotes = seventTVEmoteSearchEmotes.getItems();
-        List<SevenTVEmote> sevenTVEmotesSorted = sevenTVEmotes.stream()
-                .filter(sevenTVEmote ->
-                {
-                    String sevenTVEmoteName = sevenTVEmote.getName();
-                    return sevenTVEmoteName.equalsIgnoreCase(emoteToAdd);
-                })
-                .sorted(new SevenTVEmoteComparator(emoteToAdd))
-                .toList();
-
-        if (sevenTVEmotesSorted.isEmpty())
-        {
-            chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToAdd}' found.");
-            return;
-        }
-
-        SevenTVEmote sevenTVEmote = sevenTVEmotesSorted.getFirst();
-        String sevenTVEmoteID = sevenTVEmote.getID();
-
-        sevenTVEmote = ServiceProvider.getSevenTVEmote(sevenTVEmoteID);
-
-        boolean isAnimated = sevenTVEmote.isAnimated();
-        boolean isListed = sevenTVEmote.isListed();
-        boolean isPrivate = sevenTVEmote.getFlags() == 1;
 
         sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
         ArrayList<SevenTVConnection> sevenTVConnections = sevenTVUser.getConnections();
@@ -146,10 +111,29 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        SevenTVEmoteSet sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        String sevenTVEmoteSetID = sevenTVEmoteSet.getID();
+        SevenTVEmoteSet sevenTVChannelEmoteSet = sevenTVConnection.getEmoteSet();
+        String sevenTVChannelEmoteSetID = sevenTVChannelEmoteSet.getID();
 
-        SevenTV emoteAddition = SevenTVUtils.changeEmote(SevenTVEmoteChangeAction.ADD, sevenTVEmoteSetID, sevenTVEmoteID, emoteAlias);
+        SevenTV sevenTVEmoteSet = ServiceProvider.getSevenTVEmoteSet(sevenTVChannelEmoteSetID);
+        ArrayList<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
+        List<SevenTVEmote> sevenTVEmotesSorted = sevenTVEmotes.stream()
+                .filter(sevenTVEmote ->
+                {
+                    String sevenTVEmoteName = sevenTVEmote.getName();
+                    return sevenTVEmoteName.equalsIgnoreCase(emoteToRemove);
+                })
+                .toList();
+
+        if (sevenTVEmotesSorted.isEmpty())
+        {
+            chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToRemove}' found.");
+            return;
+        }
+
+        SevenTVEmote sevenTVEmote = sevenTVEmotesSorted.getFirst();
+        String sevenTVEmoteID = sevenTVEmote.getID();
+
+        SevenTV emoteAddition = SevenTVUtils.changeEmote(SevenTVEmoteChangeAction.REMOVE, sevenTVChannelEmoteSetID, sevenTVEmoteID, emoteToRemove);
 
         ArrayList<SevenTVError> errors = emoteAddition.getErrors();
 
@@ -164,6 +148,6 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed})");
+        chat.sendMessage(channelName, STR."SeemsGood Successfully removed (7TV) emote \{emoteToRemove}.");
     }
 }
