@@ -17,14 +17,12 @@
  */
 package dev.blocky.twitch.utils;
 
-import com.github.twitch4j.chat.TwitchChat;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.seventv.SevenTV;
-import dev.blocky.api.entities.seventv.SevenTVData;
-import dev.blocky.api.entities.seventv.SevenTVEmoteChangeAction;
-import dev.blocky.api.entities.seventv.SevenTVUser;
+import dev.blocky.api.entities.seventv.*;
 import dev.blocky.api.gql.SevenTVGQLBody;
+import dev.blocky.comparator.SevenTVEmoteComparator;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -32,6 +30,7 @@ import java.util.*;
 
 public class SevenTVUtils
 {
+    @NonNull
     public static SevenTV getUser(@NonNull String userName) throws IOException
     {
         String query = """
@@ -54,6 +53,7 @@ public class SevenTVUtils
         return ServiceProvider.postSevenTVGQL(gql);
     }
 
+    @NonNull
     public static SevenTV searchEmotes(@NonNull String emoteName) throws IOException
     {
         String query = """
@@ -75,7 +75,7 @@ public class SevenTVUtils
 
         Map<String, Object> filter = Map.of
                 (
-                        "exact_match", false,
+                        "exact_match", true,
                         "case_sensitive", true,
                         "ignore_tags", true,
                         "zero_width", false,
@@ -97,6 +97,7 @@ public class SevenTVUtils
         return ServiceProvider.postSevenTVGQL(gql);
     }
 
+    @NonNull
     public static SevenTV changeEmote(@NonNull SevenTVEmoteChangeAction action, @NonNull String emoteSetID, @NonNull String emoteID, @NonNull String emoteName) throws IOException
     {
         String query = """
@@ -122,6 +123,48 @@ public class SevenTVUtils
         SevenTVGQLBody gql = new SevenTVGQLBody("ChangeEmoteInSet", variables, query);
 
         return ServiceProvider.postSevenTVGQL(gql);
+    }
+
+    @NonNull
+    public static List<SevenTVEmote> getFilteredEmotes(@NonNull List<SevenTVEmote> sevenTVEmotes, @NonNull String emoteName)
+    {
+        return sevenTVEmotes.stream()
+                .filter(sevenTVEmote ->
+                {
+                    String sevenTVEmoteName = sevenTVEmote.getName();
+                    return sevenTVEmoteName.equalsIgnoreCase(emoteName);
+                })
+                .sorted(new SevenTVEmoteComparator(emoteName))
+                .toList();
+    }
+
+    @NonNull
+    public static List<SevenTVUser> getFilteredUsers(@NonNull List<SevenTVUser> sevenTVUsers, @NonNull String userName)
+    {
+        return sevenTVUsers.stream()
+                .filter(sevenTVUser ->
+                {
+                    String sevenTVUsername = sevenTVUser.getUsername();
+                    return sevenTVUsername.equalsIgnoreCase(userName);
+                })
+                .toList();
+    }
+
+    @Nullable
+    public static SevenTVUserConnection getSevenTVUserConnection(@NonNull SevenTVUser sevenTVUser)
+    {
+        ArrayList<SevenTVUserConnection> sevenTVUserConnections = sevenTVUser.getConnections();
+
+        for (SevenTVUserConnection connection : sevenTVUserConnections)
+        {
+            String platform = connection.getPlatform();
+
+            if (platform.equals("TWITCH"))
+            {
+                return connection;
+            }
+        }
+        return null;
     }
 
     public static boolean isAllowedEditor(int channelID, int userID) throws SQLException
@@ -158,7 +201,7 @@ public class SevenTVUtils
         return false;
     }
 
-    public static boolean isAllowedEditor(@NonNull TwitchChat chat, int channelID, int userID, @NonNull String sevenTVUserID, @NonNull String channelName, @NonNull String userName) throws SQLException, IOException
+    public static boolean isAllowedEditor(int channelID, int userID, @NonNull String sevenTVUserID, @NonNull String userName) throws SQLException, IOException
     {
         boolean isAllowedEditor = isAllowedEditor(channelID, userID);
 
@@ -171,30 +214,23 @@ public class SevenTVUtils
         ArrayList<SevenTVUser> sevenTVEditors = sevenTVUser.getEditors();
 
         SevenTV sevenTV = SevenTVUtils.getUser(userName);
-        SevenTVData sevenTVEventUserData = sevenTV.getData();
-        ArrayList<SevenTVUser> sevenTVEventUsers = sevenTVEventUserData.getUsers();
-        List<SevenTVUser> sevenTVEventUsersSorted = sevenTVEventUsers.stream()
-                .filter(sevenTVEventUser ->
-                {
-                    String sevenTVUsername = sevenTVEventUser.getUsername();
-                    return sevenTVUsername.equalsIgnoreCase(channelName);
-                })
-                .toList();
+        SevenTVData sevenTVData = sevenTV.getData();
+        ArrayList<SevenTVUser> sevenTVUsers = sevenTVData.getUsers();
+        List<SevenTVUser> sevenTVUsersFiltered = getFilteredUsers(sevenTVUsers, userName);
 
-        if (sevenTVEventUsersSorted.isEmpty())
+        if (sevenTVUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{userName}' found.");
             return false;
         }
 
-        SevenTVUser sevenTVEventUser = sevenTVEventUsersSorted.getFirst();
-        String sevenTVEventUserID = sevenTVEventUser.getID();
+        sevenTVUser = sevenTVUsersFiltered.getFirst();
+        sevenTVUserID = sevenTVUser.getID();
 
         for (SevenTVUser sevenTVEditor : sevenTVEditors)
         {
             String sevenTVEditorID = sevenTVEditor.getID();
 
-            if (!sevenTVEditorID.equals(sevenTVEventUserID))
+            if (!sevenTVEditorID.equals(sevenTVUserID))
             {
                 continue;
             }

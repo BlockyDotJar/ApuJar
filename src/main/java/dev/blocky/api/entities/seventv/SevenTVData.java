@@ -27,9 +27,6 @@ public class SevenTVData
     @SerializedName("users")
     ArrayList<SevenTVUser> users;
 
-    @SerializedName("user")
-    SevenTVUser user;
-
     @SerializedName("emotes")
     SevenTVEmoteSearch emotes;
 
@@ -37,12 +34,6 @@ public class SevenTVData
     public ArrayList<SevenTVUser> getUsers()
     {
         return users;
-    }
-
-    @NonNull
-    public SevenTVUser getUser()
-    {
-        return user;
     }
 
     @NonNull

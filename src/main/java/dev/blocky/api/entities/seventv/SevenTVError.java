@@ -25,19 +25,10 @@ public class SevenTVError
     @SerializedName("extensions")
     SevenTVErrorExtension extensions;
 
-    @SerializedName("message")
-    String message;
-
     @NonNull
     public SevenTVErrorExtension getExtension()
     {
         return extensions;
-    }
-
-    @NonNull
-    public String getMessage()
-    {
-        return message;
     }
 
     SevenTVError()

@@ -98,7 +98,7 @@ public class UserSayCommand implements ICommand
                 return;
             }
 
-            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            IVR ivr = ServiceProvider.getIVRModVip(channelName);
             boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
             boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 
@@ -157,7 +157,8 @@ public class UserSayCommand implements ICommand
 
         if (globalCommands.containsKey(command))
         {
-            chat.sendMessage(channelToSend, globalCommands.get(command));
+            String message = globalCommands.get(command);
+            chat.sendMessage(channelToSend, message);
             return;
         }
 

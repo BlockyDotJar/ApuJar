@@ -24,7 +24,6 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.*;
-import dev.blocky.comparator.SevenTVEmoteComparator;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SevenTVUtils;
@@ -68,27 +67,21 @@ public class SevenTVAddCommand implements ICommand
         HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
 
         SevenTV sevenTV = SevenTVUtils.getUser(channelName);
-        SevenTVData sevenTVUserData = sevenTV.getData();
-        ArrayList<SevenTVUser> sevenTVUsers = sevenTVUserData.getUsers();
-        List<SevenTVUser> sevenTVUsersSorted = sevenTVUsers.stream()
-                .filter(sevenTVUser ->
-                {
-                    String sevenTVUsername = sevenTVUser.getUsername();
-                    return sevenTVUsername.equalsIgnoreCase(channelName);
-                })
-                .toList();
+        SevenTVData sevenTVData = sevenTV.getData();
+        ArrayList<SevenTVUser> sevenTVUsers = sevenTVData.getUsers();
+        List<SevenTVUser> sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, channelName);
 
-        if (sevenTVUsersSorted.isEmpty())
+        if (sevenTVUsersFiltered.isEmpty())
         {
             chat.sendMessage(channelName, STR."undefined No user with name '\{channelName}' found.");
             return;
         }
 
-        SevenTVUser sevenTVUser = sevenTVUsersSorted.getFirst();
+        SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
         String sevenTVUserDisplayName = sevenTVUser.getDisplayName();
         String sevenTVUserID = sevenTVUser.getID();
 
-        boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(chat, channelIID, eventUserIID, sevenTVUserID, channelName, eventUserName);
+        boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, eventUserIID, sevenTVUserID, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
@@ -96,26 +89,19 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        SevenTV sevenTVEmoteSearch = SevenTVUtils.searchEmotes(emoteToAdd);
-        SevenTVData sevenTVEmoteSearchData = sevenTVEmoteSearch.getData();
-        SevenTVEmoteSearch seventTVEmoteSearchEmotes = sevenTVEmoteSearchData.getEmotes();
-        ArrayList<SevenTVEmote> sevenTVEmotes = seventTVEmoteSearchEmotes.getItems();
-        List<SevenTVEmote> sevenTVEmotesSorted = sevenTVEmotes.stream()
-                .filter(sevenTVEmote ->
-                {
-                    String sevenTVEmoteName = sevenTVEmote.getName();
-                    return sevenTVEmoteName.equalsIgnoreCase(emoteToAdd);
-                })
-                .sorted(new SevenTVEmoteComparator(emoteToAdd))
-                .toList();
+        sevenTV = SevenTVUtils.searchEmotes(emoteToAdd);
+        sevenTVData = sevenTV.getData();
+        SevenTVEmoteSearch seventTVEmoteSearch = sevenTVData.getEmotes();
+        ArrayList<SevenTVEmote> sevenTVEmotes = seventTVEmoteSearch.getItems();
+        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToAdd);
 
-        if (sevenTVEmotesSorted.isEmpty())
+        if (sevenTVEmotesFiltered.isEmpty())
         {
             chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToAdd}' found.");
             return;
         }
 
-        SevenTVEmote sevenTVEmote = sevenTVEmotesSorted.getFirst();
+        SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
         String sevenTVEmoteID = sevenTVEmote.getID();
 
         sevenTVEmote = ServiceProvider.getSevenTVEmote(sevenTVEmoteID);
@@ -125,20 +111,8 @@ public class SevenTVAddCommand implements ICommand
         boolean isPrivate = sevenTVEmote.getFlags() == 1;
 
         sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
-        ArrayList<SevenTVConnection> sevenTVConnections = sevenTVUser.getConnections();
 
-        SevenTVConnection sevenTVConnection = null;
-
-        for (SevenTVConnection connection : sevenTVConnections)
-        {
-            String platform = connection.getPlatform();
-
-            if (platform.equals("TWITCH"))
-            {
-                sevenTVConnection = connection;
-                break;
-            }
-        }
+        SevenTVUserConnection sevenTVConnection = SevenTVUtils.getSevenTVUserConnection(sevenTVUser);
 
         if (sevenTVConnection == null)
         {

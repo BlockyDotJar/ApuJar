@@ -29,10 +29,14 @@ import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.tuple.Triple;
+
+import java.util.List;
 
 import static dev.blocky.twitch.utils.SQLUtils.removeApostrophe;
+import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
 
-public class SetPrefixCommand implements ICommand
+public class EditKeywordCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -42,59 +46,75 @@ public class SetPrefixCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a prefix.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a keyword.");
             return;
         }
 
-        String rawPrefix = messageParts[1].strip();
-        String prefix = removeApostrophe(rawPrefix);
-        String actualPrefix = SQLUtils.getActualPrefix(channelID);
+        if (messageParts.length == 2)
+        {
+            chat.sendMessage(channelName, "FeelsGoodMan Please specify a message.");
+            return;
+        }
 
         IVR ivr = ServiceProvider.getIVRModVip(channelName);
         boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "NOIDONTTHINKSO You can't set a prefix, because you aren't a broadcaster or moderator.");
+            chat.sendMessage(channelName, "ManFeels You can't edit a keyword, because you aren't a broadcaster or moderator.");
             return;
         }
 
-        if (actualPrefix.equals(prefix))
+        String kwRaw = messageParts[1].strip();
+        String kwMessageRaw = removeElements(messageParts, 2);
+
+        String kw = removeApostrophe(kwRaw);
+        String kwMessage = removeApostrophe(kwMessageRaw);
+
+        if (kw.isBlank() || kwMessage.isBlank())
         {
-            chat.sendMessage(channelName, "CoolStoryBob The new prefix matches exactly with the old one.");
+            chat.sendMessage(channelName, "monkaLaugh The keyword/message can't contain the character ' haha");
             return;
         }
 
-        if (prefix.isBlank())
+        List<Triple<String, String, Boolean>> keywords = SQLUtils.getKeywords(channelIID);
+
+        boolean keywordExists = false;
+
+        for (Triple<String, String, Boolean> keyword : keywords)
         {
-            chat.sendMessage(channelName, "monkaLaugh The new prefix can't contain the character ' haha");
-            return;
+            String kwd = keyword.getLeft();
+            String kwdMessage = keyword.getMiddle();
+
+            if (kwd.equals(kw))
+            {
+                keywordExists = true;
+
+                if (kwdMessage.equals(kwMessage))
+                {
+                    chat.sendMessage(channelName, STR."4Head The new value for '\{kw}' does exactly match with the old one.");
+                    return;
+                }
+
+                break;
+            }
         }
 
-        if (!actualPrefix.equals("kok!") && prefix.equals("kok!"))
+        if (!keywordExists)
         {
-            SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
-
-            chat.sendMessage(channelName, "8-) Successfully deleted prefix.");
+            chat.sendMessage(channelName, STR."CoolStoryBob Keyword ' \{kw} ' doesn't exist.");
             return;
         }
 
-        if (actualPrefix.equals("kok!"))
-        {
-            SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix) VALUES(\{channelID}, '\{prefix}')");
+        SQLite.onUpdate(STR."UPDATE customKeywords SET message = '\{kwMessage}' WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-            chat.sendMessage(channelName, STR."8-) Successfully set prefix to \{prefix}");
-            return;
-        }
-
-        SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{prefix}' WHERE userID = \{channelID}");
-
-        chat.sendMessage(channelName, STR."8-) Successfully set prefix to \{prefix}");
+        chat.sendMessage(channelName, STR."SeemsGood Successfully edited keyword ' \{kw} '.");
     }
 }

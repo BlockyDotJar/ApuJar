@@ -54,14 +54,15 @@ public class PartCommand implements ICommand
 
         String chatToPart = getUserAsString(messageParts, eventUser);
 
-        if (!chatToPart.equals(eventUserName))
+        if (!chatToPart.equalsIgnoreCase(eventUserName))
         {
-            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            IVR ivr = ServiceProvider.getIVRModVip(chatToPart);
             boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
             HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
+            HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
 
-            if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID)))
+            if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
             {
                 chat.sendMessage(channelName, "ManFeels Can't leave channel, because you aren't broadcaster or mod at this channel.");
                 return;

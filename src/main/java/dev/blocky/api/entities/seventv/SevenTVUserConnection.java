@@ -20,7 +20,7 @@ package dev.blocky.api.entities.seventv;
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-public class SevenTVConnection
+public class SevenTVUserConnection
 {
     @SerializedName("platform")
     String platform;
@@ -40,7 +40,7 @@ public class SevenTVConnection
         return emote_set;
     }
 
-    SevenTVConnection()
+    SevenTVUserConnection()
     {
     }
 }

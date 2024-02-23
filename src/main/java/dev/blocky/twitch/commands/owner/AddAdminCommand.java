@@ -66,7 +66,6 @@ public class AddAdminCommand implements ICommand
 
         User user = chatsToPromote.getFirst();
         String userID = user.getId();
-        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
         int userIID = Integer.parseInt(userID);
 

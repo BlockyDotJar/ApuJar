@@ -20,9 +20,11 @@ package dev.blocky.twitch.utils;
 import dev.blocky.twitch.sql.SQLite;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,6 +65,30 @@ public class SQLUtils
                 map.put(key, value);
             }
             return map;
+        }
+    }
+
+    @NonNull
+    public static <T, E> ArrayList<Triple<T, T, E>> getTriples(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<T> clazz, @NonNull Class<E> extraClazz) throws SQLException
+    {
+        try (ResultSet result = SQLite.onQuery(sql))
+        {
+            ArrayList<Triple<T, T, E>> triples = new ArrayList<>();
+
+            while (result.next())
+            {
+                String firstColumnLabel = columnLabels.getFirst();
+                String middleColumnLabel = columnLabels.get(1);
+                String lastColumnLabel = columnLabels.getLast();
+
+                T key = result.getObject(firstColumnLabel, clazz);
+                T value = result.getObject(middleColumnLabel, clazz);
+                E extraValue = result.getObject(lastColumnLabel, extraClazz);
+
+                Triple<T, T, E> triple = Triple.of(key, value, extraValue);
+                triples.add(triple);
+            }
+            return triples;
         }
     }
 
@@ -142,15 +168,15 @@ public class SQLUtils
     }
 
     @NonNull
-    public static HashSet<Integer> getSevenTVUserIDs() throws SQLException
-    {
-        return getAll("SELECT * from sevenTVUsers", "userID", Integer.class);
-    }
-
-    @NonNull
     public static String getSevenTVAllowedUserIDs(int userID) throws SQLException
     {
         return get(STR."SELECT * from sevenTVUsers WHERE userID = \{userID}", "allowedUserIDs", String.class);
+    }
+
+    @NonNull
+    public static List<Triple<String, String, Boolean>> getKeywords(int userID) throws SQLException
+    {
+        return getTriples(STR."SELECT * from customKeywords WHERE userID = \{userID}", List.of("name", "message", "exactMatch"), String.class, Boolean.class);
     }
 
     @NonNull

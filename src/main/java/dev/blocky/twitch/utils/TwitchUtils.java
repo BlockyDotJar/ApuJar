@@ -130,7 +130,7 @@ public class TwitchUtils
         {
             String login = ivrModVIP.getLogin();
 
-            if (login.equals(userName))
+            if (login.equalsIgnoreCase(userName))
             {
                 return true;
             }

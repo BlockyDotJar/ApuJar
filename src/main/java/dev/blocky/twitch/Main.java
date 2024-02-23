@@ -223,7 +223,7 @@ public class Main
                         chat.sendMessage("ApuJar", "GigaSignal Successfully reconncted to Twitch websocket...");
                     }
 
-                    line = null;
+                    line = "";
                 }
             }
             catch (IOException | InterruptedException | SQLException e)

@@ -78,7 +78,7 @@ public class SQLite
         onUpdate("CREATE TABLE IF NOT EXISTS adminCommands(command VARCHAR, requiresOwner BOOLEAN)");
         onUpdate("CREATE TABLE IF NOT EXISTS bible(ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, userID INTEGER, entry VARCHAR)");
         onUpdate("CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name VARCHAR, message VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name VARCHAR, message VARCHAR, equals BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name VARCHAR, message VARCHAR, exactMatch BOOLEAN)");
         onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name VARCHAR, message VARCHAR)");
         onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken VARCHAR, refreshToken VARCHAR, expiresOn VARCHAR)");
         onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs VARCHAR)");

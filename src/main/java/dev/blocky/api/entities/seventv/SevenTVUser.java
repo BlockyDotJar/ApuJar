@@ -35,7 +35,7 @@ public class SevenTVUser
     String display_name;
 
     @SerializedName("connections")
-    ArrayList<SevenTVConnection> connections;
+    ArrayList<SevenTVUserConnection> connections;
 
     @SerializedName("editors")
     ArrayList<SevenTVUser> editors;
@@ -59,7 +59,7 @@ public class SevenTVUser
     }
 
     @Nullable
-    public ArrayList<SevenTVConnection> getConnections()
+    public ArrayList<SevenTVUserConnection> getConnections()
     {
         return connections;
     }

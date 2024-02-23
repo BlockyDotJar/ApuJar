@@ -28,13 +28,12 @@ import dev.blocky.twitch.commands.admin.*;
 import dev.blocky.twitch.commands.ivr.*;
 import dev.blocky.twitch.commands.modscanner.*;
 import dev.blocky.twitch.commands.owner.*;
-import dev.blocky.twitch.commands.seventv.SevenTVAddCommand;
-import dev.blocky.twitch.commands.seventv.SevenTVAllowCommand;
-import dev.blocky.twitch.commands.seventv.SevenTVRemoveCommand;
+import dev.blocky.twitch.commands.seventv.*;
 import dev.blocky.twitch.commands.spotify.*;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -108,6 +107,11 @@ public class CommandManager
         commands.put(List.of("editglobalcommand", "editglobalcmd", "editgcmd"), new EditGlobalCommandCommand());
         commands.put(List.of("deleteglobalcommand", "deleteglobalcmd", "delglobalcommand", "delglobalcmd", "delgcmd"), new DeleteGlobalCommandCommand());
 
+        commands.put(List.of("addkeyword", "addkw"), new AddKeywordCommand());
+        commands.put(List.of("editkeyword", "editkw"), new EditKeywordCommand());
+        commands.put(List.of("editkeywordmatching", "editkwm"), new EditKeywordMatchingCommand());
+        commands.put(List.of("deletekeyword", "delkw"), new DeleteKeywordCommand());
+
         commands.put(Collections.singletonList("google"), new GoogleCommand());
 
         commands.put(List.of("checkname", "cn"), new CheckNameCommand());
@@ -134,9 +138,12 @@ public class CommandManager
         commands.put(Collections.singletonList("shuffle"), new ShuffleCommand());
         commands.put(Collections.singletonList("yoink"), new YoinkSongCommand());
 
-        commands.put(List.of("7tvallow", "siebentverlaubung"), new SevenTVAllowCommand());
-        commands.put(List.of("7tvadd", "siebentvhinzufuegung"), new SevenTVAddCommand());
-        commands.put(List.of("7tvremove", "siebentventfernung"), new SevenTVRemoveCommand());
+        commands.put(Collections.singletonList("7tvallow"), new SevenTVAllowCommand());
+        commands.put(Collections.singletonList("7tvdeny"), new SevenTVDenyCommand());
+        commands.put(Collections.singletonList("7tvadd"), new SevenTVAddCommand());
+        commands.put(Collections.singletonList("7tvyoink"), new SevenTVYoinkCommand());
+        commands.put(List.of("7tvrename", "7tvrn"), new SevenTVRenameCommand());
+        commands.put(List.of("7tvremove", "7tvrm"), new SevenTVRemoveCommand());
     }
 
     boolean onMessage(String commandOrAlias, ChannelMessageEvent event, String[] prefixedMessageParts, String[] messageParts) throws Exception
@@ -164,6 +171,7 @@ public class CommandManager
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         try
         {
@@ -189,44 +197,58 @@ public class CommandManager
 
                 if (globalCommands.containsKey(globalCommand))
                 {
-                    chat.sendMessage(channelName, globalCommands.get(globalCommand));
+                    String commandMessage = globalCommands.get(globalCommand);
+                    chat.sendMessage(channelName, commandMessage);
                     return;
                 }
             }
 
-            if (!message.startsWith(actualPrefix))
+            if (message.startsWith(actualPrefix))
             {
-                return;
+                EventUser eventUser = event.getUser();
+                String eventUserID = eventUser.getId();
+                int eventUserIID = Integer.parseInt(eventUserID);
+
+                String commandRaw = message.substring(prefixLength).strip();
+                String[] messageParts = commandRaw.split(" ");
+
+                if (messageParts.length > 0)
+                {
+                    String command = messageParts[0];
+
+                    HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
+                    HashSet<String> adminCommands = SQLUtils.getAdminCommands();
+
+                    HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+                    HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
+
+                    if ((!adminIDs.contains(eventUserIID) && adminCommands.contains(command)) && (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command)))
+                    {
+                        chat.sendMessage(channelName, "4Head You don't have any permission to do that :P");
+                        return;
+                    }
+
+                    String[] prefixedMessageParts = message.split(" ");
+
+                    if (!command.isBlank() && !onMessage(command, event, prefixedMessageParts, messageParts))
+                    {
+                        chat.sendMessage(channelName, STR."Sadeg '\{command}' command was not found.");
+                    }
+                }
             }
 
-            EventUser eventUser = event.getUser();
-            String eventUserID = eventUser.getId();
-            int eventUserIID = Integer.parseInt(eventUserID);
+            List<Triple<String, String, Boolean>> keywords = SQLUtils.getKeywords(channelIID);
 
-            String commandRaw = message.substring(prefixLength).strip();
-            String[] messageParts = commandRaw.split(" ");
-
-            if (messageParts.length > 0)
+            for (Triple<String, String, Boolean> keyword : keywords)
             {
-                String command = messageParts[0];
+                String kw = keyword.getLeft();
+                String kwMessage = keyword.getMiddle();
+                boolean exactMatch = keyword.getRight();
 
-                HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
-                HashSet<String> adminCommands = SQLUtils.getAdminCommands();
-
-                HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
-                HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
-
-                if ((!adminIDs.contains(eventUserIID) && adminCommands.contains(command)) && (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command)))
+                if ((message.equals(kw) && exactMatch) || (message.contains(kw) && !exactMatch))
                 {
-                    chat.sendMessage(channelName, "4Head You don't have any permission to do that :P");
+                    chat.sendMessage(channelName, kwMessage);
                     return;
-                }
-
-                String[] prefixedMessageParts = message.split(" ");
-
-                if (!command.isBlank() && !onMessage(command, event, prefixedMessageParts, messageParts))
-                {
-                    chat.sendMessage(channelName, STR."Sadeg '\{command}' command was not found.");
                 }
             }
         }

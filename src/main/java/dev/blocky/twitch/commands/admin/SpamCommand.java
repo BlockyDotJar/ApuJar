@@ -90,7 +90,7 @@ public class SpamCommand implements ICommand
                 return;
             }
 
-            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            IVR ivr = ServiceProvider.getIVRModVip(channelName);
             boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
             boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 

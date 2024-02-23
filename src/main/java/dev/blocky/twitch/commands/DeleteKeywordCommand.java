@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.admin;
+package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
@@ -25,15 +25,15 @@ import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.tuple.Triple;
 
-import java.util.HashSet;
+import java.util.List;
 
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
-
-public class SayCommand implements ICommand
+public class DeleteKeywordCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -42,47 +42,52 @@ public class SayCommand implements ICommand
 
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+        String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
-        int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a message.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a keyword.");
             return;
         }
 
-        String messageToSend = removeElements(messageParts, 1);
+        IVR ivr = ServiceProvider.getIVRModVip(channelName);
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
-
-        if (messageToSend.startsWith("/"))
+        if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            if (!ownerIDs.contains(eventUserIID))
-            {
-                chat.sendMessage(channelName, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
-                return;
-            }
+            chat.sendMessage(channelName, "ManFeels You can't delete a keyword, because you aren't a broadcaster or moderator.");
+            return;
+        }
 
-            IVR ivr = ServiceProvider.getIVRModVip(channelName);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
-            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
+        String kw = messageParts[1].strip();
 
-            if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
-            {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or moderator.");
-                return;
-            }
+        List<Triple<String, String, Boolean>> keywords = SQLUtils.getKeywords(channelIID);
 
-            if (!selfModeratorPerms)
+        boolean keywordExists = false;
+
+        for (Triple<String, String, Boolean> keyword : keywords)
+        {
+            String kwd = keyword.getLeft();
+
+            if (kwd.equals(kw))
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
-                return;
+                keywordExists = true;
+                break;
             }
         }
 
-        chat.sendMessage(channelName, messageToSend);
+        if (!keywordExists)
+        {
+            chat.sendMessage(channelName, STR."CoolStoryBob Keyword ' \{kw} ' doesn't exist.");
+            return;
+        }
+
+        SQLite.onUpdate(STR."DELETE FROM customKeywords WHERE userID = \{channelIID} AND name = '\{kw}'");
+
+        chat.sendMessage(channelName, STR."SeemsGood Successfully deleted keyword ' \{kw} '.");
     }
 }

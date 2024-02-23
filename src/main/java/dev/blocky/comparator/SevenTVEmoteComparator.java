@@ -39,8 +39,8 @@ public class SevenTVEmoteComparator implements Comparator<SevenTVEmote>
 
         if (firstEmoteName.startsWith(emoteName))
         {
-            return secondEmoteName.startsWith(emoteName)? firstEmoteName.compareTo(secondEmoteName): -1;
+            return secondEmoteName.startsWith(emoteName) ? firstEmoteName.compareTo(secondEmoteName) : -1;
         }
-        return secondEmoteName.startsWith(emoteName)? 1: firstEmoteName.compareTo(secondEmoteName);
+        return secondEmoteName.startsWith(emoteName) ? 1 : firstEmoteName.compareTo(secondEmoteName);
     }
 }

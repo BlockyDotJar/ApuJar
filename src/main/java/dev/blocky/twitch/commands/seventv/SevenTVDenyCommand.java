@@ -37,7 +37,7 @@ import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class SevenTVAllowCommand implements ICommand
+public class SevenTVDenyCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
@@ -58,26 +58,25 @@ public class SevenTVAllowCommand implements ICommand
             return;
         }
 
-        String userToAllow = getUserAsString(messageParts, 1);
+        String userToDeny = getUserAsString(messageParts, 1);
 
-        if (!isValidUsername(userToAllow))
+        if (!isValidUsername(userToDeny))
         {
             chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<User> usersToAllow = retrieveUserList(client, userToAllow);
+        List<User> usersToDeny = retrieveUserList(client, userToDeny);
 
-        if (usersToAllow.isEmpty())
+        if (usersToDeny.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToAllow}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToDeny}' found.");
             return;
         }
 
-        User user = usersToAllow.getFirst();
+        User user = usersToDeny.getFirst();
         String userDisplayName = user.getDisplayName();
         String userID = user.getId();
-        int userIID = Integer.parseInt(userID);
 
         if (!channelName.equals(eventUserName))
         {
@@ -88,33 +87,22 @@ public class SevenTVAllowCommand implements ICommand
         SevenTV sevenTV = SevenTVUtils.getUser(channelName);
         SevenTVData sevenTVData = sevenTV.getData();
         ArrayList<SevenTVUser> sevenTVUsers = sevenTVData.getUsers();
-        List<SevenTVUser> sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, channelName);
+        List<SevenTVUser> sevenTVChannelUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, channelName);
 
-        if (sevenTVUsersFiltered.isEmpty())
+        if (sevenTVChannelUsersFiltered.isEmpty())
         {
             chat.sendMessage(channelName, STR."undefined No user with name '\{userDisplayName}' found.");
             return;
         }
-
-        SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVUserID = sevenTVUser.getID();
 
         sevenTV = SevenTVUtils.getUser(userDisplayName);
         sevenTVData = sevenTV.getData();
         sevenTVUsers = sevenTVData.getUsers();
-        sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, userDisplayName);
+        sevenTVChannelUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, userDisplayName);
 
-        if (sevenTVUsersFiltered.isEmpty())
+        if (sevenTVChannelUsersFiltered.isEmpty())
         {
             chat.sendMessage(channelName, STR."undefined No user with name '\{userDisplayName}' found.");
-            return;
-        }
-
-        boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, userIID, sevenTVUserID, eventUserName);
-
-        if (isAllowedEditor)
-        {
-            chat.sendMessage(channelName, STR."WHAT \{userDisplayName} is already able to update emotes.");
             return;
         }
 
@@ -122,15 +110,42 @@ public class SevenTVAllowCommand implements ICommand
 
         if (sevenTVAllowedUserIDs == null)
         {
-            SQLite.onUpdate(STR."INSERT INTO sevenTVUsers(userID, allowedUserIDs) VALUES(\{channelIID}, '\{userID}')");
-            chat.sendMessage(channelName, STR."POGGERS Successfully added \{userDisplayName} as editor.");
+            chat.sendMessage(channelName, "Danki Allowed (7TV) user database entry is empty.");
             return;
         }
 
-        String newAllowedUserIDs = STR."\{sevenTVAllowedUserIDs},\{userIID}";
+        String[] allowedUserIDs = sevenTVAllowedUserIDs.split(",");
+        ArrayList<String> newAllowedUserIDList = new ArrayList<>();
+        String neededUserID = null;
+
+        for (String sevenTVAllowedUserID : allowedUserIDs)
+        {
+            if (sevenTVAllowedUserID.equals(userID))
+            {
+                neededUserID = userID;
+                break;
+            }
+
+            newAllowedUserIDList.add(sevenTVAllowedUserID);
+        }
+
+        if (neededUserID == null)
+        {
+            chat.sendMessage(channelName, STR."Danki \{userDisplayName} is not even set as allowed user in the database.");
+            return;
+        }
+
+        if (newAllowedUserIDList.isEmpty())
+        {
+            SQLite.onUpdate(STR."DELETE FROM sevenTVUsers WHERE userID = \{channelIID}");
+            chat.sendMessage(channelName, STR."MEGALUL Successfully removed \{userDisplayName}'s editor permissions.");
+            return;
+        }
+
+        String newAllowedUserIDs = String.join(",", newAllowedUserIDList);
 
         SQLite.onUpdate(STR."UPDATE sevenTVUsers SET allowedUserIDs = '\{newAllowedUserIDs}' WHERE userID = \{channelIID}");
 
-        chat.sendMessage(channelName, STR."POGGERS Successfully added \{userDisplayName} as editor.");
+        chat.sendMessage(channelName, STR."MEGALUL Successfully removed \{userDisplayName}'s editor permissions.");
     }
 }

@@ -21,7 +21,6 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -42,9 +41,6 @@ public class EditGlobalCommandCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
-
-        EventUser eventUser = event.getUser();
-        String eventUserID = eventUser.getId();
 
         if (messageParts.length == 1)
         {
@@ -91,7 +87,7 @@ public class EditGlobalCommandCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE globalCommands SET userID = \{eventUserID}, message = '\{gcMessage}' WHERE name = '\{gcName}'");
+        SQLite.onUpdate(STR."UPDATE globalCommands SET message = '\{gcMessage}' WHERE name = '\{gcName}'");
 
         chat.sendMessage(channelName, STR."SeemsGood Successfully edited global command '\{gcName}'");
     }

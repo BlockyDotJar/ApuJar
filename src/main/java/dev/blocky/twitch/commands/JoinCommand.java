@@ -53,14 +53,15 @@ public class JoinCommand implements ICommand
 
         String chatToJoin = getUserAsString(messageParts, eventUser);
 
-        if (!chatToJoin.equals(eventUserName))
+        if (!chatToJoin.equalsIgnoreCase(eventUserName))
         {
-            IVR ivr = ServiceProvider.getIVRModVip(eventUserName);
+            IVR ivr = ServiceProvider.getIVRModVip(chatToJoin);
             boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
             HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
+            HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
 
-            if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID)))
+            if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
             {
                 chat.sendMessage(channelName, "ManFeels Can't join channel, because you aren't broadcaster or mod at this channel.");
                 return;
@@ -91,12 +92,11 @@ public class JoinCommand implements ICommand
 
         User user = chatsToJoin.getFirst();
         String userDisplayName = user.getDisplayName();
-        String userLogin = user.getLogin();
         String userID = user.getId();
 
         SQLite.onUpdate(STR."INSERT INTO chats(userID) VALUES(\{userID})");
 
-        chat.sendMessage(chatToJoin, "BatChest Hello guys!");
+        chat.sendMessage(chatToJoin, "lebroJAM Hi, my name is, what? HUH My name is, who? eeeh My name is, APU APU ApuJar !");
         chat.sendMessage(channelName, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood");
     }
 }

@@ -18,6 +18,7 @@
 package dev.blocky.twitch.utils;
 
 import dev.blocky.twitch.sql.SQLite;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import io.github.cdimascio.dotenv.Dotenv;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.SpotifyHttpManager;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 
 public class SpotifyUtils
 {
+    @NonNull
     public static SpotifyApi getSpotifyAPI(int userID) throws Exception
     {
         String accessToken = SQLUtils.getSpotifyAccessToken(userID);
