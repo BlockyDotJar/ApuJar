@@ -21,17 +21,14 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
-import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
-import static dev.blocky.twitch.utils.TwitchUtils.retrieveUserList;
 
 public class DeleteOwnerCommand implements ICommand
 {
@@ -49,23 +46,18 @@ public class DeleteOwnerCommand implements ICommand
             return;
         }
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
+
         String ownerToDemote = getUserAsString(messageParts, 1);
 
-        List<User> ownersToDemote = retrieveUserList(client, ownerToDemote);
-        User user = ownersToDemote.getFirst();
-        String userDisplayName = user.getDisplayName();
-        String userID = user.getId();
-        int userIID = Integer.parseInt(userID);
-
-        if (!ownerIDs.contains(userIID))
+        if (!ownerLogins.contains(ownerToDemote))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob \{userDisplayName} is not even an owner.");
+            chat.sendMessage(channelName, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
             return;
         }
 
-        SQLite.onUpdate(STR."DELETE FROM admins WHERE userID = '\{userIID}'");
+        SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{ownerToDemote}'");
 
-        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{userDisplayName}.");
+        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
     }
 }

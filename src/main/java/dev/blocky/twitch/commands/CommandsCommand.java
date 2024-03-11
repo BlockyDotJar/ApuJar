@@ -57,6 +57,6 @@ public class CommandsCommand implements ICommand
 
         channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."\{userDisplayName} peepoHappy \uD83D\uDC49 Here you can see everything important about the bot https://blockydotjar.github.io/ApuJar-Website FeelsOkayMan");
+        chat.sendMessage(channelName, STR."\{userDisplayName} peepoHappy \uD83D\uDC49 Here you can see everything important about the bot https://apujar.blockyjar.dev/ FeelsOkayMan");
     }
 }

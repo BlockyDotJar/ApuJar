@@ -34,8 +34,8 @@ public class SevenTVEmoteComparator implements Comparator<SevenTVEmote>
     @Override
     public int compare(@NonNull SevenTVEmote firstSevenTVEmote, @NonNull SevenTVEmote secondSevenTVEmote)
     {
-        String firstEmoteName = firstSevenTVEmote.getName();
-        String secondEmoteName = secondSevenTVEmote.getName();
+        String firstEmoteName = firstSevenTVEmote.getEmoteName();
+        String secondEmoteName = secondSevenTVEmote.getEmoteName();
 
         if (firstEmoteName.startsWith(emoteName))
         {

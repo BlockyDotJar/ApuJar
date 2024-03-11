@@ -23,20 +23,20 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class SevenTVErrorExtension
 {
     @SerializedName("code")
-    int code;
+    int errorCode;
 
     @SerializedName("message")
-    String message;
+    String errorMessage;
 
-    public int getCode()
+    public int getErrorCode()
     {
-        return code;
+        return errorCode;
     }
 
     @NonNull
-    public String getMessage()
+    public String getErrorMessage()
     {
-        return message;
+        return errorMessage;
     }
 
     SevenTVErrorExtension()

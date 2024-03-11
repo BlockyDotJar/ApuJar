@@ -91,7 +91,7 @@ public class SevenTVDenyCommand implements ICommand
 
         if (sevenTVChannelUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{userDisplayName}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userDisplayName}' found.");
             return;
         }
 
@@ -102,7 +102,7 @@ public class SevenTVDenyCommand implements ICommand
 
         if (sevenTVChannelUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{userDisplayName}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userDisplayName}' found.");
             return;
         }
 
@@ -131,7 +131,7 @@ public class SevenTVDenyCommand implements ICommand
 
         if (neededUserID == null)
         {
-            chat.sendMessage(channelName, STR."Danki \{userDisplayName} is not even set as allowed user in the database.");
+            chat.sendMessage(channelName, STR."Danki \{userDisplayName} isn't even set as allowed user in the database.");
             return;
         }
 

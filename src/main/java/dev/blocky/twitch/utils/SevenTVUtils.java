@@ -43,10 +43,7 @@ public class SevenTVUtils
                     }
                 """;
 
-        Map<String, Object> variables = Map.of
-                (
-                        "query", userName
-                );
+        Map<String, Object> variables = Map.of("query", userName);
 
         SevenTVGQLBody gql = new SevenTVGQLBody("SearchUsers", variables, query);
 
@@ -128,13 +125,15 @@ public class SevenTVUtils
     @NonNull
     public static List<SevenTVEmote> getFilteredEmotes(@NonNull List<SevenTVEmote> sevenTVEmotes, @NonNull String emoteName)
     {
+        SevenTVEmoteComparator emoteComparator = new SevenTVEmoteComparator(emoteName);
+
         return sevenTVEmotes.stream()
                 .filter(sevenTVEmote ->
                 {
-                    String sevenTVEmoteName = sevenTVEmote.getName();
+                    String sevenTVEmoteName = sevenTVEmote.getEmoteName();
                     return sevenTVEmoteName.equalsIgnoreCase(emoteName);
                 })
-                .sorted(new SevenTVEmoteComparator(emoteName))
+                .sorted(emoteComparator)
                 .toList();
     }
 
@@ -144,7 +143,7 @@ public class SevenTVUtils
         return sevenTVUsers.stream()
                 .filter(sevenTVUser ->
                 {
-                    String sevenTVUsername = sevenTVUser.getUsername();
+                    String sevenTVUsername = sevenTVUser.getUserName();
                     return sevenTVUsername.equalsIgnoreCase(userName);
                 })
                 .toList();
@@ -153,15 +152,15 @@ public class SevenTVUtils
     @Nullable
     public static SevenTVUserConnection getSevenTVUserConnection(@NonNull SevenTVUser sevenTVUser)
     {
-        ArrayList<SevenTVUserConnection> sevenTVUserConnections = sevenTVUser.getConnections();
+        ArrayList<SevenTVUserConnection> sevenTVUserConnections = sevenTVUser.getUserConnections();
 
-        for (SevenTVUserConnection connection : sevenTVUserConnections)
+        for (SevenTVUserConnection sevenTVUserConnection : sevenTVUserConnections)
         {
-            String platform = connection.getPlatform();
+            String platform = sevenTVUserConnection.getPlatform();
 
             if (platform.equals("TWITCH"))
             {
-                return connection;
+                return sevenTVUserConnection;
             }
         }
         return null;
@@ -178,6 +177,7 @@ public class SevenTVUtils
             if (allowedUserIDsRaw.contains(","))
             {
                 String[] allowedUserIDs = allowedUserIDsRaw.split(",");
+
                 allowedUserIIDs = Arrays.stream(allowedUserIDs)
                         .mapToInt(Integer::parseInt)
                         .boxed()
@@ -211,7 +211,7 @@ public class SevenTVUtils
         }
 
         SevenTVUser sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
-        ArrayList<SevenTVUser> sevenTVEditors = sevenTVUser.getEditors();
+        ArrayList<SevenTVUser> sevenTVUserEditors = sevenTVUser.getUserEditors();
 
         SevenTV sevenTV = SevenTVUtils.getUser(userName);
         SevenTVData sevenTVData = sevenTV.getData();
@@ -224,13 +224,13 @@ public class SevenTVUtils
         }
 
         sevenTVUser = sevenTVUsersFiltered.getFirst();
-        sevenTVUserID = sevenTVUser.getID();
+        sevenTVUserID = sevenTVUser.getUserID();
 
-        for (SevenTVUser sevenTVEditor : sevenTVEditors)
+        for (SevenTVUser sevenTVUserEditor : sevenTVUserEditors)
         {
-            String sevenTVEditorID = sevenTVEditor.getID();
+            String sevenTVUserEditorID = sevenTVUserEditor.getUserID();
 
-            if (!sevenTVEditorID.equals(sevenTVUserID))
+            if (!sevenTVUserEditorID.equals(sevenTVUserID))
             {
                 continue;
             }

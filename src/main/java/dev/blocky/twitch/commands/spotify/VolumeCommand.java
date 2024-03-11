@@ -21,6 +21,7 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -46,50 +47,54 @@ public class VolumeCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
 
-        String userToGetSongFrom = getUserAsString(messageParts, event.getUser());
+        EventUser eventUser = event.getUser();
 
-        if (!isValidUsername(userToGetSongFrom))
+        String userToGetVolumeFrom = getUserAsString(messageParts, eventUser);
+
+        if (!isValidUsername(userToGetVolumeFrom))
         {
             chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<User> usersToGetSongFrom = retrieveUserList(client, userToGetSongFrom);
+        List<User> usersToGetVolumeFrom = retrieveUserList(client, userToGetVolumeFrom);
 
-        if (usersToGetSongFrom.isEmpty())
+        if (usersToGetVolumeFrom.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToGetSongFrom}' found.");
+            chat.sendMessage(channelName, STR.":| No user called '\{userToGetVolumeFrom}' found.");
             return;
         }
 
-        User user = usersToGetSongFrom.getFirst();
-        String userName = user.getDisplayName();
-        int userID = Integer.parseInt(user.getId());
+        User user = usersToGetVolumeFrom.getFirst();
+        String userDisplayName = user.getDisplayName();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
 
-        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
+        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
 
-        if (!spotifyUserIDs.contains(userID))
+        if (!spotifyUserIIDs.contains(userIID))
         {
-            chat.sendMessage(channelName, STR."ManFeels No user called '\{userName}' found in Spotify credential database. Sign in here TriHard https://blockydotjar.github.io/ApuJar-Website/oauth2/spotify.html");
+            chat.sendMessage(channelName, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
-        SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userID);
+        SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
 
-        GetUsersAvailableDevicesRequest devicesRequest = spotifyAPI.getUsersAvailableDevices().build();
-        Device[] devices = devicesRequest.execute();
+        GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = deviceRequest.execute();
 
         if (devices.length == 0)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{userName} is not online on Spotify.");
+            chat.sendMessage(channelName, STR."AlienUnpleased \{userDisplayName} isn't online on Spotify.");
             return;
         }
 
         Device device = devices[0];
+
         int volume = device.getVolume_percent();
 
         channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."pepeBASS \{userName} uses a volume of \{volume}% WAYTOODANK");
+        chat.sendMessage(channelName, STR."pepeBASS \{userDisplayName} is listening to a song with a volume of \{volume}% WAYTOODANK");
     }
 }

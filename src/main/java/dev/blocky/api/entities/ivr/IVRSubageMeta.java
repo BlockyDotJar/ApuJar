@@ -25,29 +25,29 @@ import java.util.Date;
 public class IVRSubageMeta
 {
     @SerializedName("type")
-    public String type;
+    String subType;
 
     @SerializedName("tier")
-    public int tier;
+    int subTier;
 
     @SerializedName("endsAt")
-    public Date endsAt;
+    Date endsAt;
 
     @SerializedName("renewsAt")
-    public Date renewsAt;
+    Date renewsAt;
 
     @SerializedName("giftMeta")
-    public IVRSubageGiftMeta giftMeta;
+    IVRSubageGiftMeta subGiftMeta;
 
     @NonNull
-    public String getType()
+    public String getSubType()
     {
-        return type;
+        return subType;
     }
 
-    public int getTier()
+    public int getSubTier()
     {
-        return tier;
+        return subTier;
     }
 
     @NonNull
@@ -63,9 +63,9 @@ public class IVRSubageMeta
     }
 
     @NonNull
-    public IVRSubageGiftMeta getGiftMeta()
+    public IVRSubageGiftMeta getSubGiftMeta()
     {
-        return giftMeta;
+        return subGiftMeta;
     }
 
     IVRSubageMeta()

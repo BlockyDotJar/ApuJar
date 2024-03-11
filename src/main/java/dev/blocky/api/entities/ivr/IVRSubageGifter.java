@@ -23,12 +23,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class IVRSubageGifter
 {
     @SerializedName("displayName")
-    public String displayName;
+    String userDisplayName;
 
     @NonNull
-    public String getDisplayName()
+    public String getUserDisplayName()
     {
-        return displayName;
+        return userDisplayName;
     }
 
     IVRSubageGifter()

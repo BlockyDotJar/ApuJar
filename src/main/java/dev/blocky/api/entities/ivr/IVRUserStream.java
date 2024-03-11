@@ -25,7 +25,7 @@ import java.util.Date;
 public class IVRUserStream
 {
     @SerializedName("startedAt")
-    public Date startedAt;
+    Date startedAt;
 
     @NonNull
     public Date getStartedAt()

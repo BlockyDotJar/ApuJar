@@ -37,7 +37,7 @@ public class ErrorInterceptor implements Interceptor
         Request request = chain.request();
         Response response = chain.proceed(request);
 
-        String body = response.peekBody(1000000).string();
+        String body = response.peekBody(Long.MAX_VALUE).string();
         JSONObject json = new JSONObject(body);
 
         if (!response.isSuccessful())

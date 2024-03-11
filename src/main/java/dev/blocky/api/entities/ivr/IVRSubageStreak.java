@@ -22,11 +22,11 @@ import com.google.gson.annotations.SerializedName;
 public class IVRSubageStreak
 {
     @SerializedName("months")
-    public int months;
+    int subStreakMonths;
 
-    public int getMonths()
+    public int getSubStreakMonths()
     {
-        return months;
+        return subStreakMonths;
     }
 
     IVRSubageStreak()

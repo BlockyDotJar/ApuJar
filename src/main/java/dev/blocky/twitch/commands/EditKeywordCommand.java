@@ -68,7 +68,7 @@ public class EditKeywordCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "ManFeels You can't edit a keyword, because you aren't a broadcaster or moderator.");
+            chat.sendMessage(channelName, "ManFeels You can't edit a keyword, because you aren't the broadcaster or moderator.");
             return;
         }
 

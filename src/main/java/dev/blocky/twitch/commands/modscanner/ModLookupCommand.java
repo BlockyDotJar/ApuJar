@@ -82,9 +82,9 @@ public class ModLookupCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getUserModerators())
             {
-                follower += msUser.getFollowers();
+                follower += msUser.getUserFollowers();
 
-                String modLogin = msUser.getLogin();
+                String modLogin = msUser.getUserLogin();
 
                 List<User> modUsers = retrieveUserList(client, modLogin);
                 User modUser = modUsers.getFirst();
@@ -129,9 +129,9 @@ public class ModLookupCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getChannelModerators())
             {
-                follower += msUser.getFollowers();
+                follower += msUser.getUserFollowers();
 
-                String modLogin = msUser.getLogin();
+                String modLogin = msUser.getUserLogin();
 
                 List<User> moderators = retrieveUserList(client, modLogin);
                 User moderator = moderators.getFirst();

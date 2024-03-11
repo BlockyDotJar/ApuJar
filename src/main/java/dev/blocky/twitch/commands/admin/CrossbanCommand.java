@@ -78,17 +78,17 @@ public class CrossbanCommand implements ICommand
         User user = usersToBan.getFirst();
         String userID = user.getId();
 
-        HashSet<Integer> openedChatIDs = SQLUtils.getOpenedChatIDs();
-        int bannedChats = openedChatIDs.size();
+        HashSet<String> chatLogins = SQLUtils.getChatLogins();
+        int bannedChats = chatLogins.size();
 
-        for (int openedChatID : openedChatIDs)
+        for (String chatLogin : chatLogins)
         {
             BanUserInput banUserInput = BanUserInput.builder()
                     .userId(userID)
                     .reason(reason)
                     .build();
 
-            List<User> chatUsers = retrieveUserListByID(client, openedChatID);
+            List<User> chatUsers = retrieveUserList(client, chatLogin);
             User chatUser = chatUsers.getFirst();
             String chatUserDisplayName = chatUser.getDisplayName();
             String chatUserID = chatUser.getId();

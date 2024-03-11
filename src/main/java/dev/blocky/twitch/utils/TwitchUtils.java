@@ -89,21 +89,6 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static List<User> retrieveUserListByID(@NonNull TwitchClient client, int userIID)
-    {
-        String userID = String.valueOf(userIID);
-
-        UserList userList = client.getHelix().getUsers
-                        (
-                                null,
-                                Collections.singletonList(userID),
-                                null
-                        )
-                .execute();
-        return userList.getUsers();
-    }
-
-    @NonNull
     public static boolean isValidUsername(@NonNull String userName)
     {
         Pattern pattern = Pattern.compile("(?!_)\\w+", CASE_INSENSITIVE);
@@ -128,9 +113,9 @@ public class TwitchUtils
     {
         for (IVRModVIP ivrModVIP : ivr.getMods())
         {
-            String login = ivrModVIP.getLogin();
+            String userLogin = ivrModVIP.getUserLogin();
 
-            if (login.equalsIgnoreCase(userName))
+            if (userLogin.equalsIgnoreCase(userName))
             {
                 return true;
             }

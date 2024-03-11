@@ -23,45 +23,45 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class SevenTVEmote
 {
     @SerializedName("id")
-    String id;
+    String emoteID;
 
     @SerializedName("name")
-    String name;
+    String emoteName;
 
     @SerializedName("flags")
-    int flags;
+    int emoteFlags;
 
     @SerializedName("listed")
-    boolean listed;
+    boolean isListed;
 
     @SerializedName("animated")
-    boolean animated;
+    boolean isAnimated;
 
     @NonNull
-    public String getID()
+    public String getEmoteID()
     {
-        return id;
+        return emoteID;
     }
 
     @NonNull
-    public String getName()
+    public String getEmoteName()
     {
-        return name;
+        return emoteName;
     }
 
-    public int getFlags()
+    public int getEmoteFlags()
     {
-        return flags;
+        return emoteFlags;
     }
 
     public boolean isListed()
     {
-        return listed;
+        return isListed;
     }
 
     public boolean isAnimated()
     {
-        return animated;
+        return isAnimated;
     }
 
     SevenTVEmote()

@@ -23,12 +23,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class IVRUserBadge
 {
     @SerializedName("title")
-    public String title;
+    String badgeName;
 
     @NonNull
-    public String getTitle()
+    public String getBadgeName()
     {
-        return title;
+        return badgeName;
     }
 
     IVRUserBadge()

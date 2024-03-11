@@ -67,19 +67,19 @@ public class SevenTVRemoveCommand implements ICommand
 
         if (sevenTVUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{channelName}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{channelName}' found.");
             return;
         }
 
         SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVUserDisplayName = sevenTVUser.getDisplayName();
-        String sevenTVUserID = sevenTVUser.getID();
+        String sevenTVUserDisplayName = sevenTVUser.getUserDisplayName();
+        String sevenTVUserID = sevenTVUser.getUserID();
 
         boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, eventUserIID, sevenTVUserID, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
-            chat.sendMessage(channelName, "ManFeels You can't remove emotes, because you aren't a broadcaster, 7tv editor or a broadcaster allowed user.");
+            chat.sendMessage(channelName, "ManFeels You can't remove emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
             return;
         }
 
@@ -89,12 +89,12 @@ public class SevenTVRemoveCommand implements ICommand
 
         if (sevenTVConnection == null)
         {
-            chat.sendMessage(channelName, STR."undefined No emote set found for \{sevenTVUserDisplayName}.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) emote set found for \{sevenTVUserDisplayName}.");
             return;
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        String sevenTVEmoteSetID = sevenTVEmoteSet.getID();
+        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
 
         sevenTV = ServiceProvider.getSevenTVEmoteSet(sevenTVEmoteSetID);
         ArrayList<SevenTVEmote> sevenTVEmotes = sevenTV.getEmotes();
@@ -107,7 +107,7 @@ public class SevenTVRemoveCommand implements ICommand
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
-        String sevenTVEmoteID = sevenTVEmote.getID();
+        String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
         SevenTV emoteAddition = SevenTVUtils.changeEmote(SevenTVEmoteChangeAction.REMOVE, sevenTVEmoteSetID, sevenTVEmoteID, emoteToRemove);
 
@@ -116,11 +116,11 @@ public class SevenTVRemoveCommand implements ICommand
         if (errors != null)
         {
             SevenTVError error = errors.getFirst();
-            SevenTVErrorExtension extension = error.getExtension();
-            String message = extension.getMessage();
-            int code = extension.getCode();
+            SevenTVErrorExtension errorExtension = error.getErrorExtension();
+            String errorMessage = errorExtension.getErrorMessage();
+            int errorCode = errorExtension.getErrorCode();
 
-            chat.sendMessage(channelName, STR."(7TV) error (\{code}) undefined \ud83d\udc4d \{message}");
+            chat.sendMessage(channelName, STR."(7TV) error (\{errorCode}) undefined \ud83d\udc4d \{errorMessage}");
             return;
         }
 

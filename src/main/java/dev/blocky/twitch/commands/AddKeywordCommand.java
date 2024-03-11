@@ -83,7 +83,7 @@ public class AddKeywordCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "ManFeels You can't add a keyword, because you aren't a broadcaster or moderator.");
+            chat.sendMessage(channelName, "ManFeels You can't add a keyword, because you aren't the broadcaster or moderator.");
             return;
         }
 

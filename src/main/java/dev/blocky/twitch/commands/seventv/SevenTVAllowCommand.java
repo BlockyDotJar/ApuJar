@@ -92,12 +92,12 @@ public class SevenTVAllowCommand implements ICommand
 
         if (sevenTVUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{userDisplayName}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userDisplayName}' found.");
             return;
         }
 
         SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVUserID = sevenTVUser.getID();
+        String sevenTVUserID = sevenTVUser.getUserID();
 
         sevenTV = SevenTVUtils.getUser(userDisplayName);
         sevenTVData = sevenTV.getData();
@@ -106,7 +106,7 @@ public class SevenTVAllowCommand implements ICommand
 
         if (sevenTVUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{userDisplayName}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userDisplayName}' found.");
             return;
         }
 

@@ -3,8 +3,10 @@ import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 plugins {
     `java-library`
     application
+    idea
+
     id("com.github.ben-manes.versions") version ("0.51.0")
-    kotlin("jvm") version("1.9.22")
+    kotlin("jvm") version("1.9.23")
 }
 
 group = "dev.blocky.twitch"
@@ -20,25 +22,28 @@ dependencies {
 
     api("com.github.twitch4j:twitch4j:1.19.0")
 
+    api("se.michaelthelin.spotify:spotify-web-api-java:8.3.6")
+
     api("com.squareup.retrofit2:retrofit:2.9.0")
     api("com.squareup.retrofit2:converter-gson:2.9.0")
 
-    api("se.michaelthelin.spotify:spotify-web-api-java:8.3.5")
-
-    api("org.json:json:20240205")
-
     api("com.squareup.okhttp3:okhttp:4.12.0")
     api("com.squareup.okio:okio-jvm:3.8.0")
+
+    api("org.json:json:20240303")
 
     api("org.xerial:sqlite-jdbc:3.45.1.0")
 
     api("io.github.cdimascio:dotenv-java:3.0.0")
 
+    api("joda-time:joda-time:2.12.7")
+    api("org.quartz-scheduler:quartz:2.3.2")
+
     api("org.apache.commons:commons-lang3:3.14.0")
     api("org.apache.commons:commons-collections4:4.4")
 
     api("org.slf4j:slf4j-api:2.0.12")
-    api("ch.qos.logback:logback-classic:1.5.0")
+    api("ch.qos.logback:logback-classic:1.5.3")
 
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.3")
 }
@@ -51,6 +56,13 @@ java {
 application {
     mainModule.set("dev.blocky.twitch")
     mainClass.set("dev.blocky.twitch.Main")
+}
+
+idea {
+    module {
+        isDownloadJavadoc = true
+        isDownloadSources = true
+    }
 }
 
 tasks.withType<JavaCompile> {

@@ -49,7 +49,7 @@ public class DeletePrefixCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "ManFeels You can't delete a prefix, because you aren't a broadcaster or moderator.");
+            chat.sendMessage(channelName, "ManFeels You can't delete a prefix, because you aren't the broadcaster or moderator.");
             return;
         }
 

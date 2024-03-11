@@ -22,7 +22,6 @@ import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
-import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -32,10 +31,8 @@ import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
-import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
-import static dev.blocky.twitch.utils.TwitchUtils.retrieveUserList;
 
 public class PartCommand implements ICommand
 {
@@ -75,15 +72,9 @@ public class PartCommand implements ICommand
             return;
         }
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
 
-        List<User> chatsToPart = retrieveUserList(client, chatToPart);
-        User user = chatsToPart.getFirst();
-        String userDisplayName = user.getDisplayName();
-        String userID = user.getId();
-        int userIID = Integer.parseInt(userID);
-
-        if (ownerIDs.contains(userIID))
+        if (ownerLogins.contains(chatToPart))
         {
             chat.sendMessage(channelName, "TriHard I won't leave this chat.");
             return;
@@ -91,9 +82,10 @@ public class PartCommand implements ICommand
 
         chat.leaveChannel(chatToPart);
 
-        SQLite.onUpdate(STR."DELETE FROM chats WHERE userID ='\{userIID}'");
+        SQLite.onUpdate(STR."DELETE FROM chats WHERE userLogin ='\{chatToPart}'");
+        SQLite.onUpdate(STR."DELETE FROM eventNotifications WHERE userLogin ='\{chatToPart}'");
 
-        chat.sendMessage(channelName, STR."MrDestructoid Successfully left from \{userDisplayName}'s chat.");
+        chat.sendMessage(channelName, STR."MrDestructoid Successfully left from \{chatToPart}'s chat.");
     }
 }
 

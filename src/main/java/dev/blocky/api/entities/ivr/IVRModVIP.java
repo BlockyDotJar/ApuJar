@@ -26,10 +26,10 @@ import java.util.Date;
 public class IVRModVIP
 {
     @SerializedName("grantedAt")
-    public Date grantedAt;
+    Date grantedAt;
 
     @SerializedName("login")
-    public String login;
+    String userLogin;
 
     @Nullable
     public Date getGrantedAt()
@@ -38,9 +38,9 @@ public class IVRModVIP
     }
 
     @NonNull
-    public String getLogin()
+    public String getUserLogin()
     {
-        return login;
+        return userLogin;
     }
 
     IVRModVIP()

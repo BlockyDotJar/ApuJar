@@ -72,15 +72,17 @@ public class SQLite
 
     public void initDatabase() throws SQLException
     {
-        onUpdate("CREATE TABLE IF NOT EXISTS chats(userID INTEGER)");
-        onUpdate("CREATE TABLE IF NOT EXISTS admins(userID INTEGER, isOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customPrefixes(userID INTEGER, prefix VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS adminCommands(command VARCHAR, requiresOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS bible(ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, userID INTEGER, entry VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name VARCHAR, message VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name VARCHAR, message VARCHAR, exactMatch BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name VARCHAR, message VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken VARCHAR, refreshToken VARCHAR, expiresOn VARCHAR)");
-        onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs VARCHAR)");
+        onUpdate("CREATE TABLE IF NOT EXISTS chats(userID INTEGER, userLogin TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS admins(userID INTEGER, userLogin TEXT, isOwner BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customPrefixes(userID INTEGER, prefix TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS adminCommands(command TEXT, requiresOwner BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS bible(entry TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name TEXT, message TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name TEXT, message TEXT, exactMatch BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name TEXT, message TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken TEXT, refreshToken TEXT, expiresOn TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS eventNotifications(userID INTEGER, userLogin TEXT, enabled BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL)");
     }
 }

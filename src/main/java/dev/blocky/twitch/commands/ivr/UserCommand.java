@@ -80,31 +80,31 @@ public class UserCommand implements ICommand
             userInfo = STR."\u26D4 BANNED \u26D4 (Reason: \{banReason}) ";
         }
 
-        String userLogin = ivrUser.getLogin();
-        String userDisplayName = ivrUser.getDisplayName();
-        String userID = ivrUser.getId();
-        String userChatColor = ivrUser.getChatColor() == null ? "#FFFFFF" : ivrUser.getChatColor();
+        String userLogin = ivrUser.getUserLogin();
+        String userDisplayName = ivrUser.getUserDisplayName();
+        String userID = ivrUser.getUserID();
+        String userChatColor = ivrUser.getUserChatColor() == null ? "#FFFFFF" : ivrUser.getUserChatColor();
 
         userInfo = STR."\{userInfo} \uD83D\uDC49 Login: \{userLogin}, Display: \{userDisplayName}, ID: \{userID}, Created: \{readableCreationDate}, Chat-Color: \{userChatColor}";
 
-        ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getBadges();
+        ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getUserBadges();
 
         if (!ivrUserBadges.isEmpty())
         {
             IVRUserBadge ivrUserBadge = ivrUserBadges.getFirst();
-            String badgeTitle = ivrUserBadge.getTitle();
-            userInfo = STR."\{userInfo}, Global-Badge: \{badgeTitle}";
+            String badgeName = ivrUserBadge.getBadgeName();
+            userInfo = STR."\{userInfo}, Global-Badge: \{badgeName}";
         }
 
         if (!ivrUser.isBanned())
         {
-            int followers = ivrUser.getFollowers();
+            int userFollowers = ivrUser.getUserFollowers();
             int chatterCount = ivrUser.getChatterCount();
 
-            userInfo = STR."\{userInfo}, Follower: \{followers}, Chatter: \{chatterCount}";
+            userInfo = STR."\{userInfo}, Follower: \{userFollowers}, Chatter: \{chatterCount}";
         }
 
-        IVRUserRoles ivrUserRoles = ivrUser.getRoles();
+        IVRUserRoles ivrUserRoles = ivrUser.getUserRoles();
 
         boolean isAffiliate = ivrUserRoles.isAffiliate();
         boolean isPartner = ivrUserRoles.isPartner();

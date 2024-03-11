@@ -98,7 +98,7 @@ public class FounderageCommand implements ICommand
 
         if (!secondUserBroadcasterType.equals("affiliate") && !secondUserBroadcasterType.equals("partner"))
         {
-            chat.sendMessage(channelName, STR."ManFeels \{secondUserDisplayName} is not even an affiliate or partner.");
+            chat.sendMessage(channelName, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
             return;
         }
 
@@ -112,7 +112,7 @@ public class FounderageCommand implements ICommand
         {
             for (IVRFounder ivrFounder : ivr.getFounders())
             {
-                String founderLogin = ivrFounder.getLogin();
+                String founderLogin = ivrFounder.getUserLogin();
 
                 if (!founderLogin.equals(userLogin))
                 {
@@ -129,7 +129,7 @@ public class FounderageCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getChannelFounders())
             {
-                String founderLogin = msUser.getLogin();
+                String founderLogin = msUser.getUserLogin();
 
                 if (!founderLogin.equals(userLogin))
                 {
@@ -146,7 +146,7 @@ public class FounderageCommand implements ICommand
 
         if (!isFounder)
         {
-            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} is not founder in \{secondUserDisplayName}'s chat at the moment.");
+            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} isn't founder in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 

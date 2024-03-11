@@ -63,7 +63,7 @@ public class CreatedAtCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String ivrUserDisplayName = ivrUser.getDisplayName();
+        String ivrUserDisplayName = ivrUser.getUserDisplayName();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         Date creationDate = ivrUser.getCreatedAt();

@@ -62,12 +62,12 @@ public class IsStaffCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
-        IVRUserRoles ivrUserRoles = ivrUser.getRoles();
+        String userDisplayName = ivrUser.getUserDisplayName();
+        IVRUserRoles ivrUserRoles = ivrUser.getUserRoles();
 
         if (!ivrUserRoles.isStaff())
         {
-            chat.sendMessage(channelName, STR."Saved \{userDisplayName} is not a Twitch staff at the moment.");
+            chat.sendMessage(channelName, STR."Saved \{userDisplayName} isn't a Twitch staff at the moment.");
             return;
         }
 

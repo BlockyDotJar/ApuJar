@@ -84,12 +84,12 @@ public class SevenTVYoinkCommand implements ICommand
         List<SevenTVUser> sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, userLogin);
 
         SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVUserDisplayName = sevenTVUser.getID();
-        String sevenTVUserID = sevenTVUser.getID();
+        String sevenTVUserDisplayName = sevenTVUser.getUserDisplayName();
+        String sevenTVUserID = sevenTVUser.getUserID();
 
         if (sevenTVUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{userLogin}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userLogin}' found.");
             return;
         }
 
@@ -102,7 +102,7 @@ public class SevenTVYoinkCommand implements ICommand
         String emoteToYoink = messageParts[2];
         String emoteAlias = emoteToYoink;
 
-        if (messageParts.length == 4)
+        if (messageParts.length >= 4)
         {
             emoteAlias = messageParts[3];
         }
@@ -116,19 +116,19 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (sevenTVUsersFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."undefined No user with name '\{channelName}' found.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{channelName}' found.");
             return;
         }
 
         sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVChannelDisplayName = sevenTVUser.getDisplayName();
-        String sevenTVChannelID = sevenTVUser.getID();
+        String sevenTVChannelDisplayName = sevenTVUser.getUserDisplayName();
+        String sevenTVChannelID = sevenTVUser.getUserID();
 
         boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, eventUserIID, sevenTVChannelID, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
-            chat.sendMessage(channelName, "ManFeels You can't add emotes, because you aren't a broadcaster, 7tv editor or a broadcaster allowed user.");
+            chat.sendMessage(channelName, "ManFeels You can't add emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
             return;
         }
 
@@ -138,12 +138,12 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (sevenTVConnection == null)
         {
-            chat.sendMessage(channelName, STR."undefined No emote set found for \{sevenTVUserDisplayName}.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) emote set found for \{sevenTVUserDisplayName}.");
             return;
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        String sevenTVEmoteSetID = sevenTVEmoteSet.getID();
+        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
 
         sevenTV = ServiceProvider.getSevenTVEmoteSet(sevenTVEmoteSetID);
         ArrayList<SevenTVEmote> sevenTVEmotes = sevenTV.getEmotes();
@@ -156,13 +156,13 @@ public class SevenTVYoinkCommand implements ICommand
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
-        String sevenTVEmoteID = sevenTVEmote.getID();
+        String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
         sevenTVEmote = ServiceProvider.getSevenTVEmote(sevenTVEmoteID);
 
         boolean isAnimated = sevenTVEmote.isAnimated();
         boolean isListed = sevenTVEmote.isListed();
-        boolean isPrivate = sevenTVEmote.getFlags() == 1;
+        boolean isPrivate = sevenTVEmote.getEmoteFlags() == 1;
 
         sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVChannelID);
 
@@ -170,12 +170,12 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (sevenTVConnection == null)
         {
-            chat.sendMessage(channelName, STR."undefined No emote set found for \{sevenTVChannelDisplayName}.");
+            chat.sendMessage(channelName, STR."undefined No (7TV) emote set found for \{sevenTVChannelDisplayName}.");
             return;
         }
 
         sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        sevenTVEmoteSetID = sevenTVEmoteSet.getID();
+        sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
 
         SevenTV emoteAddition = SevenTVUtils.changeEmote(SevenTVEmoteChangeAction.ADD, sevenTVEmoteSetID, sevenTVEmoteID, emoteAlias);
 
@@ -184,11 +184,11 @@ public class SevenTVYoinkCommand implements ICommand
         if (errors != null)
         {
             SevenTVError error = errors.getFirst();
-            SevenTVErrorExtension extension = error.getExtension();
-            String message = extension.getMessage();
-            int code = extension.getCode();
+            SevenTVErrorExtension errorExtension = error.getErrorExtension();
+            String errorMessage = errorExtension.getErrorMessage();
+            int errorCode = errorExtension.getErrorCode();
 
-            chat.sendMessage(channelName, STR."(7TV) error (\{code}) undefined \ud83d\udc4d \{message}");
+            chat.sendMessage(channelName, STR."(7TV) error (\{errorCode}) undefined \ud83d\udc4d \{errorMessage}");
             return;
         }
 

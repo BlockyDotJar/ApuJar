@@ -96,7 +96,7 @@ public class FollowageCommand implements ICommand
 
         if (followedAt == null)
         {
-            chat.sendMessage(channelName, STR."Bad \{userDisplayName} is not following \{secondUserDisplayName} at the moment.");
+            chat.sendMessage(channelName, STR."Bad \{userDisplayName} isn't following \{secondUserDisplayName} at the moment.");
             return;
         }
 

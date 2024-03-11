@@ -25,23 +25,23 @@ import java.util.Date;
 public class ModScannerUser
 {
     @SerializedName("login")
-    public String login;
+    String userLogin;
 
     @SerializedName("followers")
-    public int followers;
+    int userFollowers;
 
     @SerializedName("grantedAt")
-    public Date grantedAt;
+    Date grantedAt;
 
     @NonNull
-    public String getLogin()
+    public String getUserLogin()
     {
-        return login;
+        return userLogin;
     }
 
-    public int getFollowers()
+    public int getUserFollowers()
     {
-        return followers;
+        return userFollowers;
     }
 
     @NonNull

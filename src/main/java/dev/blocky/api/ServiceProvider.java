@@ -17,22 +17,25 @@
  */
 package dev.blocky.api;
 
-import dev.blocky.api.entities.modscanner.ModScanner;
+import dev.blocky.api.entities.github.GitHubRelease;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRUser;
+import dev.blocky.api.entities.maps.GeocodeMaps;
+import dev.blocky.api.entities.modscanner.ModScanner;
+import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.seventv.SevenTV;
 import dev.blocky.api.entities.seventv.SevenTVEmote;
 import dev.blocky.api.entities.seventv.SevenTVUser;
 import dev.blocky.api.gql.SevenTVGQLBody;
 import dev.blocky.api.interceptor.AuthInterceptor;
 import dev.blocky.api.interceptor.ErrorInterceptor;
+import dev.blocky.api.interceptor.GitHubErrorInterceptor;
 import dev.blocky.api.interceptor.SevenTVErrorInterceptor;
-import dev.blocky.api.services.IVRService;
-import dev.blocky.api.services.ModScannerService;
-import dev.blocky.api.services.SevenTVService;
+import dev.blocky.api.services.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import io.github.cdimascio.dotenv.Dotenv;
 import okhttp3.ConnectionPool;
 import okhttp3.Dispatcher;
 import okhttp3.Interceptor;
@@ -53,10 +56,13 @@ public class ServiceProvider
     private static final SevenTVErrorInterceptor sevenTVErrorInterceptor = new SevenTVErrorInterceptor();
     private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(sevenTVAccessToken);
 
+    private static final GitHubErrorInterceptor gitHubErrorInterceptor = new GitHubErrorInterceptor();
+
     private static final ErrorInterceptor errorInterceptor = new ErrorInterceptor();
 
     private static final int IVR_API_VERSION = 2;
     private static final int SEVENTV_API_VERSION = 3;
+    private static final int OPEN_METEO_VERSION = 1;
 
     @NonNull
     public static <T> T createService(@NonNull Class<T> clazz, @Nullable Interceptor... interceptors)
@@ -83,6 +89,9 @@ public class ServiceProvider
             case "ModScannerService" -> "https://api.modscanner.com/twitch/";
             case "IVRService" -> STR."https://api.ivr.fi/v\{IVR_API_VERSION}/";
             case "SevenTVService" -> STR."https://7tv.io/v\{SEVENTV_API_VERSION}/";
+            case "GitHubService" -> "https://api.github.com/";
+            case "GeocodeMapsService" -> "https://geocode.maps.co/";
+            case "OpenMeteoService" -> STR."https://api.open-meteo.com/v\{OPEN_METEO_VERSION}/";
             default -> null;
         };
 
@@ -182,6 +191,39 @@ public class ServiceProvider
         SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVErrorInterceptor, sevenTVAuthInterceptor);
         Call<SevenTV> sevenTVCall = sevenTVService.postGQL(body);
         Response<SevenTV> response = sevenTVCall.execute();
+        return response.body();
+    }
+
+    @NonNull
+    public static GitHubRelease getGitHubLatestRelease(@NonNull String owner, @NonNull String repository) throws IOException
+    {
+        GitHubService gitHubService = ServiceProvider.createService(GitHubService.class, gitHubErrorInterceptor);
+        Call<GitHubRelease> gitHubCall = gitHubService.getLatestRelease(owner, repository);
+        Response<GitHubRelease> response = gitHubCall.execute();
+        return response.body();
+    }
+
+    @NonNull
+    public static List<GeocodeMaps> searchMaps(@NonNull String query) throws IOException
+    {
+        Dotenv env = Dotenv.configure()
+                .filename(".maps")
+                .load();
+
+        String apiKey = env.get("API_KEY");
+
+        GeocodeMapsService geocodeMapsService = ServiceProvider.createService(GeocodeMapsService.class);
+        Call<List<GeocodeMaps>> geocodeMapsCall = geocodeMapsService.search(query, apiKey);
+        Response<List<GeocodeMaps>> response = geocodeMapsCall.execute();
+        return response.body();
+    }
+
+    @NonNull
+    public static OpenMeteo getOpenMeteoCurrentWeather(double latitude, double longitude, @NonNull String current) throws IOException
+    {
+        OpenMeteoService openMeteoService = ServiceProvider.createService(OpenMeteoService.class);
+        Call<OpenMeteo> openMeteoCall = openMeteoService.getCurrentWeather(latitude, longitude, current);
+        Response<OpenMeteo> response = openMeteoCall.execute();
         return response.body();
     }
 }

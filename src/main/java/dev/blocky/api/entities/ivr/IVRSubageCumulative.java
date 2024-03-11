@@ -25,20 +25,20 @@ import java.util.Date;
 public class IVRSubageCumulative
 {
     @SerializedName("months")
-    public int months;
+    int subMonths;
 
     @SerializedName("end")
-    public Date end;
+    Date subEnd;
 
-    @NonNull
-    public Date getEnd()
+    public int getSubMonths()
     {
-        return end;
+        return subMonths;
     }
 
-    public int getMonths()
+    @NonNull
+    public Date getSubEnd()
     {
-        return months;
+        return subEnd;
     }
 
     IVRSubageCumulative()

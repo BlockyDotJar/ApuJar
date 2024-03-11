@@ -26,48 +26,48 @@ import java.util.ArrayList;
 public class SevenTVUser
 {
     @SerializedName("id")
-    String id;
+    String userID;
 
     @SerializedName("username")
-    String username;
+    String userName;
 
     @SerializedName("display_name")
-    String display_name;
+    String userDisplayName;
 
     @SerializedName("connections")
-    ArrayList<SevenTVUserConnection> connections;
+    ArrayList<SevenTVUserConnection> userConnections;
 
     @SerializedName("editors")
-    ArrayList<SevenTVUser> editors;
+    ArrayList<SevenTVUser> userEditors;
 
     @NonNull
-    public String getID()
+    public String getUserID()
     {
-        return id;
+        return userID;
     }
 
     @Nullable
-    public String getUsername()
+    public String getUserName()
     {
-        return username;
+        return userName;
     }
 
     @Nullable
-    public String getDisplayName()
+    public String getUserDisplayName()
     {
-        return display_name;
+        return userDisplayName;
     }
 
     @Nullable
-    public ArrayList<SevenTVUserConnection> getConnections()
+    public ArrayList<SevenTVUserConnection> getUserConnections()
     {
-        return connections;
+        return userConnections;
     }
 
     @Nullable
-    public ArrayList<SevenTVUser> getEditors()
+    public ArrayList<SevenTVUser> getUserEditors()
     {
-        return editors;
+        return userEditors;
     }
 
     SevenTVUser()

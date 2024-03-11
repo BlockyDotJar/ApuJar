@@ -61,7 +61,7 @@ public class ChatterCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
+        String userDisplayName = ivrUser.getUserDisplayName();
         int userChatterCount = ivrUser.getChatterCount();
 
         channelName = getActualChannel(channelToSend, channelName);

@@ -61,7 +61,7 @@ public class SetPrefixCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "NOIDONTTHINKSO You can't set a prefix, because you aren't a broadcaster or moderator.");
+            chat.sendMessage(channelName, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or moderator.");
             return;
         }
 

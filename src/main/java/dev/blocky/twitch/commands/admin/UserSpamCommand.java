@@ -68,7 +68,7 @@ public class UserSpamCommand implements ICommand
 
         if (!StringUtils.isNumeric(spamCount))
         {
-            chat.sendMessage(channelName, "ManFeels The second parameter is not an integer.");
+            chat.sendMessage(channelName, "ManFeels The second parameter isn't an integer.");
             return;
         }
 
@@ -107,7 +107,7 @@ public class UserSpamCommand implements ICommand
         User user = chatsToSpam.getFirst();
         String userDisplayName = user.getDisplayName();
 
-        String messageToSend = removeElements(messageParts, 4);
+        String messageToSend = removeElements(messageParts, 3);
 
         if (messageToSend.startsWith("/"))
         {
@@ -123,7 +123,7 @@ public class UserSpamCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or moderator.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
                 return;
             }
 

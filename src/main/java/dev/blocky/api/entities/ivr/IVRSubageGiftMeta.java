@@ -25,10 +25,10 @@ import java.util.Date;
 public class IVRSubageGiftMeta
 {
     @SerializedName("giftDate")
-    public Date giftDate;
+    Date giftDate;
 
     @SerializedName("gifter")
-    public IVRSubageGifter gifter;
+    IVRSubageGifter subGifter;
 
     @NonNull
     public Date getGiftDate()
@@ -37,9 +37,9 @@ public class IVRSubageGiftMeta
     }
 
     @NonNull
-    public IVRSubageGifter getGifter()
+    public IVRSubageGifter getSubGifter()
     {
-        return gifter;
+        return subGifter;
     }
 
     IVRSubageGiftMeta()

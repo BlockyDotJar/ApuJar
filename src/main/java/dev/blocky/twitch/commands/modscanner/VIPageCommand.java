@@ -102,7 +102,7 @@ public class VIPageCommand implements ICommand
 
         for (IVRModVIP ivrModVIP : ivr.getVIPs())
         {
-            String vipLogin = ivrModVIP.getLogin();
+            String vipLogin = ivrModVIP.getUserLogin();
 
             if (!vipLogin.equals(userLogin))
             {
@@ -118,7 +118,7 @@ public class VIPageCommand implements ICommand
 
         for (ModScannerUser msUser : modScanner.getChannelVIPs())
         {
-            String vipLogin = msUser.getLogin();
+            String vipLogin = msUser.getUserLogin();
 
             if (!vipLogin.equals(userLogin))
             {
@@ -134,7 +134,7 @@ public class VIPageCommand implements ICommand
 
         if (!isVIP)
         {
-            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} is not vip in \{secondUserDisplayName}'s chat at the moment.");
+            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} isn't vip in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 

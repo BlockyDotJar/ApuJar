@@ -102,9 +102,15 @@ public class SQLUtils
     }
 
     @NonNull
-    public static HashSet<Integer> getOpenedChatIDs() throws SQLException
+    public static HashSet<String> getChatLogins() throws SQLException
     {
-        return getAll("SELECT * from chats", "userID", Integer.class);
+        return getAll("SELECT * from chats", "userLogin", String.class);
+    }
+
+    @NonNull
+    public static HashSet<String> getAdminLogins() throws SQLException
+    {
+        return getAll("SELECT * from admins WHERE isOwner = FALSE", "userLogin", String.class);
     }
 
     @NonNull
@@ -120,15 +126,21 @@ public class SQLUtils
     }
 
     @NonNull
-    public static HashSet<String> getOwnerCommands() throws SQLException
+    public static HashSet<String> getOwnerLogins() throws SQLException
     {
-        return getAll("SELECT * from adminCommands WHERE requiresOwner = TRUE", "command", String.class);
+        return getAll("SELECT * from admins WHERE isOwner = TRUE", "userLogin", String.class);
     }
 
     @NonNull
     public static HashSet<Integer> getOwnerIDs() throws SQLException
     {
         return getAll("SELECT * from admins WHERE isOwner = TRUE", "userID", Integer.class);
+    }
+
+    @NonNull
+    public static HashSet<String> getOwnerCommands() throws SQLException
+    {
+        return getAll("SELECT * from adminCommands WHERE requiresOwner = TRUE", "command", String.class);
     }
 
     @NonNull
@@ -180,6 +192,18 @@ public class SQLUtils
     }
 
     @NonNull
+    public static HashSet<String> getEnabledEventNotificationChatLogins() throws SQLException
+    {
+        return getAll("SELECT * from eventNotifications WHERE enabled = TRUE", "userLogin", String.class);
+    }
+
+    @NonNull
+    public static boolean hasEnabledEventNotifications(int userID) throws SQLException
+    {
+        return get(STR."SELECT * from eventNotifications WHERE userID = \{userID}", "enabled", Boolean.class);
+    }
+
+    @NonNull
     public static String removeApostrophe(@NonNull String prefix)
     {
         return StringUtils.remove(prefix, "'");
@@ -191,5 +215,30 @@ public class SQLUtils
         int userIID = Integer.parseInt(userID);
         String customPrefix = getPrefix(userIID);
         return customPrefix == null ? "kok!" : customPrefix;
+    }
+
+    public static void correctUserLogin(int userID, @NonNull String newUserLogin) throws SQLException
+    {
+        List<String> tables = List.of("chats", "admins", "eventNotifications");
+
+        for (String table : tables)
+        {
+            try (ResultSet result = SQLite.onQuery(STR."SELECT * from \{table} WHERE userID = \{userID}"))
+            {
+                String userLogin = result.getString("userLogin");
+
+                if (userLogin == null || userLogin.isBlank())
+                {
+                    continue;
+                }
+
+                if (userLogin.equals(newUserLogin))
+                {
+                    continue;
+                }
+
+                SQLite.onUpdate(STR."UPDATE \{table} SET userLogin = '\{newUserLogin}' WHERE userID = \{userID}");
+            }
+        }
     }
 }

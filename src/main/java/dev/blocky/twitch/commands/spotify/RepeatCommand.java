@@ -20,6 +20,7 @@ package dev.blocky.twitch.commands.spotify;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -38,48 +39,51 @@ public class RepeatCommand implements ICommand
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
-        EventUser user = event.getUser();
 
-        String[] msgParts = event.getMessage().split(" ");
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        if (msgParts.length == 1)
+        EventUser eventUser  = event.getUser();
+        String eventUserName = eventUser.getName();
+        String eventUserID = eventUser.getId();
+        int eventUserIID = Integer.parseInt(eventUserID);
+
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify the way the track should be repeated. (off/track/context)");
+            chat.sendMessage(channelName, "FeelsMan Please specify the way the track should be repeated. (off/track/context)");
             return;
         }
 
-        String repeatMode = msgParts[1];
+        String repeatMode = messageParts[1].toLowerCase();
 
         if (!repeatMode.matches("^(off|track|context)$"))
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Invalid repeat mode specified. (Choose between off, track or context)");
+            chat.sendMessage(channelName, "FeelsMan Invalid repeat mode specified. (Choose between off, track or context)");
             return;
         }
 
-        int userID = Integer.parseInt(user.getId());
+        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
 
-        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
-
-        if (!spotifyUserIDs.contains(userID))
+        if (!spotifyUserIIDs.contains(eventUserIID))
         {
-            chat.sendMessage(event.getChannel().getName(), STR."ManFeels No user called '\{user.getName()}' found in Spotify credential database. Sign in here TriHard https://blockydotjar.github.io/ApuJar-Website/oauth2/spotify.html");
+            chat.sendMessage(channelName, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
-        SpotifyApi spotifyApi = SpotifyUtils.getSpotifyAPI(userID);
+        SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
 
-        GetUsersAvailableDevicesRequest devicesRequest = spotifyApi.getUsersAvailableDevices().build();
-        Device[] devices = devicesRequest.execute();
+        GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = deviceRequest.execute();
 
         if (devices.length == 0)
         {
-            chat.sendMessage(event.getChannel().getName(), STR."AlienUnpleased \{user.getName()} is not active at the moment.");
+            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
         }
 
-        SetRepeatModeOnUsersPlaybackRequest repeatModePlaybackRequest = spotifyApi.setRepeatModeOnUsersPlayback(repeatMode).build();
-        repeatModePlaybackRequest.execute();
+        SetRepeatModeOnUsersPlaybackRequest repeatRequest = spotifyAPI.setRepeatModeOnUsersPlayback(repeatMode).build();
+        repeatRequest.execute();
 
-        chat.sendMessage(event.getChannel().getName(), STR."PassTheBurrito Set repeat mode to \{repeatMode.toLowerCase()}.");
+        chat.sendMessage(channelName, STR."PassTheBurrito Set repeat mode to \{repeatMode}.");
     }
 }

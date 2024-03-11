@@ -61,8 +61,8 @@ public class FollowerCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
-        int userFollowers = ivrUser.getFollowers();
+        String userDisplayName = ivrUser.getUserDisplayName();
+        int userFollowers = ivrUser.getUserFollowers();
 
         channelName = getActualChannel(channelToSend, channelName);
 

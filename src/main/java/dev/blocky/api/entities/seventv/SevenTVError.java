@@ -23,12 +23,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class SevenTVError
 {
     @SerializedName("extensions")
-    SevenTVErrorExtension extensions;
+    SevenTVErrorExtension errorExtension;
 
     @NonNull
-    public SevenTVErrorExtension getExtension()
+    public SevenTVErrorExtension getErrorExtension()
     {
-        return extensions;
+        return errorExtension;
     }
 
     SevenTVError()

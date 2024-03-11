@@ -82,9 +82,9 @@ public class VIPLookupCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getUserVIPs())
             {
-                follower += msUser.getFollowers();
+                follower += msUser.getUserFollowers();
 
-                String vipLogin = msUser.getLogin();
+                String vipLogin = msUser.getUserLogin();
 
                 List<User> vipUsers = retrieveUserList(client, vipLogin);
                 User vipUser = vipUsers.getFirst();
@@ -129,9 +129,9 @@ public class VIPLookupCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getChannelVIPs())
             {
-                follower += msUser.getFollowers();
+                follower += msUser.getUserFollowers();
 
-                String vipLogin = msUser.getLogin();
+                String vipLogin = msUser.getUserLogin();
 
                 List<User> vipUsers = retrieveUserList(client, vipLogin);
                 User vipUser = vipUsers.getFirst();

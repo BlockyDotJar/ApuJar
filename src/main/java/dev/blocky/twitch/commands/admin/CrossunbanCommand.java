@@ -70,12 +70,12 @@ public class CrossunbanCommand implements ICommand
         User user = usersToUnban.getFirst();
         String userID = user.getId();
 
-        HashSet<Integer> openedChatIDs = SQLUtils.getOpenedChatIDs();
-        int unbannedChats = openedChatIDs.size();
+        HashSet<String> chatLogins = SQLUtils.getChatLogins();
+        int unbannedChats = chatLogins.size();
 
-        for (int openedChatID : openedChatIDs)
+        for (String chatLogin : chatLogins)
         {
-            List<User> chatUsers = retrieveUserListByID(client, openedChatID);
+            List<User> chatUsers = retrieveUserList(client, chatLogin);
             User chatUser = chatUsers.getFirst();
             String chatUserDisplayName = chatUser.getDisplayName();
             String chatUserID = chatUser.getId();
@@ -102,7 +102,7 @@ public class CrossunbanCommand implements ICommand
 
         if (unbannedChats == 0)
         {
-            chat.sendMessage(channelName, STR."User '\{userToUnban}' is not banned in any chat that i'm mod in NotLikeThis");
+            chat.sendMessage(channelName, STR."User '\{userToUnban}' isn't banned in any chat that i'm mod in NotLikeThis");
             return;
         }
 

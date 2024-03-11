@@ -20,13 +20,14 @@ package dev.blocky.twitch.utils;
 import dev.blocky.twitch.sql.SQLite;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.SpotifyHttpManager;
 import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 import se.michaelthelin.spotify.requests.authorization.authorization_code.AuthorizationCodeRefreshRequest;
 
 import java.net.URI;
-import java.time.LocalDateTime;
 
 public class SpotifyUtils
 {
@@ -36,28 +37,34 @@ public class SpotifyUtils
         String accessToken = SQLUtils.getSpotifyAccessToken(userID);
         String refreshToken = SQLUtils.getSpotifyRefreshToken(userID);
         String expiresOn = SQLUtils.getSpotifyExpiresOn(userID);
-        LocalDateTime expiresOnDate = LocalDateTime.parse(expiresOn);
 
-        SpotifyApi spotifyApi = new SpotifyApi.Builder()
+        DateTime expiresOnDate = new DateTime(expiresOn);
+        LocalDateTime expiresOnLocalDate = expiresOnDate.toLocalDateTime();
+
+        SpotifyApi spotifyAPI = new SpotifyApi.Builder()
                 .setAccessToken(accessToken)
                 .setRefreshToken(refreshToken)
                 .build();
+        
+        LocalDateTime now = LocalDateTime.now();
 
-        if (LocalDateTime.now().isAfter(expiresOnDate))
+        if (now.isAfter(expiresOnLocalDate))
         {
-            Dotenv env = Dotenv.configure().filename(".spotify").load();
+            Dotenv env = Dotenv.configure()
+                    .filename(".spotify")
+                    .load();
 
             String clientID = env.get("SPOTIFY_CLIENT_ID");
             String clientSecret = env.get("SPOTIFY_CLIENT_SECRET");
-            URI redirectUri = SpotifyHttpManager.makeUri("https://blockydotjar.github.io/ApuJar-Website/oauth2/spotify/callback.html");
+            URI redirectUri = SpotifyHttpManager.makeUri("https://apujar.blockyjar.dev/oauth2/spotify/callback.html");
 
-            spotifyApi = new SpotifyApi.Builder()
+            spotifyAPI = new SpotifyApi.Builder()
                     .setClientId(clientID)
                     .setClientSecret(clientSecret)
                     .setRedirectUri(redirectUri)
                     .build();
 
-            AuthorizationCodeRefreshRequest refreshRequest = spotifyApi.authorizationCodeRefresh()
+            AuthorizationCodeRefreshRequest refreshRequest = spotifyAPI.authorizationCodeRefresh()
                     .grant_type("refresh_token")
                     .refresh_token(refreshToken)
                     .build();
@@ -67,13 +74,12 @@ public class SpotifyUtils
             accessToken = authCodeCredentials.getAccessToken();
             int expiresIn = authCodeCredentials.getExpiresIn();
 
-            expiresOnDate = LocalDateTime.now().plusSeconds(expiresIn);
+            expiresOnLocalDate = now.plusSeconds(expiresIn);
 
-            SQLite.onUpdate(STR."UPDATE spotifyCredentials SET accessToken = '\{accessToken}', expiresOn = '\{expiresOnDate}' WHERE userID = \{userID}");
+            SQLite.onUpdate(STR."UPDATE spotifyCredentials SET accessToken = '\{accessToken}', expiresOn = '\{expiresOnLocalDate}' WHERE userID = \{userID}");
 
-            spotifyApi.setAccessToken(accessToken);
-            spotifyApi.setRefreshToken(refreshToken);
+            spotifyAPI.setAccessToken(accessToken);
         }
-        return spotifyApi;
+        return spotifyAPI;
     }
 }

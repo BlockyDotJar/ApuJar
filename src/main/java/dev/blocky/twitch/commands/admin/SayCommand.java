@@ -72,7 +72,7 @@ public class SayCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or moderator.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
                 return;
             }
 

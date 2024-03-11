@@ -25,6 +25,8 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.commands.*;
 import dev.blocky.twitch.commands.admin.*;
+import dev.blocky.twitch.commands.github.ChatterinoCommand;
+import dev.blocky.twitch.commands.github.ChattyCommand;
 import dev.blocky.twitch.commands.ivr.*;
 import dev.blocky.twitch.commands.modscanner.*;
 import dev.blocky.twitch.commands.owner.*;
@@ -123,27 +125,34 @@ public class CommandManager
         commands.put(List.of("crossunban", "cub"), new CrossunbanCommand());
 
         commands.put(List.of("addspotifyuser", "addspotifyu"), new AddSpotifyUserCommand());
+        commands.put(List.of("deletespotifyuser", "delspotifyuser", "delspotifyu"), new DeleteSpotifyUserCommand());
 
-        commands.put(Collections.singletonList("song"), new CurrentSongCommand());
+        commands.put(Collections.singletonList("song"), new SongCommand());
         commands.put(Collections.singletonList("volume"), new VolumeCommand());
         commands.put(Collections.singletonList("setvolume"), new SetVolumeCommand());
-        commands.put(Collections.singletonList("start"), new StartResumePlaybackCommand());
-        commands.put(Collections.singletonList("resume"), new StartResumePlaybackCommand());
-        commands.put(Collections.singletonList("pause"), new PausePlaybackCommand());
-        commands.put(Collections.singletonList("next"), new SkipToNextSongCommand());
-        commands.put(List.of("previous", "prev"), new SkipToPreviousSongCommand());
-        commands.put(Collections.singletonList("setduration"), new SeekSongPositionCommand());
-        commands.put(Collections.singletonList("additem"), new AddItemToPlaybackQueueCommand());
+        commands.put(Collections.singletonList("resume"), new ResumeCommand());
+        commands.put(Collections.singletonList("pause"), new PauseCommand());
+        commands.put(Collections.singletonList("next"), new NextCommand());
+        commands.put(List.of("previous", "prev"), new PreviousCommand());
+        commands.put(Collections.singletonList("setprogress"), new SetProgessCommand());
+        commands.put(Collections.singletonList("queue"), new QueueCommand());
         commands.put(Collections.singletonList("repeat"), new RepeatCommand());
         commands.put(Collections.singletonList("shuffle"), new ShuffleCommand());
-        commands.put(Collections.singletonList("yoink"), new YoinkSongCommand());
+        commands.put(Collections.singletonList("yoink"), new YoinkCommand());
 
         commands.put(Collections.singletonList("7tvallow"), new SevenTVAllowCommand());
         commands.put(Collections.singletonList("7tvdeny"), new SevenTVDenyCommand());
+        commands.put(Collections.singletonList("7tvurl"), new SevenTVURLCommand());
+        commands.put(Collections.singletonList("7tvuser"), new SevenTVUserCommand());
         commands.put(Collections.singletonList("7tvadd"), new SevenTVAddCommand());
         commands.put(Collections.singletonList("7tvyoink"), new SevenTVYoinkCommand());
         commands.put(List.of("7tvrename", "7tvrn"), new SevenTVRenameCommand());
         commands.put(List.of("7tvremove", "7tvrm"), new SevenTVRemoveCommand());
+
+        commands.put(List.of("receiveeventnotifications", "ren"), new ReceiveEventNotificationsCommand());
+
+        commands.put(Collections.singletonList("chatterino"), new ChatterinoCommand());
+        commands.put(Collections.singletonList("chatty"), new ChattyCommand());
     }
 
     boolean onMessage(String commandOrAlias, ChannelMessageEvent event, String[] prefixedMessageParts, String[] messageParts) throws Exception
@@ -173,6 +182,11 @@ public class CommandManager
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
+        EventUser eventUser = event.getUser();
+        String eventUserName = eventUser.getName();
+        String eventUserID = eventUser.getId();
+        int eventUserIID = Integer.parseInt(eventUserID);
+
         try
         {
             String message = event.getMessage();
@@ -182,6 +196,8 @@ public class CommandManager
 
             Pattern PREFIX_PATTERN = Pattern.compile("^@?apujar,? prefix(.*)?$", CASE_INSENSITIVE);
             Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
+
+            SQLUtils.correctUserLogin(eventUserIID, eventUserName);
 
             if (PREFIX_MATCHER.matches())
             {
@@ -205,10 +221,6 @@ public class CommandManager
 
             if (message.startsWith(actualPrefix))
             {
-                EventUser eventUser = event.getUser();
-                String eventUserID = eventUser.getId();
-                int eventUserIID = Integer.parseInt(eventUserID);
-
                 String commandRaw = message.substring(prefixLength).strip();
                 String[] messageParts = commandRaw.split(" ");
 
@@ -232,7 +244,7 @@ public class CommandManager
 
                     if (!command.isBlank() && !onMessage(command, event, prefixedMessageParts, messageParts))
                     {
-                        chat.sendMessage(channelName, STR."Sadeg '\{command}' command was not found.");
+                        chat.sendMessage(channelName, STR."Sadeg '\{command}' command wasn't found.");
                     }
                 }
             }

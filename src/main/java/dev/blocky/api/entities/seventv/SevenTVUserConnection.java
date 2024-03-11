@@ -26,7 +26,7 @@ public class SevenTVUserConnection
     String platform;
 
     @SerializedName("emote_set")
-    SevenTVEmoteSet emote_set;
+    SevenTVEmoteSet emoteSet;
 
     @NonNull
     public String getPlatform()
@@ -37,7 +37,7 @@ public class SevenTVUserConnection
     @NonNull
     public SevenTVEmoteSet getEmoteSet()
     {
-        return emote_set;
+        return emoteSet;
     }
 
     SevenTVUserConnection()

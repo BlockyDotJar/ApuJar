@@ -71,7 +71,7 @@ public class FounderLookupCommand implements ICommand
 
         if (!userBroadcasterType.equals("affiliate") && !userBroadcasterType.equals("partner"))
         {
-            chat.sendMessage(channelName, STR."ManFeels \{userDisplayName} is not even an affiliate or partner.");
+            chat.sendMessage(channelName, STR."ManFeels \{userDisplayName} isn't even an affiliate or partner.");
             return;
         }
 
@@ -91,9 +91,9 @@ public class FounderLookupCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getUserFounders())
             {
-                follower += msUser.getFollowers();
+                follower += msUser.getUserFollowers();
 
-                String founderLogin = msUser.getLogin();
+                String founderLogin = msUser.getUserLogin();
 
                 List<User> founderUsers = retrieveUserList(client, founderLogin);
                 User founderUser = founderUsers.getFirst();
@@ -135,9 +135,9 @@ public class FounderLookupCommand implements ICommand
 
             for (ModScannerUser msUser : modScanner.getChannelFounders())
             {
-                follower += msUser.getFollowers();
+                follower += msUser.getUserFollowers();
 
-                String founderLogin = msUser.getLogin();
+                String founderLogin = msUser.getUserLogin();
 
                 List<User> founderUsers = retrieveUserList(client, founderLogin);
                 User founderUser = founderUsers.getFirst();

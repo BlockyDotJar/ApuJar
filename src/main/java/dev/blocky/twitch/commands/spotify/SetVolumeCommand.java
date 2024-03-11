@@ -20,6 +20,7 @@ package dev.blocky.twitch.commands.spotify;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -38,54 +39,59 @@ public class SetVolumeCommand implements ICommand
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
-        EventUser user = event.getUser();
 
-        String[] msgParts = event.getMessage().split(" ");
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
 
-        if (msgParts.length == 1)
+        EventUser eventUser = event.getUser();
+        String eventUserName = eventUser.getName();
+        String eventUserID = eventUser.getId();
+        int eventUserIID = Integer.parseInt(eventUserID);
+
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsMan Please specify a number to set the volume to.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a number.");
             return;
         }
 
-        if (!msgParts[1].matches("^(-)?\\d+$"))
+        String volumeValue = messageParts[1];
+
+        if (!volumeValue.matches("^\\d{1,3}$"))
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsDankMan Your specified volume is not a number.");
+            chat.sendMessage(channelName, "FeelsDankMan Your specified volume isn't a number.");
             return;
         }
 
-        int volume = Integer.parseInt(msgParts[1]);
+        int volume = Integer.parseInt(volumeValue);
 
         if (volume < 0 || volume > 100)
         {
-            chat.sendMessage(event.getChannel().getName(), "FeelsDankMan Number can't be under 0 and over 100.");
+            chat.sendMessage(channelName, "FeelsDankMan Number can't be under 0 and over 100.");
             return;
         }
 
-        int userID = Integer.parseInt(user.getId());
+        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
 
-        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
-
-        if (!spotifyUserIDs.contains(userID))
+        if (!spotifyUserIIDs.contains(eventUserIID))
         {
-            chat.sendMessage(event.getChannel().getName(), STR."ManFeels No user called '\{user.getName()}' found in Spotify credential database. Sign in here TriHard https://blockydotjar.github.io/ApuJar-Website/oauth2/spotify.html");
+            chat.sendMessage(channelName, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
-        SpotifyApi spotifyApi = SpotifyUtils.getSpotifyAPI(userID);
+        SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
 
-        GetUsersAvailableDevicesRequest devicesRequest = spotifyApi.getUsersAvailableDevices().build();
-        Device[] devices = devicesRequest.execute();
+        GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = deviceRequest.execute();
 
         if (devices.length == 0)
         {
-            chat.sendMessage(event.getChannel().getName(), STR."AlienUnpleased \{user.getName()} you aren't listening to a song.");
+            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
         }
 
-        SetVolumeForUsersPlaybackRequest volumeRequest = spotifyApi.setVolumeForUsersPlayback(volume).build();
+        SetVolumeForUsersPlaybackRequest volumeRequest = spotifyAPI.setVolumeForUsersPlayback(volume).build();
         volumeRequest.execute();
 
-        chat.sendMessage(event.getChannel().getName(), STR."pepeBASS \{user.getName()} set his/her volume to \{volume}% WAYTOODANK");
+        chat.sendMessage(channelName, STR."pepeBASS \{eventUserName} set his/her volume to \{volume}% WAYTOODANK");
     }
 }

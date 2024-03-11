@@ -63,8 +63,8 @@ public class GlobalBadgeCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
-        ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getBadges();
+        String userDisplayName = ivrUser.getUserDisplayName();
+        ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getUserBadges();
 
         if (ivrUserBadges.isEmpty())
         {
@@ -73,10 +73,10 @@ public class GlobalBadgeCommand implements ICommand
         }
 
         IVRUserBadge ivrUserBadge = ivrUserBadges.getFirst();
-        String ivrUserBadgeTitle = ivrUserBadge.getTitle();
+        String ivrUserBadgeName = ivrUserBadge.getBadgeName();
 
         channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."GivePLZ \{userDisplayName} currently has equipped the \{ivrUserBadgeTitle} badge.");
+        chat.sendMessage(channelName, STR."GivePLZ \{userDisplayName} currently has equipped the \{ivrUserBadgeName} badge.");
     }
 }

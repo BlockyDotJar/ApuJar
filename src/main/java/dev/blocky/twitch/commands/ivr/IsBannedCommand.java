@@ -64,11 +64,11 @@ public class IsBannedCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
+        String userDisplayName = ivrUser.getUserDisplayName();
 
         if (!ivrUser.isBanned())
         {
-            chat.sendMessage(channelName, STR."Saved \{userDisplayName} is not banned from Twitch at the moment.");
+            chat.sendMessage(channelName, STR."Saved \{userDisplayName} isn't banned from Twitch at the moment.");
             return;
         }
 

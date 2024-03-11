@@ -23,13 +23,13 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class IVRUserRoles
 {
     @SerializedName("isAffiliate")
-    public boolean isAffiliate;
+    boolean isAffiliate;
 
     @SerializedName("isPartner")
-    public boolean isPartner;
+    boolean isPartner;
 
     @SerializedName("isStaff")
-    public boolean isStaff;
+    boolean isStaff;
 
     @NonNull
     public boolean isAffiliate()

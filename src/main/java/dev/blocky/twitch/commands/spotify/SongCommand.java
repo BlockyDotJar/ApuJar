@@ -36,13 +36,15 @@ import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTra
 import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 
 import java.text.DecimalFormat;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
+import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class CurrentSongCommand implements ICommand
+public class SongCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -54,10 +56,7 @@ public class CurrentSongCommand implements ICommand
 
         EventUser eventUser = event.getUser();
 
-        String message = event.getMessage();
-        String[] msgParts = message.split(" ");
-
-        String userToGetSongFrom = getUserAsString(msgParts, eventUser);
+        String userToGetSongFrom = getUserAsString(messageParts, eventUser);
 
         if (!isValidUsername(userToGetSongFrom))
         {
@@ -65,73 +64,85 @@ public class CurrentSongCommand implements ICommand
             return;
         }
 
-        List<User> users = retrieveUserList(client, userToGetSongFrom);
+        List<User> usersToGetSongFrom = retrieveUserList(client, userToGetSongFrom);
 
-        if (users.isEmpty())
+        if (usersToGetSongFrom.isEmpty())
         {
             chat.sendMessage(channelName, STR.":| No user called '\{userToGetSongFrom}' found.");
             return;
         }
 
-        User user = users.getFirst();
-        String displayName = user.getDisplayName();
+        User user = usersToGetSongFrom.getFirst();
+        String userDisplayName = user.getDisplayName();
         String userID = user.getId();
-        int id = Integer.parseInt(userID);
+        int userIID = Integer.parseInt(userID);
 
-        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
+        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
 
-        if (!spotifyUserIDs.contains(id))
+        if (!spotifyUserIIDs.contains(userIID))
         {
-            chat.sendMessage(channelName, STR."ManFeels No user called '\{displayName}' found in Spotify credential database. Sign in here TriHard https://blockydotjar.github.io/ApuJar-Website/oauth2/spotify.html");
+            chat.sendMessage(channelName, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
-        SpotifyApi spotifyApi = SpotifyUtils.getSpotifyAPI(id);
+        SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
 
-        GetUsersCurrentlyPlayingTrackRequest currentSongRequest = spotifyApi.getUsersCurrentlyPlayingTrack().build();
-        CurrentlyPlaying currentSong = currentSongRequest.execute();
+        GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
+        CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
 
-        if (currentSong == null)
+        if (currentlyPlaying == null)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{displayName} is not listening to a song.");
+            chat.sendMessage(channelName, STR."AlienUnpleased \{userDisplayName} isn't listening to a song.");
             return;
         }
 
-        IPlaylistItem playlistItem = currentSong.getItem();
+        IPlaylistItem playlistItem = currentlyPlaying.getItem();
         String itemName = playlistItem.getName();
         String itemID = playlistItem.getId();
 
-        GetTrackRequest trackRequest = spotifyApi.getTrack(itemID).build();
+        GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
         Track track = trackRequest.execute();
         String trackID = track.getId();
 
-        CharSequence[] artistsArray = Arrays.stream(track.getArtists()).map(ArtistSimplified::getName).toArray(CharSequence[]::new);
-        String artists = String.join(", ", artistsArray);
+        ArtistSimplified[] artistsSimplified = track.getArtists();
+
+        CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
+                .map(ArtistSimplified::getName)
+                .toArray(CharSequence[]::new);
+
+        String artists = String.join(", ", artistsRaw);
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
 
-        int progressMs = currentSong.getProgress_ms();
-        int progessS = (progressMs / 1000) % 60;
-        int progessM = (progressMs / 1000) / 60;
+        int PMS = currentlyPlaying.getProgress_ms();
+        int DMS = playlistItem.getDurationMs();
 
-        String progressSeconds = decimalFormat.format(progessS);
-        String progressMinutes = decimalFormat.format(progessM);
+        Duration progressDuration = Duration.ofMillis(PMS);
+        Duration duration = Duration.ofMillis(DMS);
 
-        int durationMs = playlistItem.getDurationMs();
-        int durationS = (durationMs / 1000) % 60;
-        int durationM = (durationMs / 1000) / 60;
+        int PSS = progressDuration.toSecondsPart();
+        long PMM = progressDuration.toMinutes();
 
-        String durationSeconds = decimalFormat.format(durationS);
-        String durationMinutes = decimalFormat.format(durationM);
+        int DSS = duration.toSecondsPart();
+        long DMM = duration.toMinutes();
 
-        String song = STR."\{displayName} is currently listening to '\{itemName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+        String progressSeconds = decimalFormat.format(PSS);
+        String progressMinutes = decimalFormat.format(PMM);
 
-        if (!currentSong.getIs_playing())
+        String durationSeconds = decimalFormat.format(DSS);
+        String durationMinutes = decimalFormat.format(DMM);
+
+        String messageToSend = STR."\{userDisplayName} is currently listening to '\{itemName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+
+        String beginEmote = "lebronJAM";
+
+        if (!currentlyPlaying.getIs_playing())
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{song}");
-            return;
+            beginEmote = "AlienUnpleased";
         }
 
-        chat.sendMessage(channelName, STR."lebronJAM \{song}");
+        channelName = getActualChannel(channelToSend, channelName);
+
+        chat.sendMessage(channelName, STR."\{beginEmote} \{messageToSend}");
     }
 }

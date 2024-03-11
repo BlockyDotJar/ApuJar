@@ -62,12 +62,12 @@ public class IsPartnerCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String ivrUserDisplayName = ivrUser.getDisplayName();
-        IVRUserRoles ivrUserRoles = ivrUser.getRoles();
+        String ivrUserDisplayName = ivrUser.getUserDisplayName();
+        IVRUserRoles ivrUserRoles = ivrUser.getUserRoles();
 
         if (!ivrUserRoles.isPartner())
         {
-            chat.sendMessage(channelName, STR."Sadge \{ivrUserDisplayName} is not a Twitch partner at the moment.");
+            chat.sendMessage(channelName, STR."Sadge \{ivrUserDisplayName} isn't a Twitch partner at the moment.");
             return;
         }
 

@@ -19,24 +19,20 @@ package dev.blocky.twitch.manager;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
-import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.sql.SQLException;
 import java.util.HashSet;
-import java.util.List;
-
-import static dev.blocky.twitch.utils.TwitchUtils.retrieveUserListByID;
 
 public class TwitchConfigurator
 {
-    private final HashSet<Integer> openedChatIDs;
+    private final HashSet<String> chatLogins;
     private final TwitchClient client;
 
     public TwitchConfigurator(@NonNull TwitchClient client) throws SQLException
     {
-        this.openedChatIDs = SQLUtils.getOpenedChatIDs();
+        this.chatLogins = SQLUtils.getChatLogins();
         this.client = client;
     }
 
@@ -48,22 +44,17 @@ public class TwitchConfigurator
 
         int chatCount = 1;
 
-        for (int openedChatID : openedChatIDs)
+        for (String chatLogin : chatLogins)
         {
-            List<User> chatsToOpen = retrieveUserListByID(client, openedChatID);
-            User user = chatsToOpen.getFirst();
-            String userDisplayName = user.getDisplayName();
-            String userLogin = user.getLogin();
-
             try
             {
-                chat.joinChannel(userLogin);
+                chat.joinChannel(chatLogin);
                 chatCount++;
             }
             catch (Exception e)
             {
                 String error = e.getMessage();
-                chat.sendMessage("ApuJar", STR."Weird Error while trying to connect to \{userDisplayName}'s chat FeelsGoodMan \{error}");
+                chat.sendMessage("ApuJar", STR."Weird Error while trying to connect to \{chatLogin}'s chat FeelsGoodMan \{error}");
 
                 e.printStackTrace();
             }

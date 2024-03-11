@@ -17,11 +17,13 @@
  */
 package dev.blocky.api.entities.seventv;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 public enum SevenTVEmoteChangeAction
 {
     ADD("ADD"), REMOVE("REMOVE"), UPDATE("UPDATE");
 
-    SevenTVEmoteChangeAction(String action)
+    SevenTVEmoteChangeAction(@NonNull String action)
     {
     }
 }

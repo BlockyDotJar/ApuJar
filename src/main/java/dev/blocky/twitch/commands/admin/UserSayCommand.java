@@ -104,7 +104,7 @@ public class UserSayCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't a broadcaster or moderator.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
                 return;
             }
 
@@ -121,35 +121,40 @@ public class UserSayCommand implements ICommand
         String actualPrefix = SQLUtils.getActualPrefix(userID);
         int prefixLength = actualPrefix.length();
 
-        String command = messageParts[2].substring(prefixLength);
+        String command = messageParts[2];
 
-        for (Map.Entry<List<String>, ICommand> entry : entries)
+        if (command.length() > prefixLength)
         {
-            List<String> commandsAndAliases = entry.getKey();
-            ICommand commandOrAlias = entry.getValue();
+            command = command.substring(prefixLength);
 
-            if (commandsAndAliases.contains(command))
+            for (Map.Entry<List<String>, ICommand> entry : entries)
             {
-                HashSet<String> adminCommands = SQLUtils.getAdminCommands();
-                HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
+                List<String> commandsAndAliases = entry.getKey();
+                ICommand commandOrAlias = entry.getValue();
 
-                if (adminCommands.contains(command) || ownerCommands.contains(command))
+                if (commandsAndAliases.contains(command))
                 {
-                    chat.sendMessage(channelName, "4Head Admin or owner commands aren't allowed to use here :P");
+                    HashSet<String> adminCommands = SQLUtils.getAdminCommands();
+                    HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
+
+                    if (adminCommands.contains(command) || ownerCommands.contains(command))
+                    {
+                        chat.sendMessage(channelName, "4Head Admin or owner commands aren't allowed to use here :P");
+                        return;
+                    }
+
+                    channelToSend = userLogin;
+
+                    String message = messageToSend.substring(prefixLength);
+
+                    prefixedMessageParts = messageToSend.split(" ");
+                    messageParts = message.split(" ");
+
+                    commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
+
+                    channelToSend = null;
                     return;
                 }
-
-                channelToSend = userLogin;
-
-                String message = messageToSend.substring(prefixLength);
-
-                prefixedMessageParts = messageToSend.split(" ");
-                messageParts = message.split(" ");
-
-                commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
-
-                channelToSend = null;
-                return;
             }
         }
 

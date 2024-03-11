@@ -25,13 +25,13 @@ import java.util.ArrayList;
 public class IVR
 {
     @SerializedName("mods")
-    public ArrayList<IVRModVIP> mods;
+    ArrayList<IVRModVIP> mods;
 
     @SerializedName("vips")
-    public ArrayList<IVRModVIP> vips;
+    ArrayList<IVRModVIP> vips;
 
     @SerializedName("founders")
-    public ArrayList<IVRFounder> founders;
+    ArrayList<IVRFounder> founders;
 
     @Nullable
     public ArrayList<IVRModVIP> getMods()

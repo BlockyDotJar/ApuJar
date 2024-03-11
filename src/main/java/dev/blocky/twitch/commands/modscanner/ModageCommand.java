@@ -102,7 +102,7 @@ public class ModageCommand implements ICommand
 
         for (IVRModVIP ivrModVIP : ivr.getMods())
         {
-            String modLogin = ivrModVIP.getLogin();
+            String modLogin = ivrModVIP.getUserLogin();
 
             if (!modLogin.equals(userLogin))
             {
@@ -118,7 +118,7 @@ public class ModageCommand implements ICommand
 
         for (ModScannerUser msUser : modScanner.getChannelModerators())
         {
-            String modLogin = msUser.getLogin();
+            String modLogin = msUser.getUserLogin();
 
             if (!modLogin.equals(userLogin))
             {
@@ -134,7 +134,7 @@ public class ModageCommand implements ICommand
 
         if (!hasModeratorPerms)
         {
-            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} is not mod in \{secondUserDisplayName}'s chat at the moment.");
+            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} isn't mod in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 

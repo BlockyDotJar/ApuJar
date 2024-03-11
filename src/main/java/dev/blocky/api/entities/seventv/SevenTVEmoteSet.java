@@ -23,12 +23,12 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 public class SevenTVEmoteSet
 {
     @SerializedName("id")
-    String id;
+    String emoteSetID;
 
     @Nullable
-    public String getID()
+    public String getEmoteSetID()
     {
-        return id;
+        return emoteSetID;
     }
 
     SevenTVEmoteSet()

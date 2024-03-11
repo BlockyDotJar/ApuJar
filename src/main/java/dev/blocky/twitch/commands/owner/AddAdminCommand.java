@@ -66,6 +66,7 @@ public class AddAdminCommand implements ICommand
 
         User user = chatsToPromote.getFirst();
         String userID = user.getId();
+        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
         int userIID = Integer.parseInt(userID);
 
@@ -78,7 +79,7 @@ public class AddAdminCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."INSERT INTO admins(userID, isOwner) VALUES(\{userID}, FALSE)");
+        SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, \{userLogin}, FALSE)");
 
         chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
     }

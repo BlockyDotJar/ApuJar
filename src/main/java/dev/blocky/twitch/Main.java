@@ -30,9 +30,11 @@ import com.github.twitch4j.common.exception.UnauthorizedException;
 import com.github.twitch4j.common.util.ThreadUtils;
 import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.manager.TwitchConfigurator;
+import dev.blocky.twitch.scheduler.InformationMessageScheduler;
 import dev.blocky.twitch.sql.SQLite;
-import dev.blocky.twitch.timer.BotAdditionAndPartageTimer;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import io.github.cdimascio.dotenv.Dotenv;
+import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,17 +59,19 @@ public class Main
 
     public static String sevenTVAccessToken;
 
-    public static void main(String[] args) throws SQLException
+    public static void main(String[] args) throws SQLException, SchedulerException
     {
         startedAt = System.currentTimeMillis();
         new Main();
     }
 
-    public Main() throws SQLException
+    public Main() throws SQLException, SchedulerException
     {
         SQLite.connect().initDatabase();
 
-        Dotenv env = Dotenv.configure().filename(".twitch").load();
+        Dotenv env = Dotenv.configure()
+                .filename(".twitch")
+                .load();
 
         String clientID = env.get("CLIENT_ID");
         String accessToken = env.get("ACCESS_TOKEN");
@@ -168,7 +172,7 @@ public class Main
         SimpleEventHandler eventHandler = eventManager.getEventHandler(SimpleEventHandler.class);
         new CommandManager(eventHandler, client);
 
-        new BotAdditionAndPartageTimer(client);
+        new InformationMessageScheduler();
 
         cli();
     }
@@ -183,10 +187,11 @@ public class Main
                 BufferedReader reader = new BufferedReader(streamReader);
 
                 TwitchChat chat = client.getChat();
-                String line = reader.readLine();
 
                 while (true)
                 {
+                    String line = reader.readLine();
+
                     if (line.equalsIgnoreCase("exit"))
                     {
                         chat.sendMessage("ApuJar", "ManFeels Preparing to shutdown...");
@@ -222,8 +227,6 @@ public class Main
 
                         chat.sendMessage("ApuJar", "GigaSignal Successfully reconncted to Twitch websocket...");
                     }
-
-                    line = "";
                 }
             }
             catch (IOException | InterruptedException | SQLException e)
@@ -231,6 +234,12 @@ public class Main
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    @Nullable
+    public static TwitchClient getTwitchClient()
+    {
+        return client;
     }
 
     public static long getStartedAt()

@@ -18,54 +18,61 @@
 package dev.blocky.api.entities.modscanner;
 
 import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.ArrayList;
 
 public class ModScanner
 {
     @SerializedName("moderating")
-    public final ArrayList<ModScannerUser> moderating = new ArrayList<>();
+    ArrayList<ModScannerUser> moderating;
 
     @SerializedName("viping")
-    public final ArrayList<ModScannerUser> viping = new ArrayList<>();
+    ArrayList<ModScannerUser> viping;
 
     @SerializedName("founding")
-    public final ArrayList<ModScannerUser> founding = new ArrayList<>();
+    ArrayList<ModScannerUser> founding;
 
     @SerializedName("moderators")
-    public final ArrayList<ModScannerUser> moderators = new ArrayList<>();
+    ArrayList<ModScannerUser> moderators;
 
     @SerializedName("vips")
-    public final ArrayList<ModScannerUser> vips = new ArrayList<>();
+    ArrayList<ModScannerUser> vips;
 
     @SerializedName("founders")
-    public final ArrayList<ModScannerUser> founders = new ArrayList<>();
+    ArrayList<ModScannerUser> founders;
 
+    @Nullable
     public ArrayList<ModScannerUser> getChannelModerators()
     {
         return moderators;
     }
 
+    @Nullable
     public ArrayList<ModScannerUser> getChannelVIPs()
     {
         return vips;
     }
 
+    @Nullable
     public ArrayList<ModScannerUser> getChannelFounders()
     {
         return founders;
     }
 
+    @Nullable
     public ArrayList<ModScannerUser> getUserModerators()
     {
         return moderating;
     }
 
+    @Nullable
     public ArrayList<ModScannerUser> getUserVIPs()
     {
         return viping;
     }
 
+    @Nullable
     public ArrayList<ModScannerUser> getUserFounders()
     {
         return founding;

@@ -81,30 +81,30 @@ public class SubageCommand implements ICommand
 
         if (secondUserBroadcasterType.isEmpty())
         {
-            chat.sendMessage(channelName, STR."ManFeels \{secondUserDisplayName} is not even an affiliate or partner.");
+            chat.sendMessage(channelName, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
             return;
         }
 
         IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userDisplayName, secondUserLogin);
-        IVRSubageCumulative ivrSubageCumulative = ivrSubage.getCumulative();
-        IVRSubageMeta ivrSubageMeta = ivrSubage.getMeta();
+        IVRSubageCumulative ivrCumulativeSubage = ivrSubage.getCumulativeSubage();
+        IVRSubageMeta ivrSubageMeta = ivrSubage.getSubageMeta();
 
-        int cumulativeMonths = ivrSubageCumulative.getMonths();
+        int cumulativeSubMonths = ivrCumulativeSubage.getSubMonths();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
         if (ivrSubageMeta == null)
         {
-            String messageToSend = STR."Bad \{userDisplayName} is not subscribing to \{secondUserDisplayName} at the moment NotLikeThis";
+            String messageToSend = STR."Bad \{userDisplayName} isn't subscribing to \{secondUserDisplayName} at the moment NotLikeThis";
 
-            if (ivrSubageCumulative != null)
+            if (ivrCumulativeSubage != null)
             {
-                Date end = ivrSubageCumulative.getEnd();
-                String readableEnd = formatter.format(end);
+                Date subEnd = ivrCumulativeSubage.getSubEnd();
+                String readableEnd = formatter.format(subEnd);
 
-                messageToSend = STR."\{messageToSend} (Subscribed for \{cumulativeMonths} month";
+                messageToSend = STR."\{messageToSend} (Subscribed for \{cumulativeSubMonths} month";
 
-                if (cumulativeMonths > 1)
+                if (cumulativeSubMonths > 1)
                 {
                     messageToSend = STR."\{messageToSend}s";
                 }
@@ -119,34 +119,34 @@ public class SubageCommand implements ICommand
         Date endsAt = ivrSubageMeta.getEndsAt();
         String readableEndsAt = formatter.format(endsAt);
 
-        String type = ivrSubageMeta.getType();
-        int tier = ivrSubageMeta.getTier();
+        String subType = ivrSubageMeta.getSubType();
+        int subTier = ivrSubageMeta.getSubTier();
 
         String messageToSend = STR."Strong \{userDisplayName} is subscribing to \{secondUserDisplayName}";
 
-        if (type.equals("paid"))
+        if (subType.equals("paid"))
         {
-            messageToSend = STR."\{messageToSend} with a tier \{tier} sub";
+            messageToSend = STR."\{messageToSend} with a tier \{subTier} sub";
         }
 
-        messageToSend = STR."\{messageToSend} since \{cumulativeMonths} month";
+        messageToSend = STR."\{messageToSend} since \{cumulativeSubMonths} month";
 
-        if (cumulativeMonths > 1)
+        if (cumulativeSubMonths > 1)
         {
             messageToSend = STR."\{messageToSend}s";
         }
 
         messageToSend = STR."\{messageToSend} (Ends: \{readableEndsAt}";
 
-        IVRSubageStreak ivrSubageStreak = ivrSubage.getStreak();
+        IVRSubageStreak ivrSubageStreak = ivrSubage.getSubageStreak();
 
         if (ivrSubageStreak != null)
         {
-            int streakMonths = ivrSubageStreak.getMonths();
+            int subStreakMonths = ivrSubageStreak.getSubStreakMonths();
 
-            messageToSend = STR."\{messageToSend}, Streak: \{streakMonths} month";
+            messageToSend = STR."\{messageToSend}, Streak: \{subStreakMonths} month";
 
-            if (streakMonths > 1)
+            if (subStreakMonths > 1)
             {
                 messageToSend = STR."\{messageToSend}s";
             }
@@ -162,16 +162,16 @@ public class SubageCommand implements ICommand
 
         messageToSend = STR."\{messageToSend})";
 
-        if (type.equals("gift"))
+        if (subType.equals("gift"))
         {
-            IVRSubageGiftMeta ivrSubageGiftMeta = ivrSubageMeta.getGiftMeta();
-            IVRSubageGifter ivrSubageGifter = ivrSubageGiftMeta.getGifter();
-            String gifterDisplayName = ivrSubageGifter.getDisplayName();
+            IVRSubageGiftMeta ivrSubGiftMeta = ivrSubageMeta.getSubGiftMeta();
+            IVRSubageGifter ivrSubGifter = ivrSubGiftMeta.getSubGifter();
+            String gifterDisplayName = ivrSubGifter.getUserDisplayName();
 
-            Date giftDate = ivrSubageGiftMeta.getGiftDate();
+            Date giftDate = ivrSubGiftMeta.getGiftDate();
             String readableGiftDate = formatter.format(giftDate);
 
-            messageToSend = STR."\{messageToSend} \{gifterDisplayName} was so nice and gifted a tier \{tier} sub to \{userDisplayName} on \{readableGiftDate}";
+            messageToSend = STR."\{messageToSend} \{gifterDisplayName} was so nice and gifted a tier \{subTier} sub to \{userDisplayName} on \{readableGiftDate}";
         }
 
         channelName = getActualChannel(channelToSend, channelName);

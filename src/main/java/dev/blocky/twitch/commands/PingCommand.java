@@ -38,6 +38,7 @@ public class PingCommand implements ICommand
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
+
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
 
@@ -54,8 +55,8 @@ public class PingCommand implements ICommand
 
         long ping = chat.getLatency();
 
-        HashSet<Integer> openedChatIDs = SQLUtils.getOpenedChatIDs();
-        int realChats = openedChatIDs.size() + 1;
+        HashSet<String> chatLogins = SQLUtils.getChatLogins();
+        int realChats = chatLogins.size() + 1;
 
         String messageToSend = STR."ppPong Chat-Ping: \{ping}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
         channelName = getActualChannel(channelToSend, channelName);

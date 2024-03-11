@@ -62,12 +62,12 @@ public class IsAffiliateCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
-        IVRUserRoles ivrUserRoles = ivrUser.getRoles();
+        String userDisplayName = ivrUser.getUserDisplayName();
+        IVRUserRoles ivrUserRoles = ivrUser.getUserRoles();
 
         if (!ivrUserRoles.isAffiliate())
         {
-            chat.sendMessage(channelName, STR."Sadge \{userDisplayName} is not a Twitch affiliate at the moment.");
+            chat.sendMessage(channelName, STR."Sadge \{userDisplayName} isn't a Twitch affiliate at the moment.");
             return;
         }
 

@@ -64,7 +64,7 @@ public class LastStreamCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String ivrUserDisplayName = ivrUser.getDisplayName();
+        String ivrUserDisplayName = ivrUser.getUserDisplayName();
         IVRUserStream ivrUserStream = ivrUser.getLastBroadcast();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");

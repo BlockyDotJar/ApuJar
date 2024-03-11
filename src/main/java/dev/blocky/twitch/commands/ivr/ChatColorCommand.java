@@ -61,8 +61,8 @@ public class ChatColorCommand implements ICommand
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getDisplayName();
-        String userChatColor = ivrUser.getChatColor() == null ? "#FFFFFF" : ivrUser.getChatColor();
+        String userDisplayName = ivrUser.getUserDisplayName();
+        String userChatColor = ivrUser.getUserChatColor() == null ? "#FFFFFF" : ivrUser.getUserChatColor();
 
         channelName = getActualChannel(channelToSend, channelName);
 

@@ -27,44 +27,44 @@ import java.util.Date;
 public class IVRUser
 {
     @SerializedName("banned")
-    public boolean banned;
+    boolean isBanned;
 
     @SerializedName("banReason")
-    public String banReason;
+    String banReason;
 
     @SerializedName("displayName")
-    public String displayName;
+    String userDisplayName;
 
     @SerializedName("login")
-    public String login;
+    String userLogin;
 
     @SerializedName("id")
-    public String id;
+    String userID;
 
     @SerializedName("followers")
-    public int followers;
+    int userFollowers;
 
     @SerializedName("chatColor")
-    public String chatColor;
+    String userChatColor;
 
     @SerializedName("createdAt")
-    public Date createdAt;
+    Date createdAt;
 
     @SerializedName("roles")
-    public IVRUserRoles roles;
+    IVRUserRoles userRoles;
 
     @SerializedName("badges")
-    public ArrayList<IVRUserBadge> badges;
+    ArrayList<IVRUserBadge> userBadges;
 
     @SerializedName("chatterCount")
-    public int chatterCount;
+    int chatterCount;
 
     @SerializedName("lastBroadcast")
-    public IVRUserStream lastBroadcast;
+    IVRUserStream lastBroadcast;
 
     public boolean isBanned()
     {
-        return banned;
+        return isBanned;
     }
 
     @Nullable
@@ -74,32 +74,32 @@ public class IVRUser
     }
 
     @NonNull
-    public String getDisplayName()
+    public String getUserDisplayName()
     {
-        return displayName;
+        return userDisplayName;
     }
 
     @NonNull
-    public String getLogin()
+    public String getUserLogin()
     {
-        return login;
+        return userLogin;
     }
 
     @NonNull
-    public String getId()
+    public String getUserID()
     {
-        return id;
+        return userID;
     }
 
-    public int getFollowers()
+    public int getUserFollowers()
     {
-        return followers;
+        return userFollowers;
     }
 
     @Nullable
-    public String getChatColor()
+    public String getUserChatColor()
     {
-        return chatColor;
+        return userChatColor;
     }
 
     @NonNull
@@ -109,15 +109,15 @@ public class IVRUser
     }
 
     @NonNull
-    public IVRUserRoles getRoles()
+    public IVRUserRoles getUserRoles()
     {
-        return roles;
+        return userRoles;
     }
 
     @Nullable
-    public ArrayList<IVRUserBadge> getBadges()
+    public ArrayList<IVRUserBadge> getUserBadges()
     {
-        return badges;
+        return userBadges;
     }
 
     public int getChatterCount()

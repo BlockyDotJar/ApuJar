@@ -25,16 +25,16 @@ import java.util.Date;
 public class IVRSubage
 {
     @SerializedName("followedAt")
-    public Date followedAt;
+    Date followedAt;
 
     @SerializedName("streak")
-    public IVRSubageStreak streak;
+    IVRSubageStreak subageStreak;
 
     @SerializedName("cumulative")
-    public IVRSubageCumulative cumulative;
+    IVRSubageCumulative cumulativeSubage;
 
     @SerializedName("meta")
-    public IVRSubageMeta meta;
+    IVRSubageMeta subageMeta;
 
     @Nullable
     public Date getFollowedAt()
@@ -43,21 +43,21 @@ public class IVRSubage
     }
 
     @Nullable
-    public IVRSubageStreak getStreak()
+    public IVRSubageStreak getSubageStreak()
     {
-        return streak;
+        return subageStreak;
     }
 
     @Nullable
-    public IVRSubageCumulative getCumulative()
+    public IVRSubageCumulative getCumulativeSubage()
     {
-        return cumulative;
+        return cumulativeSubage;
     }
 
     @Nullable
-    public IVRSubageMeta getMeta()
+    public IVRSubageMeta getSubageMeta()
     {
-        return meta;
+        return subageMeta;
     }
 
     IVRSubage()

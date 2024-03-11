@@ -25,13 +25,13 @@ import java.util.Date;
 public class IVRFounder
 {
     @SerializedName("isSubscribed")
-    public boolean isSubscribed;
+    boolean isSubscribed;
 
     @SerializedName("entitlementStarted")
-    public Date entitlementStarted;
+    Date entitlementStarted;
 
     @SerializedName("login")
-    public String login;
+    String userLogin;
 
     public boolean isSubscribed()
     {
@@ -45,9 +45,9 @@ public class IVRFounder
     }
 
     @NonNull
-    public String getLogin()
+    public String getUserLogin()
     {
-        return login;
+        return userLogin;
     }
 
     IVRFounder()

@@ -66,6 +66,7 @@ public class AddOwnerCommand implements ICommand
 
         User user = chatsToPromote.getFirst();
         String userID = user.getId();
+        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
         int userIID = Integer.parseInt(userID);
 
@@ -87,7 +88,7 @@ public class AddOwnerCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."INSERT INTO admins(userID, isOwner) VALUES(\{userID}, TRUE)");
+        SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', TRUE)");
 
         chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
     }
