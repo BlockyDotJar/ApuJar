@@ -34,6 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.utils.ModScannerFlags.*;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class FounderLookupCommand implements ICommand
@@ -48,7 +49,7 @@ public class FounderLookupCommand implements ICommand
 
         EventUser eventUser = event.getUser();
 
-        String userToLookup = getParameterUserAsString(messageParts, eventUser);
+        String userToLookup = getParameterUserAsString(messageParts, "-ch(annel)?", eventUser);
 
         if (!isValidUsername(userToLookup))
         {
@@ -79,7 +80,10 @@ public class FounderLookupCommand implements ICommand
 
         String messageToSend = null;
 
-        if (Arrays.stream(messageParts).noneMatch("-channel"::equalsIgnoreCase) && Arrays.stream(messageParts).noneMatch("-ch"::equalsIgnoreCase))
+        boolean hasChannelParameter = Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase);
+        boolean hasChParameter = Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase);
+
+        if (!hasChannelParameter && !hasChParameter)
         {
             ModScanner modScanner = ServiceProvider.getModScannerUser(userToLookup);
 
@@ -93,25 +97,19 @@ public class FounderLookupCommand implements ICommand
             {
                 follower += msUser.getUserFollowers();
 
-                String founderLogin = msUser.getUserLogin();
+                int flags = msUser.getFlags();
 
-                List<User> founderUsers = retrieveUserList(client, founderLogin);
-                User founderUser = founderUsers.getFirst();
-
-                String broadcasterType = founderUser.getBroadcasterType();
-                String type = user.getType();
-
-                if (broadcasterType.equals("affiliate"))
+                if (TWITCH_AFFILIATE.isInFlag(flags))
                 {
                     affiliateCount += 1;
                 }
 
-                if (broadcasterType.equals("partner"))
+                if (TWITCH_PARTNER.isInFlag(flags))
                 {
                     partnerCount += 1;
                 }
 
-                if (type.equals("staff"))
+                if (TWITCH_STAFF.isInFlag(flags))
                 {
                     staffCount += 1;
                 }
@@ -123,7 +121,7 @@ public class FounderLookupCommand implements ICommand
             messageToSend = STR."PogChamp \{userDisplayName} is founder in \{founderCount} channel! (Affiliate: \{affiliateCount}, Partner: \{partnerCount}, Staff: \{staffCount}, Follower: \{followerCount}) o_O https://mod.sc/\{userLogin}";
         }
 
-        if (Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase) || Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase))
+        if (hasChannelParameter || hasChParameter)
         {
             ModScanner modScanner = ServiceProvider.getModScannerChannel(userToLookup);
 
@@ -137,25 +135,19 @@ public class FounderLookupCommand implements ICommand
             {
                 follower += msUser.getUserFollowers();
 
-                String founderLogin = msUser.getUserLogin();
+                int flags = msUser.getFlags();
 
-                List<User> founderUsers = retrieveUserList(client, founderLogin);
-                User founderUser = founderUsers.getFirst();
-
-                String broadcasterType = founderUser.getBroadcasterType();
-                String type = user.getType();
-
-                if (broadcasterType.equals("affiliate"))
+                if (TWITCH_AFFILIATE.isInFlag(flags))
                 {
                     affiliateCount += 1;
                 }
 
-                if (broadcasterType.equals("partner"))
+                if (TWITCH_PARTNER.isInFlag(flags))
                 {
                     partnerCount += 1;
                 }
 
-                if (type.equals("staff"))
+                if (TWITCH_STAFF.isInFlag(flags))
                 {
                     staffCount += 1;
                 }
@@ -164,7 +156,7 @@ public class FounderLookupCommand implements ICommand
             String followerCount = decimalFormat.format(follower);
             int founderCount = modScanner.getChannelFounderCount();
 
-            messageToSend =  STR."PogChamp \{userDisplayName} has \{founderCount} founder! (Affiliate: \{affiliateCount}, Partner: \{partnerCount}, Staff: \{staffCount}, Follower: \{followerCount}) o_O https://mod.sc/channel/\{userDisplayName}";
+            messageToSend = STR."PogChamp \{userDisplayName} has \{founderCount} founder! (Affiliate: \{affiliateCount}, Partner: \{partnerCount}, Staff: \{staffCount}, Follower: \{followerCount}) o_O https://mod.sc/channel/\{userDisplayName}";
         }
 
         channelName = getActualChannel(channelToSend, channelName);

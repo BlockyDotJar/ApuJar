@@ -64,6 +64,7 @@ public class ChatIdentityCommand implements ICommand
         String userLogin = user.getLogin();
 
         String messageToSend = STR."CollectThemAll \{userDisplayName}'s badges and 7tv paints can be found and tested here PogU \uD83D\uDC49 https://vanity.zonian.dev/?u=\{userLogin}";
+
         channelName = getActualChannel(channelToSend, channelName);
 
         chat.sendMessage(channelName, messageToSend);

@@ -21,8 +21,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class OpenMeteoCurrentWeather
 {
-    @SerializedName("temperature")
+    @SerializedName("temperature_2m")
     float temperature;
+
+    @SerializedName("relative_humidity_2m")
+    int humidity;
 
     @SerializedName("apparent_temperature")
     float feelsLike;
@@ -30,14 +33,8 @@ public class OpenMeteoCurrentWeather
     @SerializedName("is_day")
     int isDay;
 
-    @SerializedName("precipitation")
-    float precipitation;
-
     @SerializedName("rain")
     float rain;
-
-    @SerializedName("showers")
-    float showers;
 
     @SerializedName("snowfall")
     float snowfall;
@@ -51,12 +48,14 @@ public class OpenMeteoCurrentWeather
     @SerializedName("wind_direction_10m")
     int windDirection;
 
-    @SerializedName("wind_gusts_10m")
-    float windGusts;
-
     public float getTemperature()
     {
         return temperature;
+    }
+
+    public int getHumidity()
+    {
+        return humidity;
     }
 
     public float getFeelsLike()
@@ -69,19 +68,9 @@ public class OpenMeteoCurrentWeather
         return isDay == 1;
     }
 
-    public float getPrecipitation()
-    {
-        return precipitation;
-    }
-
     public float getRain()
     {
         return rain;
-    }
-
-    public float getShowers()
-    {
-        return showers;
     }
 
     public float getSnowfall()
@@ -102,11 +91,6 @@ public class OpenMeteoCurrentWeather
     public int getWindDirection()
     {
         return windDirection;
-    }
-
-    public float getWindGusts()
-    {
-        return windGusts;
     }
 
     OpenMeteoCurrentWeather()

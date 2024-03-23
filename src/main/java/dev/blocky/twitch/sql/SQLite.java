@@ -83,6 +83,6 @@ public class SQLite
         onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken TEXT, refreshToken TEXT, expiresOn TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS eventNotifications(userID INTEGER, userLogin TEXT, enabled BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL)");
+        onUpdate("CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL, locationName TEXT, hideLocation BOOLEAN)");
     }
 }

@@ -21,18 +21,19 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
+import java.util.concurrent.TimeUnit;
 
-import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
+import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
 
-public class DeleteOwnerCommand implements ICommand
+public class GlobalSayCommand implements ICommand
 {
+    public static String channelToSend;
+
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
@@ -41,34 +42,30 @@ public class DeleteOwnerCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
 
-        EventUser eventUser = event.getUser();
-        String eventUserID = eventUser.getId();
-        int eventUserIID = Integer.parseInt(eventUserID);
-
-        if (eventUserIID != 755628467)
-        {
-            chat.sendMessage(channelName, "oop You are not my founder.");
-            return;
-        }
-
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            chat.sendMessage(channelName, "FeelsGoodMan Please specify a message.");
             return;
         }
 
-        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
+        String messageToSend = removeElements(messageParts, 1);
 
-        String ownerToDemote = getUserAsString(messageParts, 1);
-
-        if (!ownerLogins.contains(ownerToDemote))
+        if (messageToSend.startsWith("/"))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
+            chat.sendMessage(channelName, "4Head / (slash) commands are not allowed in global commands.");
             return;
         }
 
-        SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{ownerToDemote}'");
+        HashSet<String> chatLogins = SQLUtils.getChatLogins();
 
-        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
+        for (String chatLogin : chatLogins)
+        {
+            chat.sendMessage(chatLogin, messageToSend);
+            TimeUnit.MILLISECONDS.sleep(50);
+        }
+
+        int chats = chatLogins.size();
+
+        chat.sendMessage(channelName, STR."SeemsGood Successfully sent message in \{chats} chats.");
     }
 }

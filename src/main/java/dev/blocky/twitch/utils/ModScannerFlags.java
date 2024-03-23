@@ -15,17 +15,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.services;
+package dev.blocky.twitch.utils;
 
-import dev.blocky.api.entities.maps.GeocodeMaps;
-import retrofit2.Call;
-import retrofit2.http.GET;
-import retrofit2.http.Query;
-
-import java.util.List;
-
-public interface GeocodeMapsService
+public enum ModScannerFlags
 {
-    @GET("search")
-    Call<List<GeocodeMaps>> search(@Query("q") String query, @Query("api_key") String apiKey);
+    TWITCH_AFFILIATE(1 << 0), TWITCH_PARTNER(1 << 1), TWITCH_STAFF(1 << 2);
+
+    private final int flag;
+
+    ModScannerFlags(int flag)
+    {
+        this.flag = flag;
+    }
+
+    public boolean isInFlag(int flags)
+    {
+        return (flags & flag) == flag;
+    }
 }

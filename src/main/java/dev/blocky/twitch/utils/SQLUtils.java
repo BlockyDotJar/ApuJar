@@ -197,10 +197,50 @@ public class SQLUtils
         return getAll("SELECT * from eventNotifications WHERE enabled = TRUE", "userLogin", String.class);
     }
 
-    @NonNull
     public static boolean hasEnabledEventNotifications(int userID) throws SQLException
     {
         return get(STR."SELECT * from eventNotifications WHERE userID = \{userID}", "enabled", Boolean.class);
+    }
+
+    @NonNull
+    public static HashSet<Integer> getWeatherLocationUserIDs() throws SQLException
+    {
+        return getAll("SELECT * from weatherLocations", "userID", Integer.class);
+    }
+
+    public static double getLatitude(int userID) throws SQLException
+    {
+        String latitude = get(STR."SELECT * FROM weatherLocations WHERE userID = \{userID}", "latitude", String.class);
+
+        if (latitude == null)
+        {
+            return -1.0;
+        }
+
+        return Double.parseDouble(latitude);
+    }
+
+    public static double getLongitude(int userID) throws SQLException
+    {
+        String longitude = get(STR."SELECT * FROM weatherLocations WHERE userID = \{userID}", "longitude", String.class);
+
+        if (longitude == null)
+        {
+            return -1.0;
+        }
+
+        return Double.parseDouble(longitude);
+    }
+
+    @NonNull
+    public static String getLocationName(int userID) throws SQLException
+    {
+        return get(STR."SELECT * FROM weatherLocations WHERE userID = \{userID}", "locationName", String.class);
+    }
+
+    public static boolean hidesLocation(int userID) throws SQLException
+    {
+        return get(STR."SELECT * FROM weatherLocations WHERE userID = \{userID}", "hideLocation", Boolean.class);
     }
 
     @NonNull

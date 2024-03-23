@@ -22,26 +22,32 @@ import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
+import com.google.gson.JsonArray;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
-import se.michaelthelin.spotify.model_objects.IPlaylistItem;
-import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
+import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
-import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.SeekToPositionInCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.StartResumeUsersPlaybackRequest;
-import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
+import se.michaelthelin.spotify.requests.data.search.simplified.SearchTracksRequest;
 
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class ResumeCommand implements ICommand
+import static dev.blocky.twitch.utils.TwitchUtils.getParameterAsString;
+
+public class PlayCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -56,23 +62,45 @@ public class ResumeCommand implements ICommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
+        if (messageParts.length == 1)
+        {
+            chat.sendMessage(channelName, "FeelsMan Please specify a link or the id of the track.");
+            return;
+        }
+
+        List<String> progresses = Arrays.stream(messageParts).filter(part ->
+        {
+            Pattern SPOTIFY_TRACK_PATTERN = Pattern.compile("-p(rogress)?=(\\d{2}):(\\d{2})", Pattern.CASE_INSENSITIVE);
+            Matcher SPOTIFY_TRACK_MATCHER = SPOTIFY_TRACK_PATTERN.matcher(part);
+            return SPOTIFY_TRACK_MATCHER.find();
+        }).toList();
+
         boolean skipToPosition = false;
 
         String progressMinutes = "00";
         String progressSeconds = "00";
 
-        if (messageParts.length >= 2)
+        if (!progresses.isEmpty())
         {
-            String progressValue = messageParts[1];
+            String progressValueRaw = progresses.getFirst();
 
-            if (progressValue.matches("^\\d{1,2}:\\d{1,2}$"))
-            {
-                String[] progressParts = progressValue.split(":");
-                progressMinutes = progressParts[0];
-                progressSeconds = progressParts[1];
+            int equalSign = progressValueRaw.indexOf('=');
 
-                skipToPosition = true;
-            }
+            String progressValue = progressValueRaw.substring(equalSign + 1);
+            String[] progressParts = progressValue.split(":");
+
+            progressMinutes = progressParts[0];
+            progressSeconds = progressParts[1];
+
+            skipToPosition = true;
+        }
+
+        String spotifyTrack = getParameterAsString(messageParts, "-p(rogress)?=(\\d{2}):(\\d{2})");
+
+        if (spotifyTrack == null)
+        {
+            chat.sendMessage(channelName, "FeelsMan Please specify a link or the id of the track.");
+            return;
         }
 
         HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
@@ -94,26 +122,27 @@ public class ResumeCommand implements ICommand
             return;
         }
 
-        GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
-        CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
+        SearchTracksRequest searchTracksRequest = spotifyAPI.searchTracks(spotifyTrack).limit(5).includeExternal("audio").build();
+        Paging<Track> tracksRaw = searchTracksRequest.execute();
+        Track[] tracks = tracksRaw.getItems();
 
-        if (currentlyPlaying != null && currentlyPlaying.getIs_playing())
+        if (tracks.length == 0)
         {
-            chat.sendMessage(channelName, STR."AlienDance \{eventUserName} you're already listening to a song.");
+            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track wasn't found.");
             return;
         }
 
-        IPlaylistItem playlistItem = currentlyPlaying.getItem();
-        String itemID = playlistItem.getId();
+        Track track = tracks[0];
+        String trackName = track.getName();
+        String trackID = track.getId();
 
-        GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
-        Track track = trackRequest.execute();
+        ArtistSimplified[] artistsSimplified = track.getArtists();
 
-        if (!track.getIsPlayable())
-        {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
-            return;
-        }
+        CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
+                .map(ArtistSimplified::getName)
+                .toArray(CharSequence[]::new);
+
+        String artists = String.join(", ", artistsRaw);
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
 
@@ -130,8 +159,11 @@ public class ResumeCommand implements ICommand
         String durationSeconds = decimalFormat.format(DSS);
         String durationMinutes = decimalFormat.format(DMM);
 
-        StartResumeUsersPlaybackRequest resumeRequest = spotifyAPI.startResumeUsersPlayback().build();
-        resumeRequest.execute();
+        JsonArray uris = new JsonArray();
+        uris.add(STR."spotify:track:\{trackID}");
+
+        StartResumeUsersPlaybackRequest startRequest = spotifyAPI.startResumeUsersPlayback().uris(uris).build();
+        startRequest.execute();
 
         if (skipToPosition)
         {
@@ -153,6 +185,8 @@ public class ResumeCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        chat.sendMessage(channelName, STR."jamm \{eventUserName} resumed his/her song at position \{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}.");
+        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{trackName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+
+        chat.sendMessage(channelName, messageToSend);
     }
 }

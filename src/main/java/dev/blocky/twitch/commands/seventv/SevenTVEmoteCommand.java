@@ -30,7 +30,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SevenTVURLCommand implements ICommand
+public class SevenTVEmoteCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -89,6 +89,6 @@ public class SevenTVURLCommand implements ICommand
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
         String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
-        chat.sendMessage(channelName, STR."SeemsGood Here is your 7tv link for the ' \{emoteToGetURLFrom} ' emote \uD83D\uDC49 https://7tv.app/emotes/\{sevenTVEmoteID}");
+        chat.sendMessage(channelName, STR."SeemsGood Here is your 7tv emote link for the ' \{emoteToGetURLFrom} ' emote \uD83D\uDC49 https://7tv.app/emotes/\{sevenTVEmoteID}");
     }
 }

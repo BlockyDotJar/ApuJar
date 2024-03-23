@@ -32,6 +32,8 @@ import dev.blocky.twitch.commands.modscanner.*;
 import dev.blocky.twitch.commands.owner.*;
 import dev.blocky.twitch.commands.seventv.*;
 import dev.blocky.twitch.commands.spotify.*;
+import dev.blocky.twitch.commands.weather.UserWeatherCommand;
+import dev.blocky.twitch.commands.weather.WeatherCommand;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -65,6 +67,8 @@ public class CommandManager
 
         commands.put(Collections.singletonList("spam"), new SpamCommand());
         commands.put(List.of("userspam", "uspam"), new UserSpamCommand());
+
+        commands.put(List.of("globalsay", "gsay"), new GlobalSayCommand());
 
         commands.put(Collections.singletonList("join"), new JoinCommand());
         commands.put(Collections.singletonList("part"), new PartCommand());
@@ -127,6 +131,8 @@ public class CommandManager
         commands.put(List.of("addspotifyuser", "addspotifyu"), new AddSpotifyUserCommand());
         commands.put(List.of("deletespotifyuser", "delspotifyuser", "delspotifyu"), new DeleteSpotifyUserCommand());
 
+        commands.put(Collections.singletonList("play"), new PlayCommand());
+        commands.put(Collections.singletonList("playlink"), new PlayLinkCommand());
         commands.put(Collections.singletonList("song"), new SongCommand());
         commands.put(Collections.singletonList("volume"), new VolumeCommand());
         commands.put(Collections.singletonList("setvolume"), new SetVolumeCommand());
@@ -139,12 +145,16 @@ public class CommandManager
         commands.put(Collections.singletonList("repeat"), new RepeatCommand());
         commands.put(Collections.singletonList("shuffle"), new ShuffleCommand());
         commands.put(Collections.singletonList("yoink"), new YoinkCommand());
+        commands.put(Collections.singletonList("songs"), new SongsCommand());
+        commands.put(Collections.singletonList("artists"), new ArtistsCommand());
 
         commands.put(Collections.singletonList("7tvallow"), new SevenTVAllowCommand());
         commands.put(Collections.singletonList("7tvdeny"), new SevenTVDenyCommand());
-        commands.put(Collections.singletonList("7tvurl"), new SevenTVURLCommand());
+        commands.put(Collections.singletonList("7tvemote"), new SevenTVEmoteCommand());
+        commands.put(List.of("7tvuseremote", "7tvuemote"), new SevenTVUserEmoteCommand());
         commands.put(Collections.singletonList("7tvuser"), new SevenTVUserCommand());
         commands.put(Collections.singletonList("7tvadd"), new SevenTVAddCommand());
+        commands.put(Collections.singletonList("7tvaddlink"), new SevenTVAddLinkCommand());
         commands.put(Collections.singletonList("7tvyoink"), new SevenTVYoinkCommand());
         commands.put(List.of("7tvrename", "7tvrn"), new SevenTVRenameCommand());
         commands.put(List.of("7tvremove", "7tvrm"), new SevenTVRemoveCommand());
@@ -153,9 +163,12 @@ public class CommandManager
 
         commands.put(Collections.singletonList("chatterino"), new ChatterinoCommand());
         commands.put(Collections.singletonList("chatty"), new ChattyCommand());
+
+        commands.put(Collections.singletonList("weather"), new WeatherCommand());
+        commands.put(List.of("userweather", "uweather"), new UserWeatherCommand());
     }
 
-    boolean onMessage(String commandOrAlias, ChannelMessageEvent event, String[] prefixedMessageParts, String[] messageParts) throws Exception
+    boolean onMessage(@NonNull String commandOrAlias, @NonNull ChannelMessageEvent event, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         Set<Map.Entry<List<String>, ICommand>> entries = commands.entrySet();
 

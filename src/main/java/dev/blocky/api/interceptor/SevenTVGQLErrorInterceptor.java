@@ -25,11 +25,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 
-public class GitHubErrorInterceptor implements Interceptor
+public class SevenTVGQLErrorInterceptor implements Interceptor
 {
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException
@@ -42,15 +43,16 @@ public class GitHubErrorInterceptor implements Interceptor
 
         if (!response.isSuccessful())
         {
-            String message = json.getString("message");
-            String documentationURL = json.getString("documentation_url");
+            JSONArray errors = json.getJSONArray("errors");
+            JSONObject error = errors.getJSONObject(0);
+            String message = error.getString("message");
 
             switch (response.code())
             {
                 case 400 -> throw new BadRequest(message);
                 case 401 -> throw new Unauthorized(message);
                 case 500 -> throw new InternalServerException(STR."Internal Server Error: \{message}");
-                default -> throw new HTTPException(STR."\{message}, \{documentationURL}");
+                default -> throw new HTTPException(message);
             }
         }
         return response;

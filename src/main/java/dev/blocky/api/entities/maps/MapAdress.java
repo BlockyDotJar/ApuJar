@@ -15,12 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.exceptions;
+package dev.blocky.api.entities.maps;
 
-public class TwitchServerException extends HTTPException
+import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
+public class MapAdress
 {
-    public TwitchServerException(String message)
+    @SerializedName("properties")
+    MapProperties properties;
+
+    @NonNull
+    public MapProperties getProperties()
     {
-        super(message);
+        return properties;
+    }
+
+    MapAdress()
+    {
     }
 }

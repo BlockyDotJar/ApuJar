@@ -19,6 +19,7 @@ package dev.blocky.twitch.utils;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.helix.TwitchHelix;
 import com.github.twitch4j.helix.domain.User;
 import com.github.twitch4j.helix.domain.UserList;
 import dev.blocky.api.entities.ivr.IVR;
@@ -57,10 +58,23 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String getParameterUserAsString(@NonNull String[] msgParts, @NonNull EventUser eventUser)
+    public static String getParameterAsString(@NonNull String[] msgParts, @NonNull String regex)
     {
         String message = removeElements(msgParts, 1);
-        String parameterUser = RegExUtils.removeAll(message, "-ch(annel)?").strip();
+        String value = RegExUtils.removeAll(message, regex).strip();
+
+        if (value.isBlank())
+        {
+            return null;
+        }
+        return value;
+    }
+
+    @NonNull
+    public static String getParameterUserAsString(@NonNull String[] msgParts, @NonNull String regex, @NonNull EventUser eventUser)
+    {
+        String message = removeElements(msgParts, 1);
+        String parameterUser = RegExUtils.removeAll(message, regex).strip();
 
         if (parameterUser.contains(" "))
         {
@@ -97,10 +111,10 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String removeElements(@NonNull String[] msgParts, int start)
+    public static String removeElements(@NonNull String[] messageParts, int start)
     {
-        msgParts = Arrays.copyOfRange(msgParts, start, msgParts.length);
-        return String.join(" ", msgParts);
+        messageParts = Arrays.copyOfRange(messageParts, start, messageParts.length);
+        return String.join(" ", messageParts);
     }
 
     @NonNull
@@ -121,5 +135,10 @@ public class TwitchUtils
             }
         }
         return false;
+    }
+
+    public static void sendPrivateMessage(@NonNull TwitchHelix helix, @NonNull String userID, @NonNull String message)
+    {
+        helix.sendWhisper(null, "896181679", userID, message).execute();
     }
 }

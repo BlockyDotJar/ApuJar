@@ -19,7 +19,7 @@ package dev.blocky.api.interceptor;
 
 import dev.blocky.api.exceptions.BadRequest;
 import dev.blocky.api.exceptions.HTTPException;
-import dev.blocky.api.exceptions.TwitchServerException;
+import dev.blocky.api.exceptions.InternalServerException;
 import dev.blocky.api.exceptions.Unauthorized;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import okhttp3.Interceptor;
@@ -29,7 +29,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-public class ErrorInterceptor implements Interceptor
+public class GeocodeErrorInterceptor implements Interceptor
 {
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException
@@ -38,19 +38,21 @@ public class ErrorInterceptor implements Interceptor
         Response response = chain.proceed(request);
 
         String body = response.peekBody(Long.MAX_VALUE).string();
+
         JSONObject json = new JSONObject(body);
 
         if (!response.isSuccessful())
         {
-            String message = json.getString("message");
             int statusCode = json.getInt("statusCode");
+            String error = json.getString("error");
+            String message = json.getString("message");
 
             switch (response.code())
             {
                 case 400 -> throw new BadRequest(message);
                 case 401 -> throw new Unauthorized(message);
-                case 500 -> throw new TwitchServerException(STR."Internal Server Error: \{message}");
-                default -> throw new HTTPException(STR."\{statusCode}, \{message}");
+                case 500 -> throw new InternalServerException(STR."Internal Server Error: \{error}, \{message}");
+                default -> throw new HTTPException(STR."\{statusCode} \{error}, \{message}");
             }
         }
         return response;

@@ -42,12 +42,7 @@ import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.TimeUnit;
 
 public class PreviousCommand implements ICommand
 {
@@ -105,89 +100,64 @@ public class PreviousCommand implements ICommand
         SkipUsersPlaybackToPreviousTrackRequest previousSongRequest = spotifyAPI.skipUsersPlaybackToPreviousTrack().build();
         previousSongRequest.execute();
 
-        AtomicBoolean fskipToPosition = new AtomicBoolean(skipToPosition);
+        TimeUnit.MILLISECONDS.sleep(500);
 
-        AtomicReference<String> fprogressSecondsRef = new AtomicReference<>(progressSeconds);
-        AtomicReference<String> fprogressMinutesRef = new AtomicReference<>(progressMinutes);
+        GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
+        CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
 
-        ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+        IPlaylistItem playlistItem = currentlyPlaying.getItem();
+        String itemName = playlistItem.getName();
+        String itemID = playlistItem.getId();
 
-        scheduledExecutorService.schedule(() ->
+        GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
+        Track track = trackRequest.execute();
+        String trackID = track.getId();
+
+        ArtistSimplified[] artistsSimplified = track.getArtists();
+
+        CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
+                .map(ArtistSimplified::getName)
+                .toArray(CharSequence[]::new);
+
+        String artists = String.join(", ", artistsRaw);
+
+        DecimalFormat decimalFormat = new DecimalFormat("00");
+
+        int DMS = track.getDurationMs();
+
+        Duration duration = Duration.ofMillis(DMS);
+
+        int DSS = duration.toSecondsPart();
+        long DMM = duration.toMinutes();
+
+        String durationSeconds = decimalFormat.format(DSS);
+        String durationMinutes = decimalFormat.format(DMM);
+
+        if (skipToPosition)
         {
-            try
+            int PSS = Integer.parseInt(progressSeconds);
+            int PMM = Integer.parseInt(progressMinutes);
+
+            progressSeconds = decimalFormat.format(PSS);
+            progressMinutes = decimalFormat.format(PMM);
+
+            if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
-                CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
-
-                IPlaylistItem playlistItem = currentlyPlaying.getItem();
-                String itemName = playlistItem.getName();
-                String itemID = playlistItem.getId();
-
-                GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
-                Track track = trackRequest.execute();
-
-                if (!track.getIsPlayable())
-                {
-                    chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
-                    return;
-                }
-
-                String trackID = track.getId();
-
-                ArtistSimplified[] artistsSimplified = track.getArtists();
-
-                CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
-                        .map(ArtistSimplified::getName)
-                        .toArray(CharSequence[]::new);
-
-                String artists = String.join(", ", artistsRaw);
-
-                DecimalFormat decimalFormat = new DecimalFormat("00");
-
-                int DMS = track.getDurationMs();
-
-                Duration duration = Duration.ofMillis(DMS);
-
-                int DSS = duration.toSecondsPart();
-                long DMM = duration.toMinutes();
-
-                String fprogressSeconds = fprogressSecondsRef.get();
-                String fprogressMinutes = fprogressSecondsRef.get();
-
-                String durationSeconds = decimalFormat.format(DSS);
-                String durationMinutes = decimalFormat.format(DMM);
-
-                if (fskipToPosition.get())
-                {
-                    int PSS = Integer.parseInt(fprogressSecondsRef.get());
-                    int PMM = Integer.parseInt(fprogressMinutesRef.get());
-
-                    fprogressSeconds = decimalFormat.format(PSS);
-                    fprogressMinutes = decimalFormat.format(PMM);
-
-                    if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
-                    {
-                        chat.sendMessage(channelName, "FeelsDankMan You can't skip to a position that is out of the songs range.");
-                        return;
-                    }
-
-                    Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
-                    long progressDurationMillis = progressDuration.toMillis();
-                    String progressMillis = String.valueOf(progressDurationMillis);
-                    int PMS = Integer.parseInt(progressMillis);
-
-                    SeekToPositionInCurrentlyPlayingTrackRequest seekPositionRequest = spotifyAPI.seekToPositionInCurrentlyPlayingTrack(PMS).build();
-                    seekPositionRequest.execute();
-                }
-
-                String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} donkJAM (\{fprogressMinutes}:\{fprogressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
-
-                chat.sendMessage(channelName, messageToSend);
+                chat.sendMessage(channelName, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                return;
             }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-        }, 500, SECONDS);
+
+            Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
+            long progressDurationMillis = progressDuration.toMillis();
+            String progressMillis = String.valueOf(progressDurationMillis);
+            int PMS = Integer.parseInt(progressMillis);
+
+            SeekToPositionInCurrentlyPlayingTrackRequest seekPositionRequest = spotifyAPI.seekToPositionInCurrentlyPlayingTrack(PMS).build();
+            seekPositionRequest.execute();
+        }
+
+        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+
+        chat.sendMessage(channelName, messageToSend);
     }
 }

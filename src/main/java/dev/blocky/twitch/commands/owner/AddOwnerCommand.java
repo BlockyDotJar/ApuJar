@@ -21,6 +21,7 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
@@ -41,6 +42,16 @@ public class AddOwnerCommand implements ICommand
 
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+
+        EventUser eventUser = event.getUser();
+        String eventUserID = eventUser.getId();
+        int eventUserIID = Integer.parseInt(eventUserID);
+
+        if (eventUserIID != 755628467)
+        {
+            chat.sendMessage(channelName, "oop You are not my founder.");
+            return;
+        }
 
         if (messageParts.length == 1)
         {

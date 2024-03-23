@@ -181,7 +181,6 @@ public class YoinkCommand implements ICommand
         String durationMinutes = decimalFormat.format(DMM);
 
         JsonArray uris = new JsonArray();
-
         uris.add(STR."spotify:track:\{trackID}");
 
         StartResumeUsersPlaybackRequest startTrackRequest = eventUserSpotifyAPI.startResumeUsersPlayback().uris(uris).build();

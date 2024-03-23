@@ -15,50 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.modscanner;
+package dev.blocky.api.entities.maps;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.util.Date;
+import java.util.List;
 
-public class ModScannerUser
+public class ReversedMap
 {
-    @SerializedName("grantedAt")
-    Date grantedAt;
+    @SerializedName("features")
+    List<MapAdress> addresses;
 
-    @SerializedName("login")
-    String userLogin;
-
-    @SerializedName("followers")
-    int userFollowers;
-
-    @SerializedName("flags")
-    int flags;
-
-    @NonNull
-    public Date getGrantedAt()
+    @Nullable
+    public List<MapAdress> getAddresses()
     {
-        return grantedAt;
+        return addresses;
     }
 
-    @NonNull
-    public String getUserLogin()
-    {
-        return userLogin;
-    }
-
-    public int getUserFollowers()
-    {
-        return userFollowers;
-    }
-
-    public int getFlags()
-    {
-        return flags;
-    }
-
-    ModScannerUser()
+    ReversedMap()
     {
     }
 }

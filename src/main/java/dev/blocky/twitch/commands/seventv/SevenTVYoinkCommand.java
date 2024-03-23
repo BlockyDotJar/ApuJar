@@ -61,6 +61,20 @@ public class SevenTVYoinkCommand implements ICommand
 
         String userToYoink = getUserAsString(messageParts, 1);
 
+        if (messageParts.length == 2)
+        {
+            chat.sendMessage(channelName, "FeelsMan Please specify a emote.");
+            return;
+        }
+
+        String emoteToYoink = messageParts[2];
+        String emoteAlias = emoteToYoink;
+
+        if (messageParts.length >= 4)
+        {
+            emoteAlias = messageParts[3];
+        }
+
         if (!isValidUsername(userToYoink))
         {
             chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
@@ -91,20 +105,6 @@ public class SevenTVYoinkCommand implements ICommand
         {
             chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userLogin}' found.");
             return;
-        }
-
-        if (messageParts.length == 2)
-        {
-            chat.sendMessage(channelName, "FeelsMan Please specify a emote.");
-            return;
-        }
-
-        String emoteToYoink = messageParts[2];
-        String emoteAlias = emoteToYoink;
-
-        if (messageParts.length >= 4)
-        {
-            emoteAlias = messageParts[3];
         }
 
         HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();

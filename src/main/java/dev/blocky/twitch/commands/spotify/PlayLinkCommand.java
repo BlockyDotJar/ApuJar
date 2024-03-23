@@ -22,26 +22,26 @@ import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
+import com.google.gson.JsonArray;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
-import se.michaelthelin.spotify.model_objects.IPlaylistItem;
-import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
-import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.SeekToPositionInCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.StartResumeUsersPlaybackRequest;
 import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
 
-public class ResumeCommand implements ICommand
+public class PlayLinkCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -56,14 +56,40 @@ public class ResumeCommand implements ICommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
+        if (messageParts.length == 1)
+        {
+            chat.sendMessage(channelName, "FeelsMan Please specify a link or the id of the track.");
+            return;
+        }
+
+        String spotifyTrack = messageParts[1];
+
+        if (!spotifyTrack.matches("^(http(s)?://open.spotify.com/(intl-[a-z_-]+/)?track/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
+        {
+            chat.sendMessage(channelName, "FeelsMan Invalid Spotify song link or id specified.");
+            return;
+        }
+
+        if (spotifyTrack.length() != 22)
+        {
+            int lastSlashIndex = spotifyTrack.lastIndexOf('/');
+            spotifyTrack = spotifyTrack.substring(lastSlashIndex + 1);
+
+            if (spotifyTrack.contains("?"))
+            {
+                int firstQuestionMarkIndex = spotifyTrack.indexOf('?');
+                spotifyTrack = spotifyTrack.substring(0, firstQuestionMarkIndex);
+            }
+        }
+
         boolean skipToPosition = false;
 
         String progressMinutes = "00";
         String progressSeconds = "00";
 
-        if (messageParts.length >= 2)
+        if (messageParts.length >= 3)
         {
-            String progressValue = messageParts[1];
+            String progressValue = messageParts[2];
 
             if (progressValue.matches("^\\d{1,2}:\\d{1,2}$"))
             {
@@ -94,26 +120,31 @@ public class ResumeCommand implements ICommand
             return;
         }
 
-        GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
-        CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
+        GetTrackRequest trackRequest = spotifyAPI.getTrack(spotifyTrack).build();
+        Track track = trackRequest.execute();
 
-        if (currentlyPlaying != null && currentlyPlaying.getIs_playing())
+        if (track == null)
         {
-            chat.sendMessage(channelName, STR."AlienDance \{eventUserName} you're already listening to a song.");
+            chat.sendMessage(channelName, "ManFeels No track was found by the Spotify API.");
             return;
         }
-
-        IPlaylistItem playlistItem = currentlyPlaying.getItem();
-        String itemID = playlistItem.getId();
-
-        GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
-        Track track = trackRequest.execute();
 
         if (!track.getIsPlayable())
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
             return;
         }
+
+        String trackName = track.getName();
+        String trackID = track.getId();
+
+        ArtistSimplified[] artistsSimplified = track.getArtists();
+
+        CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
+                .map(ArtistSimplified::getName)
+                .toArray(CharSequence[]::new);
+
+        String artists = String.join(", ", artistsRaw);
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
 
@@ -130,8 +161,11 @@ public class ResumeCommand implements ICommand
         String durationSeconds = decimalFormat.format(DSS);
         String durationMinutes = decimalFormat.format(DMM);
 
-        StartResumeUsersPlaybackRequest resumeRequest = spotifyAPI.startResumeUsersPlayback().build();
-        resumeRequest.execute();
+        JsonArray uris = new JsonArray();
+        uris.add(STR."spotify:track:\{trackID}");
+
+        StartResumeUsersPlaybackRequest startRequest = spotifyAPI.startResumeUsersPlayback().uris(uris).build();
+        startRequest.execute();
 
         if (skipToPosition)
         {
@@ -153,6 +187,8 @@ public class ResumeCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        chat.sendMessage(channelName, STR."jamm \{eventUserName} resumed his/her song at position \{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}.");
+        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{trackName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+
+        chat.sendMessage(channelName, messageToSend);
     }
 }

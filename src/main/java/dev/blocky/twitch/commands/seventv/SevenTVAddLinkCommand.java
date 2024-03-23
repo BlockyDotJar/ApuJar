@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-public class SevenTVAddCommand implements ICommand
+public class SevenTVAddLinkCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -52,19 +52,22 @@ public class SevenTVAddCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a emote.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a emote url.");
             return;
         }
 
         String emoteToAdd = messageParts[1];
 
-        if (emoteToAdd.matches("https?://7tv.app/emotes/[a-z\\d]{24}"))
+        if (!emoteToAdd.matches("https?://7tv.app/emotes/[a-z\\d]{24}"))
         {
-            chat.sendMessage(channelName, "FeelsOkayMan Please use the '7tvaddlink' command to add emotes from a link.");
+            chat.sendMessage(channelName, "FeelsMan Please specify a valid emote url.");
             return;
         }
 
-        String emoteAlias = emoteToAdd;
+        int lastSlash = emoteToAdd.lastIndexOf('/');
+        String emoteID = emoteToAdd.substring(lastSlash + 1);
+
+        String emoteAlias = null;
 
         if (messageParts.length >= 3)
         {
@@ -96,29 +99,27 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        sevenTV = SevenTVUtils.searchEmotes(emoteToAdd);
-        sevenTVData = sevenTV.getData();
-        SevenTVEmoteSearch seventTVEmoteSearch = sevenTVData.getEmotes();
+        SevenTVEmote sevenTVEmote = ServiceProvider.getSevenTVEmote(emoteID);
 
-        if (seventTVEmoteSearch == null)
+        if (sevenTVEmote == null)
         {
-            chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToAdd}' found.");
+            chat.sendMessage(channelName, "ManFeels Invalid (7TV) emote link specified.");
             return;
         }
 
-        ArrayList<SevenTVEmote> sevenTVEmotes = seventTVEmoteSearch.getItems();
-        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToAdd);
-
-        if (sevenTVEmotesFiltered.isEmpty())
-        {
-            chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToAdd}' found.");
-            return;
-        }
-
-        SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
+        String sevenTVEmoteName = sevenTVEmote.getEmoteName();
         String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
-        sevenTVEmote = ServiceProvider.getSevenTVEmote(sevenTVEmoteID);
+        if (sevenTVEmoteID.equals("000000000000000000000000"))
+        {
+            chat.sendMessage(channelName, "ManFeels Invalid (7TV) emote link specified.");
+            return;
+        }
+
+        if (emoteAlias == null)
+        {
+            emoteAlias = sevenTVEmoteName;
+        }
 
         boolean isAnimated = sevenTVEmote.isAnimated();
         boolean isListed = sevenTVEmote.isListed();

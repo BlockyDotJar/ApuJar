@@ -72,12 +72,12 @@ public class QueueCommand implements ICommand
         {
             int lastSlashIndex = spotifyTrack.lastIndexOf('/');
             spotifyTrack = spotifyTrack.substring(lastSlashIndex + 1);
-        }
 
-        if (spotifyTrack.contains("?"))
-        {
-            int firstQuestionMarkIndex = spotifyTrack.indexOf('?');
-            spotifyTrack = spotifyTrack.substring(0, firstQuestionMarkIndex);
+            if (spotifyTrack.contains("?"))
+            {
+                int firstQuestionMarkIndex = spotifyTrack.indexOf('?');
+                spotifyTrack = spotifyTrack.substring(0, firstQuestionMarkIndex);
+            }
         }
 
         HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
@@ -102,6 +102,12 @@ public class QueueCommand implements ICommand
         GetTrackRequest trackRequest = spotifyAPI.getTrack(spotifyTrack).build();
         Track track = trackRequest.execute();
 
+        if (track == null)
+        {
+            chat.sendMessage(channelName, "ManFeels No track was found by the Spotify API.");
+            return;
+        }
+
         if (!track.getIsPlayable())
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
@@ -110,12 +116,6 @@ public class QueueCommand implements ICommand
 
         String trackName = track.getName();
         String trackID = track.getId();
-
-        if (track == null)
-        {
-            chat.sendMessage(channelName, "ManFeels No track was found by the Spotify API.");
-            return;
-        }
 
         AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyAPI.addItemToUsersPlaybackQueue(STR."spotify:track:\{spotifyTrack}").build();
         addItemToPlaybackQueueRequest.execute();

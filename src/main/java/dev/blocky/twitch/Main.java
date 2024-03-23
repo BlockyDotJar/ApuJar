@@ -26,9 +26,11 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
 import com.github.twitch4j.chat.TwitchChat;
-import com.github.twitch4j.common.exception.UnauthorizedException;
 import com.github.twitch4j.common.util.ThreadUtils;
+import com.github.twitch4j.helix.TwitchHelix;
+import dev.blocky.api.exceptions.Unauthorized;
 import dev.blocky.twitch.manager.CommandManager;
+import dev.blocky.twitch.manager.PrivateCommandManager;
 import dev.blocky.twitch.manager.TwitchConfigurator;
 import dev.blocky.twitch.scheduler.InformationMessageScheduler;
 import dev.blocky.twitch.sql.SQLite;
@@ -43,6 +45,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -76,6 +79,7 @@ public class Main
         String clientID = env.get("CLIENT_ID");
         String accessToken = env.get("ACCESS_TOKEN");
         String refreshToken = env.get("REFRESH_TOKEN");
+
         sevenTVAccessToken = env.get("SEVENTV_ACCESS_TOKEN");
 
         TwitchIdentityProvider tip = new TwitchIdentityProvider(clientID, null, null);
@@ -92,6 +96,7 @@ public class Main
             try
             {
                 File envFile = new File("src/main/resources/.twitch");
+                Path envPath = envFile.toPath();
 
                 String refrehedAccessToken = token.getAccessToken();
                 String refreshedRefreshToken = token.getRefreshToken();
@@ -104,7 +109,7 @@ public class Main
                                 SEVENTV_ACCESS_TOKEN=\{sevenTVAccessToken}
                                 """;
 
-                Files.writeString(envFile.toPath(), newEnvContent);
+                Files.writeString(envPath, newEnvContent);
             }
             catch (IOException e)
             {
@@ -113,17 +118,18 @@ public class Main
         };
 
         OAuth2Credential initialToken = readCredentialFromFile.get();
-        OAuth2Credential credential = tip.getAdditionalCredentialInformation(initialToken)
-                .orElseGet
+        OAuth2Credential credential = tip.getAdditionalCredentialInformation(initialToken).orElseGet
                         (
                                 () -> tip.refreshCredential(initialToken)
                                         .flatMap(tip::getAdditionalCredentialInformation)
                                         .orElse(null)
                         );
 
+        int expiresIn = credential.getExpiresIn();
+
         if (credential == null)
         {
-            logger.error("Invalid Twitch access-token specified.", new UnauthorizedException());
+            logger.error("Invalid Twitch access-token specified.", new Unauthorized("Invalid Twitch access-token specified."));
             return;
         }
 
@@ -133,9 +139,11 @@ public class Main
         }
 
         Runtime runtime = Runtime.getRuntime();
-        ScheduledThreadPoolExecutor exec = ThreadUtils.getDefaultScheduledThreadPoolExecutor("twitch4j", runtime.availableProcessors());
+        int processors = runtime.availableProcessors();
 
-        if (credential.getExpiresIn() > 0)
+        ScheduledThreadPoolExecutor exec = ThreadUtils.getDefaultScheduledThreadPoolExecutor("twitch4j", processors);
+
+        if (expiresIn > 0)
         {
             exec.scheduleAtFixedRate(
                     () -> tip.refreshCredential(credential)
@@ -143,15 +151,15 @@ public class Main
                                     {
                                         String refreshedAccessToken = cr.getAccessToken();
                                         String refreshedRefreshToken = cr.getRefreshToken();
-                                        int expiresIn = cr.getExpiresIn();
+                                        int refreshedExpiresIn = cr.getExpiresIn();
 
                                         credential.setAccessToken(refreshedAccessToken);
                                         credential.setRefreshToken(refreshedRefreshToken);
-                                        credential.setExpiresIn(expiresIn);
+                                        credential.setExpiresIn(refreshedExpiresIn);
 
                                         saveCredentialToFile.accept(credential);
                                     }
-                            ), credential.getExpiresIn() / 2, 3600, SECONDS);
+                            ), expiresIn / 2, 3600, SECONDS);
         }
 
         CredentialManager credentialManager = CredentialManagerBuilder.builder().build();
@@ -170,7 +178,11 @@ public class Main
 
         EventManager eventManager = client.getEventManager();
         SimpleEventHandler eventHandler = eventManager.getEventHandler(SimpleEventHandler.class);
+
+        TwitchHelix helix = client.getHelix();
+
         new CommandManager(eventHandler, client);
+        new PrivateCommandManager(eventHandler, helix);
 
         new InformationMessageScheduler();
 

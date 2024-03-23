@@ -46,7 +46,7 @@ public class ModScannerCommand implements ICommand
 
         EventUser eventUser = event.getUser();
 
-        String userToLookup = getParameterUserAsString(messageParts, eventUser);
+        String userToLookup = getParameterUserAsString(messageParts, "-ch(annel)?", eventUser);
 
         if (!isValidUsername(userToLookup))
         {
@@ -66,7 +66,10 @@ public class ModScannerCommand implements ICommand
 
         String messageToSend = null;
 
-        if (Arrays.stream(messageParts).noneMatch("-channel"::equalsIgnoreCase) && Arrays.stream(messageParts).noneMatch("-ch"::equalsIgnoreCase))
+        boolean hasChannelParameter = Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase);
+        boolean hasChParameter = Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase);
+
+        if (!hasChannelParameter && !hasChParameter)
         {
             ModScanner modScanner = ServiceProvider.getModScannerUser(userToLookup);
 
@@ -80,7 +83,7 @@ public class ModScannerCommand implements ICommand
             messageToSend = STR."PogChamp \{userDisplayName} is moderator in \{modCount}, vip in \{vipCount} and founder in \{founderCount} channel! o_O https://mod.sc/\{userLogin}";
         }
 
-        if (Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase) || Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase))
+        if (hasChannelParameter || hasChParameter)
         {
             ModScanner modScanner = ServiceProvider.getModScannerChannel(userToLookup);
 

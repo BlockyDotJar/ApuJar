@@ -15,50 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.modscanner;
+package dev.blocky.api.exceptions;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.util.Date;
-
-public class ModScannerUser
+public class InternalServerException extends HTTPException
 {
-    @SerializedName("grantedAt")
-    Date grantedAt;
-
-    @SerializedName("login")
-    String userLogin;
-
-    @SerializedName("followers")
-    int userFollowers;
-
-    @SerializedName("flags")
-    int flags;
-
-    @NonNull
-    public Date getGrantedAt()
+    public InternalServerException(String message)
     {
-        return grantedAt;
-    }
-
-    @NonNull
-    public String getUserLogin()
-    {
-        return userLogin;
-    }
-
-    public int getUserFollowers()
-    {
-        return userFollowers;
-    }
-
-    public int getFlags()
-    {
-        return flags;
-    }
-
-    ModScannerUser()
-    {
+        super(message);
     }
 }

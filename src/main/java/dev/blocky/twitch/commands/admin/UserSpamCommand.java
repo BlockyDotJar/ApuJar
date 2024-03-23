@@ -105,6 +105,7 @@ public class UserSpamCommand implements ICommand
         }
 
         User user = chatsToSpam.getFirst();
+        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
 
         String messageToSend = removeElements(messageParts, 3);
@@ -136,7 +137,7 @@ public class UserSpamCommand implements ICommand
 
         for (int i = 0; i < messageCount; i++)
         {
-            chat.sendMessage(user.getLogin(), messageToSend);
+            chat.sendMessage(userLogin, messageToSend);
             TimeUnit.MILLISECONDS.sleep(50);
         }
 

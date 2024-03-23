@@ -15,50 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.modscanner;
+package dev.blocky.twitch.interfaces;
 
-import com.google.gson.annotations.SerializedName;
+import com.github.twitch4j.common.events.user.PrivateMessageEvent;
+import com.github.twitch4j.helix.TwitchHelix;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.Date;
-
-public class ModScannerUser
+public interface IPrivateCommand
 {
-    @SerializedName("grantedAt")
-    Date grantedAt;
-
-    @SerializedName("login")
-    String userLogin;
-
-    @SerializedName("followers")
-    int userFollowers;
-
-    @SerializedName("flags")
-    int flags;
-
-    @NonNull
-    public Date getGrantedAt()
-    {
-        return grantedAt;
-    }
-
-    @NonNull
-    public String getUserLogin()
-    {
-        return userLogin;
-    }
-
-    public int getUserFollowers()
-    {
-        return userFollowers;
-    }
-
-    public int getFlags()
-    {
-        return flags;
-    }
-
-    ModScannerUser()
-    {
-    }
+    void onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull TwitchHelix helix, @NonNull String[] messageParts) throws Exception;
 }

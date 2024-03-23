@@ -15,39 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.maps;
+package dev.blocky.api.services;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import dev.blocky.api.entities.maps.MapSearch;
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
-public class GeocodeMaps
+import java.util.List;
+
+public interface GeocodeService
 {
-    @SerializedName("lat")
-    double latitude;
-
-    @SerializedName("lon")
-    double longitude;
-
-    @SerializedName("display_name")
-    String locationName;
-
-    public double getLatitude()
-    {
-        return latitude;
-    }
-
-    public double getLongitude()
-    {
-        return longitude;
-    }
-
-    @NonNull
-    public String getLocationName()
-    {
-        return locationName;
-    }
-
-    GeocodeMaps()
-    {
-    }
+    @GET("search")
+    Call<List<MapSearch>> search(@Query("q") String query, @Query("api_key") String apiKey);
 }

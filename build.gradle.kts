@@ -6,6 +6,7 @@ plugins {
     idea
 
     id("com.github.ben-manes.versions") version ("0.51.0")
+
     kotlin("jvm") version("1.9.23")
 }
 
@@ -24,17 +25,19 @@ dependencies {
 
     api("se.michaelthelin.spotify:spotify-web-api-java:8.3.6")
 
-    api("com.squareup.retrofit2:retrofit:2.9.0")
-    api("com.squareup.retrofit2:converter-gson:2.9.0")
+    api("com.squareup.retrofit2:retrofit:2.10.0")
+    api("com.squareup.retrofit2:converter-gson:2.10.0")
 
     api("com.squareup.okhttp3:okhttp:4.12.0")
-    api("com.squareup.okio:okio-jvm:3.8.0")
+    api("com.squareup.okio:okio-jvm:3.9.0")
 
     api("org.json:json:20240303")
 
-    api("org.xerial:sqlite-jdbc:3.45.1.0")
+    api("org.xerial:sqlite-jdbc:3.45.2.0")
 
     api("io.github.cdimascio:dotenv-java:3.0.0")
+
+    api("com.neovisionaries:nv-i18n:1.28")
 
     api("joda-time:joda-time:2.12.7")
     api("org.quartz-scheduler:quartz:2.3.2")

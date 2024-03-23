@@ -19,18 +19,17 @@ package dev.blocky.api.interceptor;
 
 import dev.blocky.api.exceptions.BadRequest;
 import dev.blocky.api.exceptions.HTTPException;
-import dev.blocky.api.exceptions.TwitchServerException;
+import dev.blocky.api.exceptions.InternalServerException;
 import dev.blocky.api.exceptions.Unauthorized;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.IOException;
 
-public class SevenTVErrorInterceptor implements Interceptor
+public class ModScannerErrorInterceptor implements Interceptor
 {
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException
@@ -43,16 +42,15 @@ public class SevenTVErrorInterceptor implements Interceptor
 
         if (!response.isSuccessful())
         {
-            JSONArray errors = json.getJSONArray("errors");
-            JSONObject error = errors.getJSONObject(0);
-            String message = error.getString("message");
+            String message = json.getString("message");
+            int statusCode = json.getInt("statusCode");
 
             switch (response.code())
             {
                 case 400 -> throw new BadRequest(message);
                 case 401 -> throw new Unauthorized(message);
-                case 500 -> throw new TwitchServerException(STR."Internal Server Error: \{message}");
-                default -> throw new HTTPException(message);
+                case 500 -> throw new InternalServerException(STR."Internal Server Error: \{message}");
+                default -> throw new HTTPException(STR."\{statusCode}, \{message}");
             }
         }
         return response;

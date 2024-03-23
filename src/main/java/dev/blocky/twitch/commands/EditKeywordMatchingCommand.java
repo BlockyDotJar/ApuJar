@@ -112,6 +112,6 @@ public class EditKeywordMatchingCommand implements ICommand
 
         SQLite.onUpdate(STR."UPDATE customKeywords SET exactMatch = \{exactMatch} WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully edited keyword ' \{kw} '.");
+        chat.sendMessage(channelName, STR."SeemsGood Successfully edited keyword exact matching to '\{exactMatch}'.");
     }
 }

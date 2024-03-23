@@ -15,50 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.modscanner;
+package dev.blocky.api.services;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import dev.blocky.api.entities.maps.ReversedMap;
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
-import java.util.Date;
-
-public class ModScannerUser
+public interface ReversedGeocodeService
 {
-    @SerializedName("grantedAt")
-    Date grantedAt;
-
-    @SerializedName("login")
-    String userLogin;
-
-    @SerializedName("followers")
-    int userFollowers;
-
-    @SerializedName("flags")
-    int flags;
-
-    @NonNull
-    public Date getGrantedAt()
-    {
-        return grantedAt;
-    }
-
-    @NonNull
-    public String getUserLogin()
-    {
-        return userLogin;
-    }
-
-    public int getUserFollowers()
-    {
-        return userFollowers;
-    }
-
-    public int getFlags()
-    {
-        return flags;
-    }
-
-    ModScannerUser()
-    {
-    }
+    @GET("reverse")
+    Call<ReversedMap> reverse(@Query("lat") double latitude, @Query("lon") double longitude, @Query("apiKey") String apiKey);
 }

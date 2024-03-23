@@ -31,6 +31,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
+import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
+
 public class ChattyCommand implements ICommand
 {
     @Override
@@ -80,6 +83,8 @@ public class ChattyCommand implements ICommand
         int assetID = asset.getAssetID();
 
         String browserDownloadURL = asset.getBrowserDownloadURL();
+
+        channelName = getActualChannel(channelToSend, channelName);
 
         chat.sendMessage(channelName, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}, Pre-Release: \{isPreRealse}) \uD83D\uDC49 \{browserDownloadURL}");
     }
