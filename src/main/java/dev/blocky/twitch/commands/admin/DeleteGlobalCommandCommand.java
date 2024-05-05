@@ -38,6 +38,7 @@ public class DeleteGlobalCommandCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
@@ -45,9 +46,9 @@ public class DeleteGlobalCommandCommand implements ICommand
             return;
         }
 
-        String actualPrefix = SQLUtils.getActualPrefix(channelID);
+        String actualPrefix = SQLUtils.getPrefix(channelIID);
 
-        String gcName = messageParts[1].strip();
+        String gcName = messageParts[1];
 
         if (gcName.startsWith(actualPrefix))
         {

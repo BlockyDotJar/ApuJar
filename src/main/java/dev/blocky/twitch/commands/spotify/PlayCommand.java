@@ -29,6 +29,7 @@ import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.model_objects.specification.Track;
@@ -46,6 +47,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getParameterAsString;
+import static dev.blocky.twitch.utils.TwitchUtils.getParameterValue;
 
 public class PlayCommand implements ICommand
 {
@@ -68,26 +70,16 @@ public class PlayCommand implements ICommand
             return;
         }
 
-        List<String> progresses = Arrays.stream(messageParts).filter(part ->
-        {
-            Pattern SPOTIFY_TRACK_PATTERN = Pattern.compile("-p(rogress)?=(\\d{2}):(\\d{2})", Pattern.CASE_INSENSITIVE);
-            Matcher SPOTIFY_TRACK_MATCHER = SPOTIFY_TRACK_PATTERN.matcher(part);
-            return SPOTIFY_TRACK_MATCHER.find();
-        }).toList();
-
         boolean skipToPosition = false;
 
         String progressMinutes = "00";
         String progressSeconds = "00";
 
-        if (!progresses.isEmpty())
+        String progressRaw = getParameterValue(messageParts, "-p(rogress)?=(\\d{2}):(\\d{2})");
+
+        if (progressRaw != null)
         {
-            String progressValueRaw = progresses.getFirst();
-
-            int equalSign = progressValueRaw.indexOf('=');
-
-            String progressValue = progressValueRaw.substring(equalSign + 1);
-            String[] progressParts = progressValue.split(":");
+            String[] progressParts = progressRaw.split(":");
 
             progressMinutes = progressParts[0];
             progressSeconds = progressParts[1];
@@ -116,7 +108,9 @@ public class PlayCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
@@ -135,6 +129,9 @@ public class PlayCommand implements ICommand
         Track track = tracks[0];
         String trackName = track.getName();
         String trackID = track.getId();
+
+        AlbumSimplified album = track.getAlbum();
+        String albumName = album.getName();
 
         ArtistSimplified[] artistsSimplified = track.getArtists();
 
@@ -178,6 +175,7 @@ public class PlayCommand implements ICommand
 
             Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
             long progressDurationMillis = progressDuration.toMillis();
+
             String progressMillis = String.valueOf(progressDurationMillis);
             int PMS = Integer.parseInt(progressMillis);
 
@@ -185,7 +183,7 @@ public class PlayCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{trackName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{trackName}' by \{artists} from \{albumName} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
         chat.sendMessage(channelName, messageToSend);
     }

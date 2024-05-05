@@ -42,6 +42,7 @@ public class SetPrefixCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -52,9 +53,9 @@ public class SetPrefixCommand implements ICommand
             return;
         }
 
-        String rawPrefix = messageParts[1].strip();
-        String prefix = removeApostrophe(rawPrefix);
-        String actualPrefix = SQLUtils.getActualPrefix(channelID);
+        String prefixRaw = messageParts[1];
+        String prefix = removeApostrophe(prefixRaw);
+        String actualPrefix = SQLUtils.getPrefix(channelIID);
 
         IVR ivr = ServiceProvider.getIVRModVip(channelName);
         boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
@@ -62,6 +63,12 @@ public class SetPrefixCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             chat.sendMessage(channelName, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or moderator.");
+            return;
+        }
+
+        if (prefix.equals("/"))
+        {
+            chat.sendMessage(channelName, "monkaLaugh The new prefix can't be / (slash) haha");
             return;
         }
 
@@ -77,7 +84,7 @@ public class SetPrefixCommand implements ICommand
             return;
         }
 
-        if (!actualPrefix.equals("kok!") && prefix.equals("kok!"))
+        if (!actualPrefix.equals("#") && prefix.equals("#"))
         {
             SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
@@ -85,7 +92,7 @@ public class SetPrefixCommand implements ICommand
             return;
         }
 
-        if (actualPrefix.equals("kok!"))
+        if (actualPrefix.equals("#"))
         {
             SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix) VALUES(\{channelID}, '\{prefix}')");
 

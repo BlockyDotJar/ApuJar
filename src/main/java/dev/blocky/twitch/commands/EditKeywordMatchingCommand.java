@@ -79,7 +79,7 @@ public class EditKeywordMatchingCommand implements ICommand
             return;
         }
 
-        String kw = messageParts[1].strip();
+        String kw = messageParts[1];
 
         List<Triple<String, String, Boolean>> keywords = SQLUtils.getKeywords(channelIID);
 

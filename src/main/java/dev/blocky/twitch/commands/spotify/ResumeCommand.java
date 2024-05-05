@@ -39,6 +39,7 @@ import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class ResumeCommand implements ICommand
@@ -58,8 +59,8 @@ public class ResumeCommand implements ICommand
 
         boolean skipToPosition = false;
 
-        String progressMinutes = "00";
-        String progressSeconds = "00";
+        String prgMinutes = "00";
+        String prgSeconds = "00";
 
         if (messageParts.length >= 2)
         {
@@ -68,8 +69,8 @@ public class ResumeCommand implements ICommand
             if (progressValue.matches("^\\d{1,2}:\\d{1,2}$"))
             {
                 String[] progressParts = progressValue.split(":");
-                progressMinutes = progressParts[0];
-                progressSeconds = progressParts[1];
+                prgMinutes = progressParts[0];
+                prgSeconds = progressParts[1];
 
                 skipToPosition = true;
             }
@@ -88,7 +89,9 @@ public class ResumeCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
@@ -103,19 +106,31 @@ public class ResumeCommand implements ICommand
             return;
         }
 
+        StartResumeUsersPlaybackRequest resumeRequest = spotifyAPI.startResumeUsersPlayback().build();
+        resumeRequest.execute();
+
+        if (currentlyPlaying == null)
+        {
+            currentlyPlaying = currentlyPlayingRequest.execute();
+        }
+
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
         String itemID = playlistItem.getId();
 
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
         Track track = trackRequest.execute();
 
-        if (!track.getIsPlayable())
-        {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
-            return;
-        }
-
         DecimalFormat decimalFormat = new DecimalFormat("00");
+
+        int PMS = currentlyPlaying.getProgress_ms();
+
+        Duration progessDuration = Duration.ofMillis(PMS);
+
+        int PSS = progessDuration.toSecondsPart();
+        long PMM = progessDuration.toMinutes();
+
+        String progressSeconds = decimalFormat.format(PSS);
+        String progressMinutes = decimalFormat.format(PMM);
 
         int DMS = track.getDurationMs();
 
@@ -124,17 +139,14 @@ public class ResumeCommand implements ICommand
         int DSS = duration.toSecondsPart();
         long DMM = duration.toMinutes();
 
-        int PSS = Integer.parseInt(progressSeconds);
-        int PMM = Integer.parseInt(progressMinutes);
-
         String durationSeconds = decimalFormat.format(DSS);
         String durationMinutes = decimalFormat.format(DMM);
 
-        StartResumeUsersPlaybackRequest resumeRequest = spotifyAPI.startResumeUsersPlayback().build();
-        resumeRequest.execute();
-
         if (skipToPosition)
         {
+            PSS = Integer.parseInt(prgSeconds);
+            PMM = Integer.parseInt(prgMinutes);
+
             progressSeconds = decimalFormat.format(PSS);
             progressMinutes = decimalFormat.format(PMM);
 
@@ -146,8 +158,9 @@ public class ResumeCommand implements ICommand
 
             Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
             long progressDurationMillis = progressDuration.toMillis();
+
             String progressMillis = String.valueOf(progressDurationMillis);
-            int PMS = Integer.parseInt(progressMillis);
+            PMS = Integer.parseInt(progressMillis);
 
             SeekToPositionInCurrentlyPlayingTrackRequest seekPositionRequest = spotifyAPI.seekToPositionInCurrentlyPlayingTrack(PMS).build();
             seekPositionRequest.execute();

@@ -31,6 +31,7 @@ import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.ToggleShuffleForUsersPlaybackRequest;
 
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class ShuffleCommand implements ICommand
@@ -77,7 +78,9 @@ public class ShuffleCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;

@@ -17,13 +17,13 @@
  */
 package dev.blocky.api.services;
 
-import dev.blocky.api.entities.maps.ReversedMap;
+import dev.blocky.api.entities.maps.GeoCountryCode;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-public interface ReversedGeocodeService
+public interface GeonamesService
 {
-    @GET("reverse")
-    Call<ReversedMap> reverse(@Query("lat") double latitude, @Query("lon") double longitude, @Query("apiKey") String apiKey);
+    @GET("countryCodeJSON")
+    Call<GeoCountryCode> getCountryCode(@Query("lat") double lat, @Query("lng") double lng, @Query("username") String userName);
 }

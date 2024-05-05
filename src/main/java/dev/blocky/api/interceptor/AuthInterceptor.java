@@ -18,6 +18,7 @@
 package dev.blocky.api.interceptor;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -27,19 +28,27 @@ import java.io.IOException;
 public class AuthInterceptor implements Interceptor
 {
     private final String accessToken;
+    private final String clientID;
 
-    public AuthInterceptor(@NonNull String accessToken)
+    public AuthInterceptor(@NonNull String accessToken, @Nullable String clientID)
     {
         this.accessToken = accessToken;
+        this.clientID = clientID;
     }
 
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException
     {
-        Request request = chain.request()
+        Request.Builder builder = chain.request()
                 .newBuilder()
-                .addHeader("Authorization", STR."Bearer \{accessToken}")
-                .build();
+                .addHeader("Authorization", STR."Bearer \{accessToken}");
+
+        if (clientID != null)
+        {
+            builder.addHeader("Client-Id", clientID);
+        }
+
+        Request request = builder.build();
 
         return chain.proceed(request);
     }

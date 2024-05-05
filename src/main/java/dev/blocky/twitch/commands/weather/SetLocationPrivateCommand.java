@@ -20,15 +20,16 @@ package dev.blocky.twitch.commands.weather;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
-import com.neovisionaries.i18n.CountryCode;
 import dev.blocky.api.ServiceProvider;
+import dev.blocky.api.entities.maps.GeoCountryCode;
+import dev.blocky.api.entities.maps.MapAdress;
+import dev.blocky.api.entities.maps.MapProperty;
 import dev.blocky.api.entities.maps.MapSearch;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,36 +53,37 @@ public class SetLocationPrivateCommand implements IPrivateCommand
 
         String location = removeElements(messageParts, 1);
 
-        List<MapSearch> mapSearches = ServiceProvider.getSearchedMaps(location);
+        MapSearch mapSearch = ServiceProvider.getSearchedMaps(location);
+        List<MapAdress> mapAdresses = mapSearch.getAddresses();
 
-        if (mapSearches.isEmpty())
+        if (mapAdresses.isEmpty())
         {
             sendPrivateMessage(helix, eventUserID, STR.":/ No location called '\{location}' found.");
             return;
         }
 
-        MapSearch mapSearch = mapSearches.getFirst();
-        double latitude = mapSearch.getLatitude();
-        double longitude = mapSearch.getLongitude();
-        String locationName = mapSearch.getLocationName();
+        MapAdress mapAdress = mapAdresses.getFirst();
+        MapProperty mapProperty = mapAdress.getProperty();
 
-        String[] locationPartsRaw = locationName.split(",");
-        List<String> locationParts = Arrays.stream(locationPartsRaw)
-                .map(String::strip)
-                .toList();
+        double latitude = mapProperty.getLatitude();
+        double longitude = mapProperty.getLongitude();
+        String locationName = mapProperty.getFormatted();
+        String cityName = mapProperty.getCity();
+        String countryCode = mapProperty.getCountryCode();
 
-        String country = locationParts.getLast();
-
-        List<CountryCode> countryCodes = CountryCode.findByName(country);
+        if (countryCode == null)
+        {
+            GeoCountryCode geoCountryCode = ServiceProvider.getCountryCode(latitude, longitude);
+            countryCode = geoCountryCode.getCountryCode();
+        }
 
         String emoji = "\uD83C\uDFF4";
 
-        if (!countryCodes.isEmpty())
+        if (countryCode != null)
         {
-            CountryCode countryCode = countryCodes.getFirst();
-            String code = countryCode.name();
+            countryCode = countryCode.toUpperCase();
 
-            emoji = code.chars()
+            emoji = countryCode.chars()
                     .map(ch -> ch - 0x41 + 0x1F1E6)
                     .mapToObj(Character::toString)
                     .collect(Collectors.joining());
@@ -98,13 +100,13 @@ public class SetLocationPrivateCommand implements IPrivateCommand
 
         if (lat == -1.0 && lon == -1.0)
         {
-            SQLite.onUpdate(STR."INSERT INTO weatherLocations(userID, latitude, longitude, locationName, hideLocation) VALUES(\{eventUserIID}, \{latitude}, \{longitude}, '\{locationName}', TRUE)");
+            SQLite.onUpdate(STR."INSERT INTO weatherLocations(userID, latitude, longitude, locationName, cityName, countryCode, hideLocation) VALUES(\{eventUserIID}, \{latitude}, \{longitude}, '\{locationName}', '\{cityName}', '\{countryCode}', TRUE)");
 
             sendPrivateMessage(helix, eventUserID, STR.":) Successfully added '\{locationName}' \{emoji} as your location.");
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE weatherLocations SET latitude = \{latitude}, longitude = \{longitude}, locationName = '\{locationName}' WHERE userID = \{eventUserIID}");
+        SQLite.onUpdate(STR."UPDATE weatherLocations SET latitude = \{latitude}, longitude = \{longitude}, locationName = '\{locationName}', cityName = '\{cityName}', countryCode = '\{countryCode}' WHERE userID = \{eventUserIID}");
 
         sendPrivateMessage(helix, eventUserID, STR.":O Successfully updated your location to '\{locationName}' \{emoji} . You can change the visibility of your location with 'hidelocation'. (Your location doesn't get revealed for other users, as long as you don't change the visibility with this command)");
     }

@@ -23,9 +23,6 @@ import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.maps.MapAdress;
-import dev.blocky.api.entities.maps.MapProperties;
-import dev.blocky.api.entities.maps.ReversedMap;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.openmeteo.OpenMeteoCurrentWeather;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -89,17 +86,13 @@ public class UserWeatherCommand implements ICommand
         double latitude = SQLUtils.getLatitude(userIID);
         double longitude = SQLUtils.getLatitude(userIID);
 
-        ReversedMap reversedMap = ServiceProvider.getReversedMap(latitude, longitude);
-        List<MapAdress> mapAdresses = reversedMap.getAddresses();
-
-        MapAdress mapAdress = mapAdresses.getFirst();
-        MapProperties mapProperties = mapAdress.getProperties();
-        String location = mapProperties.getCity();
-        String countryCode = mapProperties.getCountryCode();
+        String locationName = SQLUtils.getLocationName(userIID);
+        String cityName = SQLUtils.getCityName(userIID);
+        String countryCode = SQLUtils.getCountryCode(userIID);
 
         String emoji = "\uD83C\uDFF4";
 
-        if (countryCode == null)
+        if (countryCode != null)
         {
             String code = countryCode.toUpperCase();
 
@@ -162,9 +155,11 @@ public class UserWeatherCommand implements ICommand
             return;
         }
 
-        if (location == null)
+        String location = cityName;
+
+        if (cityName == null)
         {
-            location = SQLUtils.getLocationName(userIID);
+            location = locationName;
         }
 
         channelName = getActualChannel(channelToSend, channelName);

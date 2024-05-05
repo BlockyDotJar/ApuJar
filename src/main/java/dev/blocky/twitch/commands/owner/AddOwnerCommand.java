@@ -23,6 +23,8 @@ import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
+import dev.blocky.api.ServiceProvider;
+import dev.blocky.api.request.BlockyJarUserBody;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -100,6 +102,9 @@ public class AddOwnerCommand implements ICommand
         }
 
         SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', TRUE)");
+
+        BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
+        ServiceProvider.postOwner(body);
 
         chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
     }

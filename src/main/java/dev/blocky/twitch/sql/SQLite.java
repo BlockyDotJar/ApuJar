@@ -24,6 +24,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.sql.*;
 
+import static dev.blocky.twitch.utils.OSUtils.getFilePath;
+
 public class SQLite
 {
     private static final Logger logger = LoggerFactory.getLogger(SQLite.class);
@@ -35,7 +37,9 @@ public class SQLite
     @NonNull
     public static SQLite connect() throws SQLException
     {
-        file = new File("src/main/resources/database.db");
+        String osFilePath = getFilePath("database.db");
+
+        file = new File(osFilePath);
 
         String filePath = file.getPath();
         String fileName = file.getName();
@@ -76,13 +80,14 @@ public class SQLite
         onUpdate("CREATE TABLE IF NOT EXISTS admins(userID INTEGER, userLogin TEXT, isOwner BOOLEAN)");
         onUpdate("CREATE TABLE IF NOT EXISTS customPrefixes(userID INTEGER, prefix TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS adminCommands(command TEXT, requiresOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS bible(entry TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name TEXT, message TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name TEXT, message TEXT, exactMatch BOOLEAN)");
         onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name TEXT, message TEXT)");
+        onUpdate("CREATE TABLE IF NOT EXISTS bible(page INTEGER, entry TEXT, addedAt TEXT, userID INTEGER, userLogin TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken TEXT, refreshToken TEXT, expiresOn TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs TEXT)");
         onUpdate("CREATE TABLE IF NOT EXISTS eventNotifications(userID INTEGER, userLogin TEXT, enabled BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL, locationName TEXT, hideLocation BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL, locationName TEXT, cityName TEXT, countryCode TEXT, hideLocation BOOLEAN)");
+        onUpdate("CREATE TABLE IF NOT EXISTS tictactoe(userID INTEGER, playerIDs TEXT, board TEXT, nextUserID INTEGER, round INTEGER, startedAt TEXT)");
     }
 }

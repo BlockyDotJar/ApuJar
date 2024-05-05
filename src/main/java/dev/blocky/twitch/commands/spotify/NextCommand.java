@@ -30,6 +30,7 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.model_objects.special.PlaybackQueue;
+import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.GetTheUsersQueueRequest;
@@ -91,7 +92,9 @@ public class NextCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
@@ -110,14 +113,10 @@ public class NextCommand implements ICommand
 
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
         Track track = trackRequest.execute();
-
-        if (!track.getIsPlayable())
-        {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
-            return;
-        }
-
         String trackID = track.getId();
+
+        AlbumSimplified album = track.getAlbum();
+        String albumName = album.getName();
 
         ArtistSimplified[] artistsSimplified = track.getArtists();
 
@@ -155,6 +154,7 @@ public class NextCommand implements ICommand
 
             Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
             long progressDurationMillis = progressDuration.toMillis();
+
             String progressMillis = String.valueOf(progressDurationMillis);
             int PMS = Integer.parseInt(progressMillis);
 
@@ -162,7 +162,7 @@ public class NextCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} from \{albumName} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
         chat.sendMessage(channelName, messageToSend);
     }

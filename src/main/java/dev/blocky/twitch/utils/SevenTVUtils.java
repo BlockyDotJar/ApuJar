@@ -19,7 +19,7 @@ package dev.blocky.twitch.utils;
 
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.*;
-import dev.blocky.api.gql.SevenTVGQLBody;
+import dev.blocky.api.request.SevenTVGQLBody;
 import dev.blocky.comparator.SevenTVEmoteComparator;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;

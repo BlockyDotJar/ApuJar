@@ -21,15 +21,18 @@ import com.github.philippheuer.events4j.simple.SimpleEventHandler;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
+import dev.blocky.twitch.commands.spotify.AddSpotifyUserPrivateCommand;
+import dev.blocky.twitch.commands.spotify.DeleteSpotifyUserPrivateCommand;
 import dev.blocky.twitch.commands.weather.DeleteLocationPrivateCommand;
-import dev.blocky.twitch.commands.weather.LocationPrivateCommand;
 import dev.blocky.twitch.commands.weather.HideLocationPrivateCommand;
+import dev.blocky.twitch.commands.weather.LocationPrivateCommand;
 import dev.blocky.twitch.commands.weather.SetLocationPrivateCommand;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,23 +53,24 @@ public class PrivateCommandManager
 
         privateCommands = new ConcurrentHashMap<>();
 
-        privateCommands.put(Collections.singletonList("setlocation"), new SetLocationPrivateCommand());
-        privateCommands.put(Collections.singletonList("hidelocation"), new HideLocationPrivateCommand());
-        privateCommands.put(Collections.singletonList("location"), new LocationPrivateCommand());
+        privateCommands.put(List.of("addspotifyuser", "addspotifyu"), new AddSpotifyUserPrivateCommand());
+        privateCommands.put(List.of("deletespotifyuser", "delspotifyuser", "delspotifyu"), new DeleteSpotifyUserPrivateCommand());
+
+        privateCommands.put(List.of("setlocation"), new SetLocationPrivateCommand());
+        privateCommands.put(List.of("hidelocation"), new HideLocationPrivateCommand());
+        privateCommands.put(List.of("location"), new LocationPrivateCommand());
         privateCommands.put(List.of("deletelocation", "dellocation"), new DeleteLocationPrivateCommand());
     }
 
     boolean onPrivateMessage(@NonNull String commandOrAlias, @NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception
     {
-        Set<Map.Entry<List<String>, IPrivateCommand>> entries = privateCommands.entrySet();
-
-        for (Map.Entry<List<String>, IPrivateCommand> entry : entries)
+        for (List<String> privateCommandKeys : privateCommands.keySet())
         {
-            List<String> commandsAndAliases = entry.getKey();
-            IPrivateCommand command = entry.getValue();
+            boolean commandExists = privateCommandKeys.stream().anyMatch(commandOrAlias::equalsIgnoreCase);
 
-            if (commandsAndAliases.contains(commandOrAlias))
+            if (commandExists)
             {
+                IPrivateCommand command = privateCommands.get(privateCommandKeys);
                 command.onPrivateCommand(event, helix, messageParts);
                 return true;
             }
@@ -85,9 +89,9 @@ public class PrivateCommandManager
         {
             String message = event.getMessage();
 
-            String actualPrefix = SQLUtils.getActualPrefix(eventUserID);
+            String actualPrefix = SQLUtils.getPrefix(eventUserIID);
 
-            Pattern PREFIX_PATTERN = Pattern.compile("^prefix(.*)?$", CASE_INSENSITIVE);
+            Pattern PREFIX_PATTERN = Pattern.compile("(.*)?prefix(.*)?", CASE_INSENSITIVE);
             Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
 
             SQLUtils.correctUserLogin(eventUserIID, eventUserName);

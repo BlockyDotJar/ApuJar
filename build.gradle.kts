@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "dev.blocky.twitch"
-version = "1.0.0"
+version = "1.0.4"
 description = "A useful bot for Twitch with many cool utility features."
 
 repositories {
@@ -21,23 +21,22 @@ repositories {
 dependencies {
     api(kotlin("stdlib"))
 
-    api("com.github.twitch4j:twitch4j:1.19.0")
+    api("com.github.twitch4j:twitch4j:1.20.0")
+    api("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
-    api("se.michaelthelin.spotify:spotify-web-api-java:8.3.6")
+    api("se.michaelthelin.spotify:spotify-web-api-java:8.4.0")
 
-    api("com.squareup.retrofit2:retrofit:2.10.0")
-    api("com.squareup.retrofit2:converter-gson:2.10.0")
+    api("com.squareup.retrofit2:retrofit:2.11.0")
+    api("com.squareup.retrofit2:converter-gson:2.11.0")
 
     api("com.squareup.okhttp3:okhttp:4.12.0")
     api("com.squareup.okio:okio-jvm:3.9.0")
 
     api("org.json:json:20240303")
 
-    api("org.xerial:sqlite-jdbc:3.45.2.0")
+    api("org.xerial:sqlite-jdbc:3.45.3.0")
 
     api("io.github.cdimascio:dotenv-java:3.0.0")
-
-    api("com.neovisionaries:nv-i18n:1.28")
 
     api("joda-time:joda-time:2.12.7")
     api("org.quartz-scheduler:quartz:2.3.2")
@@ -45,10 +44,10 @@ dependencies {
     api("org.apache.commons:commons-lang3:3.14.0")
     api("org.apache.commons:commons-collections4:4.4")
 
-    api("org.slf4j:slf4j-api:2.0.12")
-    api("ch.qos.logback:logback-classic:1.5.3")
+    api("org.slf4j:slf4j-api:2.0.13")
+    api("ch.qos.logback:logback-classic:1.5.6")
 
-    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.3")
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.5")
 }
 
 java {
@@ -69,7 +68,15 @@ idea {
 }
 
 tasks.withType<JavaCompile> {
-    options.compilerArgs.add("--enable-preview")
+    doFirst {
+        options.compilerArgs.addAll(
+                arrayOf
+                (
+                        "--module-path", classpath.asPath,
+                        "--enable-preview"
+                )
+        )
+    }
 }
 
 tasks.withType<Jar> {
@@ -77,6 +84,9 @@ tasks.withType<Jar> {
         attributes["Main-Module"] = "dev.blocky.twitch"
         attributes["Main-Class"] = "dev.blocky.twitch.Main"
     }
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(configurations.compileClasspath.map { config -> config.map { if (it.isDirectory) it else zipTree(it) } })
 }
 
 tasks.withType<DependencyUpdatesTask> {

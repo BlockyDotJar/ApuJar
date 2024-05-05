@@ -69,7 +69,7 @@ public class HideLocationPrivateCommand implements IPrivateCommand
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE weatherLocations SET hideLocation = \{hideLocation}  WHERE userID = \{eventUserIID}");
+        SQLite.onUpdate(STR."UPDATE weatherLocations SET hideLocation = \{hideLocation} WHERE userID = \{eventUserIID}");
 
         sendPrivateMessage(helix, eventUserID, STR.":O Successfully updated your location visibility to '\{hideLocation}'.");
     }

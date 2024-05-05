@@ -30,18 +30,13 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
-import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
-import se.michaelthelin.spotify.model_objects.specification.Track;
-import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
-import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
-import se.michaelthelin.spotify.requests.data.player.SeekToPositionInCurrentlyPlayingTrackRequest;
-import se.michaelthelin.spotify.requests.data.player.SkipUsersPlaybackToPreviousTrackRequest;
+import se.michaelthelin.spotify.model_objects.specification.*;
+import se.michaelthelin.spotify.requests.data.player.*;
 import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 
 import java.text.DecimalFormat;
 import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class PreviousCommand implements ICommand
@@ -91,7 +86,9 @@ public class PreviousCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
@@ -112,6 +109,9 @@ public class PreviousCommand implements ICommand
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
         Track track = trackRequest.execute();
         String trackID = track.getId();
+
+        AlbumSimplified album = track.getAlbum();
+        String albumName = album.getName();
 
         ArtistSimplified[] artistsSimplified = track.getArtists();
 
@@ -149,6 +149,7 @@ public class PreviousCommand implements ICommand
 
             Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
             long progressDurationMillis = progressDuration.toMillis();
+
             String progressMillis = String.valueOf(progressDurationMillis);
             int PMS = Integer.parseInt(progressMillis);
 
@@ -156,7 +157,7 @@ public class PreviousCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+        String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} from \{albumName} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
         chat.sendMessage(channelName, messageToSend);
     }

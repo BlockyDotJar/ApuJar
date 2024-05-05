@@ -15,25 +15,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.maps;
+package dev.blocky.api.entities.lilb;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.List;
 
-public class ReversedMap
+public class LiLBChatter
 {
-    @SerializedName("features")
-    List<MapAdress> addresses;
+    @SerializedName("moderators")
+    List<String> moderators;
 
-    @Nullable
-    public List<MapAdress> getAddresses()
+    @SerializedName("vips")
+    List<String> vips;
+
+    @SerializedName("viewers")
+    List<String> viewers;
+
+    @NonNull
+    public List<String> getChatters()
     {
-        return addresses;
+        List<String> nonViewer = CollectionUtils.collate(moderators, viewers);
+        return CollectionUtils.collate(nonViewer, viewers);
     }
 
-    ReversedMap()
+    public int getModeratorCount()
     {
+        return moderators.size();
+    }
+
+    public int getVIPCount()
+    {
+        return vips.size();
+    }
+
+    public int getViewerCount()
+    {
+        return viewers.size();
     }
 }

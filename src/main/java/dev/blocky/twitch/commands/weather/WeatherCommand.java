@@ -24,9 +24,8 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.maps.MapAdress;
-import dev.blocky.api.entities.maps.MapProperties;
+import dev.blocky.api.entities.maps.MapProperty;
 import dev.blocky.api.entities.maps.MapSearch;
-import dev.blocky.api.entities.maps.ReversedMap;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.openmeteo.OpenMeteoCurrentWeather;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -68,34 +67,42 @@ public class WeatherCommand implements ICommand
         double latitude = SQLUtils.getLatitude(eventUserIID);
         double longitude = SQLUtils.getLatitude(eventUserIID);
 
+        String locationName = SQLUtils.getLocationName(eventUserIID);
+        String cityName = SQLUtils.getCityName(eventUserIID);
+        String countryCode = SQLUtils.getCountryCode(eventUserIID);
+
         if (messageParts.length > 1)
         {
             String location = removeElements(messageParts, 1);
 
-            List<MapSearch> mapSearches = ServiceProvider.getSearchedMaps(location);
+            if (location.isBlank())
+            {
+                chat.sendMessage(channelName, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
+                return;
+            }
 
-            if (mapSearches.isEmpty())
+            MapSearch mapSearch = ServiceProvider.getSearchedMaps(location);
+            List<MapAdress> mapAdresses = mapSearch.getAddresses();
+
+            if (mapAdresses.isEmpty())
             {
                 chat.sendMessage(channelName, STR."UNLUCKY No location called '\{location}' found.");
                 return;
             }
 
-            MapSearch mapSearch = mapSearches.getFirst();
-            latitude = mapSearch.getLatitude();
-            longitude = mapSearch.getLongitude();
+            MapAdress mapAdress = mapAdresses.getFirst();
+            MapProperty mapProperty = mapAdress.getProperty();
+
+            latitude = mapProperty.getLatitude();
+            longitude = mapProperty.getLongitude();
+            locationName = mapProperty.getFormatted();
+            cityName = mapProperty.getCity();
+            countryCode = mapProperty.getCountryCode();
         }
-
-        ReversedMap reversedMap = ServiceProvider.getReversedMap(latitude, longitude);
-        List<MapAdress> mapAdresses = reversedMap.getAddresses();
-
-        MapAdress mapAdress = mapAdresses.getFirst();
-        MapProperties mapProperties = mapAdress.getProperties();
-        String location = mapProperties.getCity();
-        String countryCode = mapProperties.getCountryCode();
 
         String emoji = "\uD83C\uDFF4";
 
-        if (countryCode == null)
+        if (countryCode != null)
         {
             String code = countryCode.toUpperCase();
 
@@ -161,17 +168,11 @@ public class WeatherCommand implements ICommand
             }
         }
 
-        if (location == null)
-        {
-            if (messageParts.length > 1)
-            {
-                location = mapProperties.getFormatted();
-            }
+        String location = cityName;
 
-            if (weatherLocationUserIIDs.contains(eventUserIID))
-            {
-                location = SQLUtils.getLocationName(eventUserIID);
-            }
+        if (cityName == null)
+        {
+            location = locationName;
         }
 
         channelName = getActualChannel(channelToSend, channelName);

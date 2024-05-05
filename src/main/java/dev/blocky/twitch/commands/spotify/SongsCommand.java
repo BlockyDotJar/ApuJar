@@ -102,11 +102,11 @@ public class SongsCommand implements ICommand
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
 
-        GetUsersTopTracksRequest topTracksRequest = spotifyAPI.getUsersTopTracks().limit(10).time_range(timeRange).build();
+        GetUsersTopTracksRequest topTracksRequest = spotifyAPI.getUsersTopTracks().limit(5).time_range(timeRange).build();
         Paging<Track> topTracks = topTracksRequest.execute();
         Track[] tracks = topTracks.getItems();
 
-        int range = Math.min(tracks.length, 10);
+        int range = Math.min(tracks.length, 5);
 
         List<String> topUserTracksRaw = IntStream.range(0, range).mapToObj(i ->
         {
@@ -130,6 +130,6 @@ public class SongsCommand implements ICommand
 
         channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."FeelsOkayMan Here are \{userDisplayName}'s top 10 tracks \uD83D\uDC49 \{topUserTracks}");
+        chat.sendMessage(channelName, STR."FeelsOkayMan Here are \{userDisplayName}'s top 5 tracks \uD83D\uDC49 \{topUserTracks}");
     }
 }

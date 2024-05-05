@@ -23,12 +23,12 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 public class MapAdress
 {
     @SerializedName("properties")
-    MapProperties properties;
+    MapProperty property;
 
     @NonNull
-    public MapProperties getProperties()
+    public MapProperty getProperty()
     {
-        return properties;
+        return property;
     }
 
     MapAdress()

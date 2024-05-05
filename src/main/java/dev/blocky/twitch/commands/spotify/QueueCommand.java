@@ -28,6 +28,7 @@ import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.AddItemToUsersPlaybackQueueRequest;
@@ -62,7 +63,7 @@ public class QueueCommand implements ICommand
 
         String spotifyTrack = messageParts[1];
 
-        if (!spotifyTrack.matches("^(http(s)?://open.spotify.com/(intl-[a-z_-]+/)?track/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
+        if (!spotifyTrack.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?track/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
         {
             chat.sendMessage(channelName, "FeelsMan Invalid Spotify song link or id specified.");
             return;
@@ -93,7 +94,9 @@ public class QueueCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
@@ -108,17 +111,14 @@ public class QueueCommand implements ICommand
             return;
         }
 
-        if (!track.getIsPlayable())
-        {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
-            return;
-        }
-
         String trackName = track.getName();
         String trackID = track.getId();
 
         AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyAPI.addItemToUsersPlaybackQueue(STR."spotify:track:\{spotifyTrack}").build();
         addItemToPlaybackQueueRequest.execute();
+
+        AlbumSimplified album = track.getAlbum();
+        String albumName = album.getName();
 
         ArtistSimplified[] artistsSimplified = track.getArtists();
 
@@ -140,7 +140,7 @@ public class QueueCommand implements ICommand
         String durationSeconds = decimalFormat.format(DSS);
         String durationMinutes = decimalFormat.format(DMM);
 
-        String queueItem = STR."notee Added '\{trackName}' by \{artists} donkJAM (\{durationMinutes}:\{durationSeconds}) to \{eventUserName}'s queue https://open.spotify.com/track/\{trackID}";
+        String queueItem = STR."notee Added '\{trackName}' by \{artists} from \{albumName} donkJAM (\{durationMinutes}:\{durationSeconds}) to \{eventUserName}'s queue https://open.spotify.com/track/\{trackID}";
 
         chat.sendMessage(channelName, queueItem);
     }

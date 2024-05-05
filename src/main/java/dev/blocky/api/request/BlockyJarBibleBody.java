@@ -15,31 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.gql;
+package dev.blocky.api.request;
 
-import com.google.gson.Gson;
-import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.util.Map;
-
-public class SevenTVGQLBody
+public class BlockyJarBibleBody
 {
-    private final Map<String, Object> variables;
-
-    private final String operationName;
-    private final String query;
-
-    public SevenTVGQLBody(String operationName, Map<String, Object> variables, String query)
-    {
-        this.operationName = operationName;
-        this.variables = variables;
-        this.query = query;
-    }
-
-    @NonNull
-    public String toString()
-    {
-        Gson gson = new Gson();
-        return gson.toJson(this);
-    }
 }

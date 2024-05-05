@@ -24,9 +24,11 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVRUser;
+import dev.blocky.api.entities.lilb.LiLBChatter;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.text.DecimalFormat;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
@@ -62,10 +64,28 @@ public class ChatterCommand implements ICommand
 
         IVRUser ivrUser = ivrUsers.getFirst();
         String userDisplayName = ivrUser.getUserDisplayName();
+        String userLogin = ivrUser.getUserLogin();
         int userChatterCount = ivrUser.getChatterCount();
+
+        DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
+
+        LiLBChatter lilbChatter = ServiceProvider.getChatter(userLogin);
+        int moderators = lilbChatter.getModeratorCount();
+        int vips = lilbChatter.getVIPCount();
+        int viewers = lilbChatter.getViewerCount();
+
+        int chatters = moderators + vips + viewers;
+
+        if (chatters != userChatterCount)
+        {
+            viewers += (userChatterCount - chatters);
+        }
+
+        String chatterCount = decimalFormat.format(userChatterCount);
+        String viewerCount = decimalFormat.format(viewers);
 
         channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."Susge Their are \{userChatterCount} chatter in \{userDisplayName}'s chat.");
+        chat.sendMessage(channelName, STR."Susge Their are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderators}, VIP: \{vips}, Viewer: \{viewerCount})");
     }
 }

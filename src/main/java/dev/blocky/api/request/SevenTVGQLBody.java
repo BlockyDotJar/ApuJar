@@ -15,41 +15,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.maps;
+package dev.blocky.api.request;
 
-import com.google.gson.annotations.SerializedName;
+import com.google.gson.Gson;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-public class MapProperties
+import java.util.Map;
+
+public class SevenTVGQLBody
 {
-    @SerializedName("city")
-    String city;
+    private final Map<String, Object> variables;
 
-    @SerializedName("country_code")
-    String countryCode;
+    private final String operationName;
+    private final String query;
 
-    @SerializedName("formatted")
-    String formatted;
-
-    @NonNull
-    public String getCity()
+    public SevenTVGQLBody(@NonNull String operationName, @NonNull Map<String, Object> variables, @NonNull String query)
     {
-        return city;
+        this.operationName = operationName;
+        this.variables = variables;
+        this.query = query;
     }
 
     @NonNull
-    public String getCountryCode()
+    @Override
+    public String toString()
     {
-        return countryCode;
-    }
-
-    @NonNull
-    public String getFormatted()
-    {
-        return formatted;
-    }
-
-    MapProperties()
-    {
+        Gson gson = new Gson();
+        return gson.toJson(this);
     }
 }

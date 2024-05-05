@@ -50,7 +50,8 @@ src/main/resources/.maps
 ### Databases
 
 src/main/resources/database.db
-src/main/resources/backup-database.db
+src/main/resources/backup-database_29.02.2024.db
+src/main/resources/backup-database_05.05.2024.db
 
 ### Netflix related files
 

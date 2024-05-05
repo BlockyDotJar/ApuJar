@@ -32,6 +32,7 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
@@ -45,6 +46,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
@@ -139,7 +141,9 @@ public class YoinkCommand implements ICommand
         GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
-        if (devices.length == 0)
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
         {
             chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
@@ -151,14 +155,10 @@ public class YoinkCommand implements ICommand
 
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
         Track track = trackRequest.execute();
-
-        if (!track.getIsPlayable())
-        {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track isn't playable for some reason.");
-            return;
-        }
-
         String trackID = track.getId();
+
+        AlbumSimplified album = track.getAlbum();
+        String albumName = album.getName();
 
         ArtistSimplified[] artistsSimplified = track.getArtists();
 
@@ -198,6 +198,8 @@ public class YoinkCommand implements ICommand
             progressSeconds = decimalFormat.format(PSS);
             progressMinutes = decimalFormat.format(PMM);
 
+            TimeUnit.MILLISECONDS.sleep(250);
+
             SeekToPositionInCurrentlyPlayingTrackRequest seekPositionRequest = eventUserSpotifyAPI.seekToPositionInCurrentlyPlayingTrack(PMS).build();
             seekPositionRequest.execute();
         }
@@ -218,14 +220,17 @@ public class YoinkCommand implements ICommand
 
             Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
             long progressDurationMillis = progressDuration.toMillis();
+
             String progressMillis = String.valueOf(progressDurationMillis);
             int PMS = Integer.parseInt(progressMillis);
+
+            TimeUnit.MILLISECONDS.sleep(250);
 
             SeekToPositionInCurrentlyPlayingTrackRequest seekPositionRequest = eventUserSpotifyAPI.seekToPositionInCurrentlyPlayingTrack(PMS).build();
             seekPositionRequest.execute();
         }
 
-        String messageToSend = STR."AlienDance \{eventUserName} you yoinked '\{itemName}' by \{artists} from \{userDisplayName} WideHardo (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+        String messageToSend = STR."AlienDance \{eventUserName} you yoinked \{userDisplayName}'s song '\{itemName}' by \{artists} from \{albumName} WideHardo (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
         chat.sendMessage(channelName, messageToSend);
     }

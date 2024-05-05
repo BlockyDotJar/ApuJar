@@ -43,6 +43,7 @@ public class AddGlobalCommandCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
@@ -56,9 +57,9 @@ public class AddGlobalCommandCommand implements ICommand
             return;
         }
 
-        String actualPrefix = SQLUtils.getActualPrefix(channelID);
+        String actualPrefix = SQLUtils.getPrefix(channelIID);
 
-        String gcNameRaw = messageParts[1].strip();
+        String gcNameRaw = messageParts[1];
         String gcMessageRaw = removeElements(messageParts, 2);
 
         String gcName = removeApostrophe(gcNameRaw);
@@ -67,6 +68,12 @@ public class AddGlobalCommandCommand implements ICommand
         if (gcName.isBlank() || gcMessage.isBlank())
         {
             chat.sendMessage(channelName, "monkaLaugh The global command name/message can't contain the character ' haha");
+            return;
+        }
+
+        if (gcName.startsWith("/") || gcMessage.startsWith("/"))
+        {
+            chat.sendMessage(channelName, "monkaLaugh The global command name/message can't start with a / (slash) haha");
             return;
         }
 

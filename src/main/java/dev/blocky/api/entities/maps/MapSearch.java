@@ -18,33 +18,19 @@
 package dev.blocky.api.entities.maps;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+
+import java.util.List;
 
 public class MapSearch
 {
-    @SerializedName("lat")
-    double latitude;
+    @SerializedName("features")
+    List<MapAdress> addresses;
 
-    @SerializedName("lon")
-    double longitude;
-
-    @SerializedName("display_name")
-    String locationName;
-
-    public double getLatitude()
+    @Nullable
+    public List<MapAdress> getAddresses()
     {
-        return latitude;
-    }
-
-    public double getLongitude()
-    {
-        return longitude;
-    }
-
-    @NonNull
-    public String getLocationName()
-    {
-        return locationName;
+        return addresses;
     }
 
     MapSearch()

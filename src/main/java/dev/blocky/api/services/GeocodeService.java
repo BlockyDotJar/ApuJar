@@ -22,10 +22,8 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-import java.util.List;
-
 public interface GeocodeService
 {
     @GET("search")
-    Call<List<MapSearch>> search(@Query("q") String query, @Query("api_key") String apiKey);
+    Call<MapSearch> search(@Query("text") String text, @Query("apiKey") String apiKey);
 }

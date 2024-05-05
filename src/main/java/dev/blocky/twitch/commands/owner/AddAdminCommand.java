@@ -22,6 +22,8 @@ import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.helix.domain.User;
+import dev.blocky.api.ServiceProvider;
+import dev.blocky.api.request.BlockyJarUserBody;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -79,7 +81,10 @@ public class AddAdminCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, \{userLogin}, FALSE)");
+        SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', FALSE)");
+
+        BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
+        ServiceProvider.postAdmin(body);
 
         chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
     }

@@ -30,6 +30,7 @@ import org.quartz.JobExecutionException;
 import java.util.Date;
 import java.util.HashSet;
 
+@Deprecated
 public class StreamAwardsJob implements Job
 {
     @Override

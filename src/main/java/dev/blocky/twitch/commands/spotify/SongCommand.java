@@ -30,6 +30,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
+import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
@@ -56,7 +57,7 @@ public class SongCommand implements ICommand
 
         EventUser eventUser = event.getUser();
 
-        String userToGetSongFrom = getUserAsString(messageParts, eventUser);
+        String userToGetSongFrom = getParameterUserAsString(messageParts, "-e(mote)?=\\w+", eventUser);
 
         if (!isValidUsername(userToGetSongFrom))
         {
@@ -104,6 +105,9 @@ public class SongCommand implements ICommand
         Track track = trackRequest.execute();
         String trackID = track.getId();
 
+        AlbumSimplified album = track.getAlbum();
+        String albumName = album.getName();
+
         ArtistSimplified[] artistsSimplified = track.getArtists();
 
         CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
@@ -132,9 +136,15 @@ public class SongCommand implements ICommand
         String durationSeconds = decimalFormat.format(DSS);
         String durationMinutes = decimalFormat.format(DMM);
 
-        String messageToSend = STR."\{userDisplayName} is currently listening to '\{itemName}' by \{artists} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+        String messageToSend = STR."\{userDisplayName} is currently listening to '\{itemName}' by \{artists} from \{albumName} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
         String beginEmote = "lebronJAM";
+        String emote = getParameterValue(messageParts, "-e(mote)?=\\w+");
+
+        if (emote != null)
+        {
+            beginEmote = emote;
+        }
 
         if (!currentlyPlaying.getIs_playing())
         {

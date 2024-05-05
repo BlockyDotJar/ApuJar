@@ -99,6 +99,6 @@ public class JoinCommand implements ICommand
         SQLite.onUpdate(STR."INSERT INTO eventNotifications(userID, userLogin, enabled) VALUES(\{userID}, '\{userLogin}', TRUE)");
 
         chat.sendMessage(chatToJoin, "lebroJAM Hi, my name is, what? HUH My name is, who? eeeh My name is, APU APU ApuJar !");
-        chat.sendMessage(channelName, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood If you want to disable event notifications use kok!ren false FeelsOkayMan By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg If you disagree with them, then use 'kok!part' to remove the bot from your chat FeelsGoodMan");
+        chat.sendMessage(channelName, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood If you want to disable event notifications use #ren false FeelsOkayMan By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg If you disagree with them, then use '#part' to remove the bot from your chat FeelsGoodMan");
     }
 }

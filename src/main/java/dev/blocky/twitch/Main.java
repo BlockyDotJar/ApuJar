@@ -33,7 +33,9 @@ import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.manager.PrivateCommandManager;
 import dev.blocky.twitch.manager.TwitchConfigurator;
 import dev.blocky.twitch.scheduler.InformationMessageScheduler;
+import dev.blocky.twitch.scheduler.TicTacToeScheduler;
 import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.utils.OSUtils;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.quartz.SchedulerException;
@@ -57,14 +59,19 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class Main
 {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
+
     private static TwitchClient client;
     private static long startedAt;
 
+    public static String clientID;
+    public static String accessToken;
+
     public static String sevenTVAccessToken;
 
-    public static void main(String[] args) throws SQLException, SchedulerException
+    public static void main() throws SQLException, SchedulerException
     {
         startedAt = System.currentTimeMillis();
+
         new Main();
     }
 
@@ -72,12 +79,15 @@ public class Main
     {
         SQLite.connect().initDatabase();
 
+        String directoryPath = OSUtils.getDirectoryPath();
+
         Dotenv env = Dotenv.configure()
+                .directory(directoryPath)
                 .filename(".twitch")
                 .load();
 
-        String clientID = env.get("CLIENT_ID");
-        String accessToken = env.get("ACCESS_TOKEN");
+        clientID = env.get("CLIENT_ID");
+        accessToken = env.get("ACCESS_TOKEN");
         String refreshToken = env.get("REFRESH_TOKEN");
 
         sevenTVAccessToken = env.get("SEVENTV_ACCESS_TOKEN");
@@ -95,7 +105,9 @@ public class Main
         {
             try
             {
-                File envFile = new File("src/main/resources/.twitch");
+                String filePath = OSUtils.getFilePath(".twitch");
+
+                File envFile = new File(filePath);
                 Path envPath = envFile.toPath();
 
                 String refrehedAccessToken = token.getAccessToken();
@@ -119,19 +131,19 @@ public class Main
 
         OAuth2Credential initialToken = readCredentialFromFile.get();
         OAuth2Credential credential = tip.getAdditionalCredentialInformation(initialToken).orElseGet
-                        (
-                                () -> tip.refreshCredential(initialToken)
-                                        .flatMap(tip::getAdditionalCredentialInformation)
-                                        .orElse(null)
-                        );
-
-        int expiresIn = credential.getExpiresIn();
+                (
+                        () -> tip.refreshCredential(initialToken)
+                                .flatMap(tip::getAdditionalCredentialInformation)
+                                .orElse(null)
+                );
 
         if (credential == null)
         {
             logger.error("Invalid Twitch access-token specified.", new Unauthorized("Invalid Twitch access-token specified."));
             return;
         }
+
+        int expiresIn = credential.getExpiresIn();
 
         if (credential != initialToken)
         {
@@ -185,6 +197,12 @@ public class Main
         new PrivateCommandManager(eventHandler, helix);
 
         new InformationMessageScheduler();
+        new TicTacToeScheduler();
+
+        /*
+         *  new StreamAwardsScheduler();
+         *  new AprilFoolsScheduler();
+         */
 
         cli();
     }

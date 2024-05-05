@@ -121,6 +121,6 @@ public class ArtistsCommand implements ICommand
 
         channelName = getActualChannel(channelToSend, channelName);
 
-        chat.sendMessage(channelName, STR."FeelsOkayMan Here are \{userDisplayName}'s top 10 tracks \uD83D\uDC49 \{topUserArtists}");
+        chat.sendMessage(channelName, STR."FeelsOkayMan Here are \{userDisplayName}'s top 10 artists \uD83D\uDC49 \{topUserArtists}");
     }
 }

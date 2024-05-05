@@ -34,6 +34,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import java.util.List;
 
 import static dev.blocky.twitch.utils.SQLUtils.removeApostrophe;
+import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
 
 public class AddKeywordCommand implements ICommand
 {
@@ -87,15 +88,21 @@ public class AddKeywordCommand implements ICommand
             return;
         }
 
-        String kwRaw = messageParts[1].strip();
-        String kwMessageRaw = messageParts[3].strip();
+        String kwRaw = messageParts[1];
+        String kwMessageRaw = removeElements(messageParts, 3);
 
         String kw = removeApostrophe(kwRaw);
         String kwMessage = removeApostrophe(kwMessageRaw);
 
         if (kw.isBlank() || kwMessage.isBlank())
         {
-            chat.sendMessage(channelName, "monkaLaugh The keyword/message can't contain the character ' haha");
+            chat.sendMessage(channelName, "monkaLaugh The keyword/message can't contain the ' character haha");
+            return;
+        }
+
+        if (kw.startsWith("/") || kwMessage.startsWith("/"))
+        {
+            chat.sendMessage(channelName, "monkaLaugh The keyword/message can't start with a / (slash) haha");
             return;
         }
 

@@ -35,6 +35,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
+import static java.util.Map.Entry;
 
 public class UserSayCommand implements ICommand
 {
@@ -82,9 +83,10 @@ public class UserSayCommand implements ICommand
         }
 
         User user = usersToSay.getFirst();
-        String userID = user.getId();
-        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
+        String userLogin = user.getLogin();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
 
         String messageToSend = removeElements(messageParts, 2);
 
@@ -104,21 +106,21 @@ public class UserSayCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
                 return;
             }
 
-            if (!selfModeratorPerms)
+            if (!selfModeratorPerms && !channelName.equalsIgnoreCase("ApuJar"))
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
+                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
                 return;
             }
         }
 
-        ConcurrentHashMap<List<String>, ICommand> commands = CommandManager.getConcurrentCommands();
-        Set<Map.Entry<List<String>, ICommand>> entries = commands.entrySet();
+        ConcurrentHashMap<List<String>, ICommand> commands = CommandManager.getCommandsAsMap();
+        Set<Entry<List<String>, ICommand>> entries = commands.entrySet();
 
-        String actualPrefix = SQLUtils.getActualPrefix(userID);
+        String actualPrefix = SQLUtils.getPrefix(userIID);
         int prefixLength = actualPrefix.length();
 
         String command = messageParts[2];
@@ -127,7 +129,7 @@ public class UserSayCommand implements ICommand
         {
             command = command.substring(prefixLength);
 
-            for (Map.Entry<List<String>, ICommand> entry : entries)
+            for (Entry<List<String>, ICommand> entry : entries)
             {
                 List<String> commandsAndAliases = entry.getKey();
                 ICommand commandOrAlias = entry.getValue();

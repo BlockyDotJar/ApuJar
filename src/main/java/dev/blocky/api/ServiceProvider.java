@@ -21,15 +21,19 @@ import dev.blocky.api.entities.github.GitHubRelease;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRUser;
+import dev.blocky.api.entities.lilb.LiLBChatter;
+import dev.blocky.api.entities.maps.GeoCountryCode;
 import dev.blocky.api.entities.maps.MapSearch;
-import dev.blocky.api.entities.maps.ReversedMap;
 import dev.blocky.api.entities.modscanner.ModScanner;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.seventv.SevenTV;
 import dev.blocky.api.entities.seventv.SevenTVEmote;
 import dev.blocky.api.entities.seventv.SevenTVUser;
-import dev.blocky.api.gql.SevenTVGQLBody;
+import dev.blocky.api.entities.wordle.Wordle;
 import dev.blocky.api.interceptor.*;
+import dev.blocky.api.request.BlockyJarBibleBody;
+import dev.blocky.api.request.BlockyJarUserBody;
+import dev.blocky.api.request.SevenTVGQLBody;
 import dev.blocky.api.services.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -46,23 +50,28 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import java.io.IOException;
 import java.util.List;
 
-import static dev.blocky.twitch.Main.sevenTVAccessToken;
+import static dev.blocky.twitch.Main.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ServiceProvider
 {
-    private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(sevenTVAccessToken);
+    private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(sevenTVAccessToken, null);
+    private static final AuthInterceptor twitchAuthInterceptor = new AuthInterceptor(accessToken, clientID);
 
     private static final SevenTVGQLErrorInterceptor sevenTVGQLErrorInterceptor = new SevenTVGQLErrorInterceptor();
 
     private static final ModScannerErrorInterceptor modScannerErrorInterceptor = new ModScannerErrorInterceptor();
-    private static final GeocodeErrorInterceptor geocodeErrorInterceptor = new GeocodeErrorInterceptor();
+    private static final GeonameErrorInterceptor geonameErrorInterceptor = new GeonameErrorInterceptor();
     private static final GitHubErrorInterceptor gitHubErrorInterceptor = new GitHubErrorInterceptor();
+
+    private static final BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor();
 
     private static final int IVR_API_VERSION = 2;
     private static final int SEVENTV_API_VERSION = 3;
-    private static final int GEOAPIFY_VERSION = 1;
-    private static final int OPEN_METEO_VERSION = 1;
+    private static final int GEOAPIFY_API_VERSION = 1;
+    private static final int OPEN_METEO_API_VERSION = 1;
+    private static final int WORDLE_API_VERSION = 2;
+    private static final int BLOCKYJAR_API_VERSION = 1;
 
     @NonNull
     public static <T> T createService(@NonNull Class<T> clazz, @Nullable Interceptor... interceptors)
@@ -82,7 +91,7 @@ public class ServiceProvider
             builder.addInterceptor(interceptor);
         }
 
-        OkHttpClient client = builder.build();
+        OkHttpClient client = builder.cache(null).build();
 
         String baseURL = switch (clazz.getSimpleName())
         {
@@ -90,9 +99,12 @@ public class ServiceProvider
             case "IVRService" -> STR."https://api.ivr.fi/v\{IVR_API_VERSION}/";
             case "SevenTVService" -> STR."https://7tv.io/v\{SEVENTV_API_VERSION}/";
             case "GitHubService" -> "https://api.github.com/";
-            case "GeocodeService" -> "https://geocode.maps.co/";
-            case "ReversedGeocodeService" -> STR."https://api.geoapify.com/v\{GEOAPIFY_VERSION}/geocode/";
-            case "OpenMeteoService" -> STR."https://api.open-meteo.com/v\{OPEN_METEO_VERSION}/";
+            case "GeocodeService" -> STR."https://api.geoapify.com/v\{GEOAPIFY_API_VERSION}/geocode/";
+            case "GeonameService" -> "http://api.geonames.org/";
+            case "OpenMeteoService" -> STR."https://api.open-meteo.com/v\{OPEN_METEO_API_VERSION}/";
+            case "WordleService" -> STR."https://www.nytimes.com/svc/wordle/v\{WORDLE_API_VERSION}/";
+            case "LiLBService" -> "https://api.blxryer.de/";
+            case "BlockyJarService" -> STR."https://api.blockyjar.dev/v\{BLOCKYJAR_API_VERSION}/";
             default -> null;
         };
 
@@ -205,22 +217,7 @@ public class ServiceProvider
     }
 
     @NonNull
-    public static List<MapSearch> getSearchedMaps(@NonNull String query) throws IOException
-    {
-        Dotenv env = Dotenv.configure()
-                .filename(".maps")
-                .load();
-
-        String apiKey = env.get("MAPS_API_KEY");
-
-        GeocodeService geocodeService = ServiceProvider.createService(GeocodeService.class);
-        Call<List<MapSearch>> mapSearchCall = geocodeService.search(query, apiKey);
-        Response<List<MapSearch>> response = mapSearchCall.execute();
-        return response.body();
-    }
-
-    @NonNull
-    public static ReversedMap getReversedMap(double latitude, double longitude) throws IOException
+    public static MapSearch getSearchedMaps(@NonNull String text) throws IOException
     {
         Dotenv env = Dotenv.configure()
                 .filename(".maps")
@@ -228,9 +225,18 @@ public class ServiceProvider
 
         String apiKey = env.get("GEOAPIFY_API_KEY");
 
-        ReversedGeocodeService geocodeService = ServiceProvider.createService(ReversedGeocodeService.class, geocodeErrorInterceptor);
-        Call<ReversedMap> reversedMapCall = geocodeService.reverse(latitude, longitude, apiKey);
-        Response<ReversedMap> response = reversedMapCall.execute();
+        GeocodeService geocodeService = ServiceProvider.createService(GeocodeService.class);
+        Call<MapSearch> mapSearchCall = geocodeService.search(text, apiKey);
+        Response<MapSearch> response = mapSearchCall.execute();
+        return response.body();
+    }
+
+    @NonNull
+    public static GeoCountryCode getCountryCode(double lat, double lng) throws IOException
+    {
+        GeonamesService geocodeService = ServiceProvider.createService(GeonamesService.class, geonameErrorInterceptor);
+        Call<GeoCountryCode> mapSearchCall = geocodeService.getCountryCode(lat, lng, "BlockyJar");
+        Response<GeoCountryCode> response = mapSearchCall.execute();
         return response.body();
     }
 
@@ -249,5 +255,79 @@ public class ServiceProvider
         Call<OpenMeteo> openMeteoCall = openMeteoService.getCurrentWeather(latitude, longitude, current);
         Response<OpenMeteo> response = openMeteoCall.execute();
         return response.body();
+    }
+
+    @NonNull
+    public static Wordle getWordle(@NonNull String year, @NonNull String month, @NonNull String day) throws IOException
+    {
+        WordleService wordleService = ServiceProvider.createService(WordleService.class);
+        Call<Wordle> wordleCall = wordleService.getWordle(year, month, day);
+        Response<Wordle> response = wordleCall.execute();
+        return response.body();
+    }
+
+    @NonNull
+    public static LiLBChatter getChatter(@NonNull String login) throws IOException
+    {
+        LiLBService lilbService = ServiceProvider.createService(LiLBService.class);
+        Call<LiLBChatter> lilbCall = lilbService.getChatter(login);
+        Response<LiLBChatter> response = lilbCall.execute();
+        return response.body();
+    }
+
+    public static void postAdmin(@NonNull BlockyJarUserBody body) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.postAdmin(body);
+        blockyJarCall.execute();
+    }
+
+    public static void deleteAdmin(int adminID) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.deleteAdmin(adminID);
+        blockyJarCall.execute();
+    }
+
+    public static void postOwner(@NonNull BlockyJarUserBody body) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.postOwner(body);
+        blockyJarCall.execute();
+    }
+
+    public static void deleteOwner(int adminID) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.deleteOwner(adminID);
+        blockyJarCall.execute();
+    }
+
+    public static void postBibleEntry(@NonNull BlockyJarBibleBody body) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.postBibleEntry(body);
+        blockyJarCall.execute();
+    }
+
+    public static void deleteBibleEntry(int biblePage) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.deleteBibleEntry(biblePage);
+        blockyJarCall.execute();
+    }
+
+    public static void patchBibleEntry(int biblePage, @NonNull BlockyJarBibleBody body) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.patchBibleEntry(biblePage, body);
+        blockyJarCall.execute();
+    }
+
+    public static void patchUser(int userID, @NonNull BlockyJarUserBody body) throws IOException
+    {
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        Call<Void> blockyJarCall = blockyJarService.patchUser(userID, body);
+        blockyJarCall.execute();
     }
 }

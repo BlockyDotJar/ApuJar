@@ -21,6 +21,7 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.TwitchHelix;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
@@ -44,6 +45,10 @@ public class CrossunbanCommand implements ICommand
 
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+
+        EventUser eventUser = event.getUser();
+        String eventUserID = eventUser.getId();
+        int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
         {
@@ -69,6 +74,13 @@ public class CrossunbanCommand implements ICommand
 
         User user = usersToUnban.getFirst();
         String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
+
+        if (eventUserIID == userIID)
+        {
+            chat.sendMessage(channelName, "FeelsDankMan You can't crossunban yourself.");
+            return;
+        }
 
         HashSet<String> chatLogins = SQLUtils.getChatLogins();
         int unbannedChats = chatLogins.size();

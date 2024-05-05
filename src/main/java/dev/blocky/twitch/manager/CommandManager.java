@@ -25,6 +25,9 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.commands.*;
 import dev.blocky.twitch.commands.admin.*;
+import dev.blocky.twitch.commands.games.LeaveCommand;
+import dev.blocky.twitch.commands.games.TicCommand;
+import dev.blocky.twitch.commands.games.TicTacToeCommand;
 import dev.blocky.twitch.commands.github.ChatterinoCommand;
 import dev.blocky.twitch.commands.github.ChattyCommand;
 import dev.blocky.twitch.commands.ivr.*;
@@ -39,7 +42,10 @@ import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.tuple.Triple;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,40 +66,42 @@ public class CommandManager
         commands = new ConcurrentHashMap<>();
 
         commands.put(List.of("commands", "help"), new CommandsCommand());
-        commands.put(Collections.singletonList("ping"), new PingCommand());
+        commands.put(List.of("ping"), new PingCommand());
 
-        commands.put(Collections.singletonList("say"), new SayCommand());
+        commands.put(List.of("say"), new SayCommand());
         commands.put(List.of("usersay", "usay"), new UserSayCommand());
 
-        commands.put(Collections.singletonList("spam"), new SpamCommand());
+        commands.put(List.of("spam"), new SpamCommand());
         commands.put(List.of("userspam", "uspam"), new UserSpamCommand());
 
         commands.put(List.of("globalsay", "gsay"), new GlobalSayCommand());
 
-        commands.put(Collections.singletonList("join"), new JoinCommand());
-        commands.put(Collections.singletonList("part"), new PartCommand());
+        commands.put(List.of("join"), new JoinCommand());
+        commands.put(List.of("part"), new PartCommand());
 
-        commands.put(Collections.singletonList("exit"), new ExitCommand());
+        commands.put(List.of("exit"), new ExitCommand());
 
-        commands.put(Collections.singletonList("addadmin"), new AddAdminCommand());
+        commands.put(List.of("addadmin"), new AddAdminCommand());
         commands.put(List.of("deleteadmin", "deladmin"), new DeleteAdminCommand());
 
-        commands.put(Collections.singletonList("addowner"), new AddOwnerCommand());
+        commands.put(List.of("addowner"), new AddOwnerCommand());
         commands.put(List.of("deleteowner", "delowner"), new DeleteOwnerCommand());
 
-        commands.put(Collections.singletonList("chatter"), new ChatterCommand());
-        commands.put(Collections.singletonList("user"), new UserCommand());
-        commands.put(Collections.singletonList("follower"), new FollowerCommand());
+        commands.put(List.of("chatter"), new ChatterCommand());
+        commands.put(List.of("isinchat", "inchat"), new IsInChatCommand());
+        commands.put(List.of("user"), new UserCommand());
+        commands.put(List.of("follower"), new FollowerCommand());
         commands.put(List.of("globalbadge", "badge"), new GlobalBadgeCommand());
+        commands.put(List.of("id"), new IDCommand());
         commands.put(List.of("chatidentity", "ci", "badges", "7tvpaint"), new ChatIdentityCommand());
         commands.put(List.of("chatcolor", "color"), new ChatColorCommand());
         commands.put(List.of("createdat", "created"), new CreatedAtCommand());
         commands.put(List.of("lastbroadcast", "laststream", "last"), new LastStreamCommand());
 
-        commands.put(Collections.singletonList("isbanned"), new IsBannedCommand());
-        commands.put(Collections.singletonList("isaffiliate"), new IsAffiliateCommand());
-        commands.put(Collections.singletonList("ispartner"), new IsPartnerCommand());
-        commands.put(Collections.singletonList("isstaff"), new IsStaffCommand());
+        commands.put(List.of("isbanned"), new IsBannedCommand());
+        commands.put(List.of("isaffiliate"), new IsAffiliateCommand());
+        commands.put(List.of("ispartner"), new IsPartnerCommand());
+        commands.put(List.of("isstaff"), new IsStaffCommand());
 
         commands.put(List.of("modscanner", "ms"), new ModScannerCommand());
         commands.put(List.of("modlookup", "mods", "ml"), new ModLookupCommand());
@@ -104,10 +112,10 @@ public class CommandManager
         commands.put(List.of("vipage", "vipchannel", "isvip", "va", "vc"), new VIPageCommand());
         commands.put(List.of("founderage", "founderchannel", "isfounder", "fda", "fc"), new FounderageCommand());
 
-        commands.put(Collections.singletonList("setprefix"), new SetPrefixCommand());
+        commands.put(List.of("setprefix", "prefix"), new SetPrefixCommand());
         commands.put(List.of("deleteprefix", "delprefix"), new DeletePrefixCommand());
 
-        commands.put(Collections.singletonList("sql"), new SQLCommand());
+        commands.put(List.of("sql"), new SQLCommand());
 
         commands.put(List.of("addglobalcommand", "addglobalcmd", "addgcmd"), new AddGlobalCommandCommand());
         commands.put(List.of("editglobalcommand", "editglobalcmd", "editgcmd"), new EditGlobalCommandCommand());
@@ -118,7 +126,7 @@ public class CommandManager
         commands.put(List.of("editkeywordmatching", "editkwm"), new EditKeywordMatchingCommand());
         commands.put(List.of("deletekeyword", "delkw"), new DeleteKeywordCommand());
 
-        commands.put(Collections.singletonList("google"), new GoogleCommand());
+        commands.put(List.of("google"), new GoogleCommand());
 
         commands.put(List.of("checkname", "cn"), new CheckNameCommand());
 
@@ -128,57 +136,65 @@ public class CommandManager
         commands.put(List.of("crossban", "cb"), new CrossbanCommand());
         commands.put(List.of("crossunban", "cub"), new CrossunbanCommand());
 
-        commands.put(List.of("addspotifyuser", "addspotifyu"), new AddSpotifyUserCommand());
-        commands.put(List.of("deletespotifyuser", "delspotifyuser", "delspotifyu"), new DeleteSpotifyUserCommand());
-
-        commands.put(Collections.singletonList("play"), new PlayCommand());
-        commands.put(Collections.singletonList("playlink"), new PlayLinkCommand());
-        commands.put(Collections.singletonList("song"), new SongCommand());
-        commands.put(Collections.singletonList("volume"), new VolumeCommand());
-        commands.put(Collections.singletonList("setvolume"), new SetVolumeCommand());
-        commands.put(Collections.singletonList("resume"), new ResumeCommand());
-        commands.put(Collections.singletonList("pause"), new PauseCommand());
-        commands.put(Collections.singletonList("next"), new NextCommand());
+        commands.put(List.of("play"), new PlayCommand());
+        commands.put(List.of("playlink"), new PlayLinkCommand());
+        commands.put(List.of("song"), new SongCommand());
+        commands.put(List.of("volume"), new VolumeCommand());
+        commands.put(List.of("setvolume"), new SetVolumeCommand());
+        commands.put(List.of("resume"), new ResumeCommand());
+        commands.put(List.of("pause"), new PauseCommand());
+        commands.put(List.of("next"), new NextCommand());
         commands.put(List.of("previous", "prev"), new PreviousCommand());
-        commands.put(Collections.singletonList("setprogress"), new SetProgessCommand());
-        commands.put(Collections.singletonList("queue"), new QueueCommand());
-        commands.put(Collections.singletonList("repeat"), new RepeatCommand());
-        commands.put(Collections.singletonList("shuffle"), new ShuffleCommand());
-        commands.put(Collections.singletonList("yoink"), new YoinkCommand());
-        commands.put(Collections.singletonList("songs"), new SongsCommand());
-        commands.put(Collections.singletonList("artists"), new ArtistsCommand());
+        commands.put(List.of("setprogress", "seekposition"), new SetProgressCommand());
+        commands.put(List.of("queue"), new QueueCommand());
+        commands.put(List.of("repeat"), new RepeatCommand());
+        commands.put(List.of("shuffle"), new ShuffleCommand());
+        commands.put(List.of("yoink"), new YoinkCommand());
+        commands.put(List.of("songs"), new SongsCommand());
+        commands.put(List.of("artists"), new ArtistsCommand());
 
-        commands.put(Collections.singletonList("7tvallow"), new SevenTVAllowCommand());
-        commands.put(Collections.singletonList("7tvdeny"), new SevenTVDenyCommand());
-        commands.put(Collections.singletonList("7tvemote"), new SevenTVEmoteCommand());
+        commands.put(List.of("7tvallow"), new SevenTVAllowCommand());
+        commands.put(List.of("7tvdeny"), new SevenTVDenyCommand());
+        commands.put(List.of("7tvemote"), new SevenTVEmoteCommand());
         commands.put(List.of("7tvuseremote", "7tvuemote"), new SevenTVUserEmoteCommand());
-        commands.put(Collections.singletonList("7tvuser"), new SevenTVUserCommand());
-        commands.put(Collections.singletonList("7tvadd"), new SevenTVAddCommand());
-        commands.put(Collections.singletonList("7tvaddlink"), new SevenTVAddLinkCommand());
-        commands.put(Collections.singletonList("7tvyoink"), new SevenTVYoinkCommand());
+        commands.put(List.of("7tvuser"), new SevenTVUserCommand());
+        commands.put(List.of("7tvadd"), new SevenTVAddCommand());
+        commands.put(List.of("7tvaddlink"), new SevenTVAddLinkCommand());
+        commands.put(List.of("7tvyoink"), new SevenTVYoinkCommand());
         commands.put(List.of("7tvrename", "7tvrn"), new SevenTVRenameCommand());
         commands.put(List.of("7tvremove", "7tvrm"), new SevenTVRemoveCommand());
 
         commands.put(List.of("receiveeventnotifications", "ren"), new ReceiveEventNotificationsCommand());
 
-        commands.put(Collections.singletonList("chatterino"), new ChatterinoCommand());
-        commands.put(Collections.singletonList("chatty"), new ChattyCommand());
+        commands.put(List.of("chatterino"), new ChatterinoCommand());
+        commands.put(List.of("chatty"), new ChattyCommand());
 
-        commands.put(Collections.singletonList("weather"), new WeatherCommand());
+        commands.put(List.of("weather"), new WeatherCommand());
         commands.put(List.of("userweather", "uweather"), new UserWeatherCommand());
+
+        commands.put(List.of("tictactoe", "ttt"), new TicTacToeCommand());
+        commands.put(List.of("leave"), new LeaveCommand());
+        commands.put(List.of("tic"), new TicCommand());
+
+        commands.put(List.of("wordle"), new WordleCommand());
+
+        commands.put(List.of("kok", "cock", "penis", "pp"), new KokCommand());
+        commands.put(List.of("sus", "susge", "suspicious"), new SusCommand());
+        commands.put(List.of("cool"), new CoolCommand());
+        commands.put(List.of("love"), new LoveCommand());
+
+        commands.put(List.of("filesay", "fs"), new FileSayCommand());
     }
 
     boolean onMessage(@NonNull String commandOrAlias, @NonNull ChannelMessageEvent event, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        Set<Map.Entry<List<String>, ICommand>> entries = commands.entrySet();
-
-        for (Map.Entry<List<String>, ICommand> entry : entries)
+        for (List<String> commandKeys : commands.keySet())
         {
-            List<String> commandsAndAliases = entry.getKey();
-            ICommand command = entry.getValue();
+            boolean commandExists = commandKeys.stream().anyMatch(commandOrAlias::equalsIgnoreCase);
 
-            if (commandsAndAliases.contains(commandOrAlias))
+            if (commandExists)
             {
+                ICommand command = commands.get(commandKeys);
                 command.onCommand(event, client, prefixedMessageParts, messageParts);
                 return true;
             }
@@ -204,10 +220,10 @@ public class CommandManager
         {
             String message = event.getMessage();
 
-            String actualPrefix = SQLUtils.getActualPrefix(channelID);
+            String actualPrefix = SQLUtils.getPrefix(channelIID);
             int prefixLength = actualPrefix.length();
 
-            Pattern PREFIX_PATTERN = Pattern.compile("^@?apujar,? prefix(.*)?$", CASE_INSENSITIVE);
+            Pattern PREFIX_PATTERN = Pattern.compile("(.*)?(prefix\\s+(of|von|from))?\\s+?@?apujar,?(prefix)?(.*)?", CASE_INSENSITIVE);
             Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
 
             SQLUtils.correctUserLogin(eventUserIID, eventUserName);
@@ -235,7 +251,12 @@ public class CommandManager
             if (message.startsWith(actualPrefix))
             {
                 String commandRaw = message.substring(prefixLength).strip();
-                String[] messageParts = commandRaw.split(" ");
+
+                String[] messagePartsRaw = commandRaw.split(" ");
+                String[] messageParts = Arrays.stream(messagePartsRaw)
+                        .filter(messagePart -> !messagePart.isBlank())
+                        .map(String::strip)
+                        .toArray(String[]::new);
 
                 if (messageParts.length > 0)
                 {
@@ -247,13 +268,23 @@ public class CommandManager
                     HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
                     HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
 
-                    if ((!adminIDs.contains(eventUserIID) && adminCommands.contains(command)) && (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command)))
+                    if (!adminIDs.contains(eventUserIID) && adminCommands.contains(command))
                     {
-                        chat.sendMessage(channelName, "4Head You don't have any permission to do that :P");
+                        chat.sendMessage(channelName, "4Head You don't have any permission to use admin commands :P");
                         return;
                     }
 
-                    String[] prefixedMessageParts = message.split(" ");
+                    if (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command))
+                    {
+                        chat.sendMessage(channelName, "4Head You don't have any permission to use owner commands :P");
+                        return;
+                    }
+
+                    String[] prefixedMessagePartsRaw = message.split(" ");
+                    String[] prefixedMessageParts = Arrays.stream(prefixedMessagePartsRaw)
+                            .filter(messagePart -> !messagePart.isBlank())
+                            .map(String::strip)
+                            .toArray(String[]::new);
 
                     if (!command.isBlank() && !onMessage(command, event, prefixedMessageParts, messageParts))
                     {
@@ -280,14 +311,23 @@ public class CommandManager
         catch (Exception e)
         {
             String error = e.getMessage();
-            chat.sendMessage(channelName, STR."Weird Error while trying to execute an command FeelsGoodMan \{error}");
+
+            if (!channelName.equalsIgnoreCase("ApuJar"))
+            {
+                chat.sendMessage("ApuJar", STR."\{channelName} Weird Error while trying to execute an command FeelsGoodMan \{error}");
+            }
+
+            if (channelName.equalsIgnoreCase("ApuJar"))
+            {
+                chat.sendMessage("ApuJar", STR."Weird Error while trying to execute an command FeelsGoodMan \{error}");
+            }
 
             e.printStackTrace();
         }
     }
 
     @NonNull
-    public static ConcurrentHashMap<List<String>, ICommand> getConcurrentCommands()
+    public static ConcurrentHashMap<List<String>, ICommand> getCommandsAsMap()
     {
         return commands;
     }
@@ -295,13 +335,11 @@ public class CommandManager
     @NonNull
     public static HashSet<String> getCommands()
     {
-        Set<Map.Entry<List<String>, ICommand>> entries = commands.entrySet();
         HashSet<String> commandSet = new HashSet<>();
 
-        for (Map.Entry<List<String>, ICommand> entry : entries)
+        for (List<String> commandKeys : commands.keySet())
         {
-            List<String> commandsAndAliases = entry.getKey();
-            commandSet.addAll(commandsAndAliases);
+            commandSet.addAll(commandKeys);
         }
 
         return commandSet;

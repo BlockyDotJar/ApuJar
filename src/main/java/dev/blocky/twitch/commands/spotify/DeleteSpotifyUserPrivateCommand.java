@@ -17,28 +17,23 @@
  */
 package dev.blocky.twitch.commands.spotify;
 
-import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
-import dev.blocky.twitch.interfaces.ICommand;
+import com.github.twitch4j.common.events.user.PrivateMessageEvent;
+import com.github.twitch4j.helix.TwitchHelix;
+import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.HashSet;
 
-public class DeleteSpotifyUserCommand implements ICommand
+import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+
+public class DeleteSpotifyUserPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull TwitchHelix helix, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
-        EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
-
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
@@ -47,12 +42,12 @@ public class DeleteSpotifyUserCommand implements ICommand
 
         if (!spotifyUserIIDs.contains(eventUserIID))
         {
-            chat.sendMessage(channelName, "4Head No Spotify credentials found in the database with your id.");
+            sendPrivateMessage(helix, eventUserID, "4Head No Spotify credentials found in the database with your id.");
             return;
         }
 
         SQLite.onUpdate(STR."DELETE FROM spotifyCredentials WHERE userID = \{eventUserIID}");
 
-        chat.sendMessage(channelName, "SeemsGood Successfully removed Spotify credential from the database.");
+        sendPrivateMessage(helix, eventUserID, "SeemsGood Successfully removed Spotify credential from the database.");
     }
 }

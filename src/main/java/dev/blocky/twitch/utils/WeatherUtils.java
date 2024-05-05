@@ -22,6 +22,8 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Map.Entry;
+
 public class WeatherUtils
 {
     @NonNull
@@ -85,9 +87,9 @@ public class WeatherUtils
 
     public static void appendEmojis(@NonNull StringBuilder builder, @NonNull Map<String, Boolean> emojis)
     {
-        Set<Map.Entry<String, Boolean>> conditionEntries = emojis.entrySet();
+        Set<Entry<String, Boolean>> conditionEntries = emojis.entrySet();
 
-        for (Map.Entry<String, Boolean> conditions : conditionEntries)
+        for (Entry<String, Boolean> conditions : conditionEntries)
         {
             String emoji = conditions.getKey();
             boolean condition = conditions.getValue();

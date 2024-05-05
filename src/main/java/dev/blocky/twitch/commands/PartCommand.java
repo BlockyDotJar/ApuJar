@@ -51,6 +51,14 @@ public class PartCommand implements ICommand
 
         String chatToPart = getUserAsString(messageParts, eventUser);
 
+        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
+
+        if (chatToPart.equalsIgnoreCase("ApuJar") || ownerLogins.contains(chatToPart))
+        {
+            chat.sendMessage(channelName, "TriHard \u270A I'll stay here.");
+            return;
+        }
+
         if (!chatToPart.equalsIgnoreCase(eventUserName))
         {
             IVR ivr = ServiceProvider.getIVRModVip(chatToPart);
@@ -69,14 +77,6 @@ public class PartCommand implements ICommand
         if (!chat.isChannelJoined(chatToPart))
         {
             chat.sendMessage(channelName, STR."CoolStoryBob I'm not even in \{chatToPart}'s chat.");
-            return;
-        }
-
-        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
-
-        if (ownerLogins.contains(chatToPart))
-        {
-            chat.sendMessage(channelName, "TriHard I won't leave this chat.");
             return;
         }
 

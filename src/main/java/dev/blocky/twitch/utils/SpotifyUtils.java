@@ -29,6 +29,8 @@ import se.michaelthelin.spotify.requests.authorization.authorization_code.Author
 
 import java.net.URI;
 
+import static dev.blocky.twitch.utils.OSUtils.getFilePath;
+
 public class SpotifyUtils
 {
     @NonNull

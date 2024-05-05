@@ -33,6 +33,6 @@ public class InformationMessageJob implements Job
         TwitchClient client = Main.getTwitchClient();
         TwitchChat chat = client.getChat();
 
-        chat.sendMessage("ApuJar", "BatChest To add me to your chat or to one that you are mod in, use the 'kok!join' command and specify a channel if needed Okay To remove me use 'kok!part' with the specified channel if needed FeelsOkayMan Also check out my commands \uD83D\uDC49 https://apujar.blockyjar.dev/commands/utility.html Okay By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg");
+        chat.sendMessage("ApuJar", "BatChest To add me to your chat or to one that you are mod in, use the '#join' command and specify a channel if needed Okay To remove me use '#part' with the specified channel if needed FeelsOkayMan Also check out my commands \uD83D\uDC49 https://apujar.blockyjar.dev/commands/utility.html Okay By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg");
     }
 }

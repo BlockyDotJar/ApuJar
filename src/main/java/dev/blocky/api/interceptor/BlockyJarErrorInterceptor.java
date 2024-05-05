@@ -17,10 +17,7 @@
  */
 package dev.blocky.api.interceptor;
 
-import dev.blocky.api.exceptions.BadRequest;
-import dev.blocky.api.exceptions.HTTPException;
-import dev.blocky.api.exceptions.InternalServerException;
-import dev.blocky.api.exceptions.Unauthorized;
+import dev.blocky.api.exceptions.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -29,7 +26,7 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-public class GeocodeErrorInterceptor implements Interceptor
+public class BlockyJarErrorInterceptor implements Interceptor
 {
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException
@@ -41,18 +38,22 @@ public class GeocodeErrorInterceptor implements Interceptor
 
         JSONObject json = new JSONObject(body);
 
+        System.out.println(json);
+
         if (!response.isSuccessful())
         {
-            int statusCode = json.getInt("statusCode");
-            String error = json.getString("error");
+            int status = json.getInt("status");
             String message = json.getString("message");
 
             switch (response.code())
             {
                 case 400 -> throw new BadRequest(message);
                 case 401 -> throw new Unauthorized(message);
-                case 500 -> throw new InternalServerException(STR."Internal Server Error: \{error}, \{message}");
-                default -> throw new HTTPException(STR."\{statusCode} \{error}, \{message}");
+                case 403 -> throw new Forbidden(message);
+                case 409 -> throw new Conflict(message);
+                case 422 -> throw new UnprocessableEntity(message);
+                case 500 -> throw new InternalServerException(STR."Internal Server Error: \{status}, \{message}");
+                default -> throw new HTTPException(STR."\{status}, \{message}");
             }
         }
         return response;

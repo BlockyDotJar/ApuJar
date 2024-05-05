@@ -39,7 +39,7 @@ public class IVRUser
     String userLogin;
 
     @SerializedName("id")
-    String userID;
+    int userID;
 
     @SerializedName("followers")
     int userFollowers;
@@ -85,8 +85,7 @@ public class IVRUser
         return userLogin;
     }
 
-    @NonNull
-    public String getUserID()
+    public int getUserID()
     {
         return userID;
     }

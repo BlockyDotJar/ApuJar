@@ -82,7 +82,7 @@ public class UserCommand implements ICommand
 
         String userLogin = ivrUser.getUserLogin();
         String userDisplayName = ivrUser.getUserDisplayName();
-        String userID = ivrUser.getUserID();
+        int userID = ivrUser.getUserID();
         String userChatColor = ivrUser.getUserChatColor() == null ? "#FFFFFF" : ivrUser.getUserChatColor();
 
         userInfo = STR."\{userInfo} \uD83D\uDC49 Login: \{userLogin}, Display: \{userDisplayName}, ID: \{userID}, Created: \{readableCreationDate}, Chat-Color: \{userChatColor}";

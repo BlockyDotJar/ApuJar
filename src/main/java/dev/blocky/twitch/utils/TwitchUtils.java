@@ -39,29 +39,29 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 public class TwitchUtils
 {
     @NonNull
-    public static String getUserAsString(@NonNull String[] msgParts, int index)
+    public static String getUserAsString(@NonNull String[] messageParts, int index)
     {
-        String userNameRaw = msgParts[index].strip();
+        String userNameRaw = messageParts[index];
         return RegExUtils.removeAll(userNameRaw, "@").toLowerCase();
     }
 
     @NonNull
-    public static String getUserAsString(@NonNull String[] msgParts, @NonNull EventUser eventUser)
+    public static String getUserAsString(@NonNull String[] messageParts, @NonNull EventUser eventUser)
     {
-        return msgParts.length == 1 ? eventUser.getName() : getUserAsString(msgParts, 1);
+        return messageParts.length == 1 ? eventUser.getName() : getUserAsString(messageParts, 1);
     }
 
     @Nullable
-    public static String getSecondUserAsString(@NonNull String[] msgParts, @NonNull EventUser eventUser)
+    public static String getSecondUserAsString(@NonNull String[] messageParts, @NonNull EventUser eventUser)
     {
-        return msgParts.length == 3 ? getUserAsString(msgParts, 2) : eventUser.getName();
+        return messageParts.length == 3 ? getUserAsString(messageParts, 2) : eventUser.getName();
     }
 
-    @NonNull
-    public static String getParameterAsString(@NonNull String[] msgParts, @NonNull String regex)
+    @Nullable
+    public static String getParameterAsString(@NonNull String[] messageParts, @NonNull String regex)
     {
-        String message = removeElements(msgParts, 1);
-        String value = RegExUtils.removeAll(message, regex).strip();
+        String message = removeElements(messageParts, 1);
+        String value = RegExUtils.removeAll(message, regex);
 
         if (value.isBlank())
         {
@@ -71,10 +71,10 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String getParameterUserAsString(@NonNull String[] msgParts, @NonNull String regex, @NonNull EventUser eventUser)
+    public static String getParameterUserAsString(@NonNull String[] messageParts, @NonNull String regex, @NonNull EventUser eventUser)
     {
-        String message = removeElements(msgParts, 1);
-        String parameterUser = RegExUtils.removeAll(message, regex).strip();
+        String message = removeElements(messageParts, 1);
+        String parameterUser = RegExUtils.removeAll(message, regex);
 
         if (parameterUser.contains(" "))
         {
@@ -82,11 +82,37 @@ public class TwitchUtils
             parameterUser = parameterUserParts[0];
         }
 
+        if (parameterUser.startsWith("@"))
+        {
+            parameterUser = parameterUser.substring(1);
+        }
+
         if (parameterUser.isBlank())
         {
             return eventUser.getName();
         }
         return parameterUser;
+    }
+
+    @Nullable
+    public static String getParameterValue(@NonNull String[] messageParts, @NonNull String regex)
+    {
+        List<String> parameterValues = Arrays.stream(messageParts).filter(part ->
+        {
+            Pattern PATTERN = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+            Matcher MATCHER = PATTERN.matcher(part);
+            return MATCHER.find();
+        }).toList();
+
+        if (parameterValues.isEmpty())
+        {
+            return null;
+        }
+
+        String parameterValueRaw = parameterValues.getFirst();
+        int equalSign = parameterValueRaw.indexOf('=');
+
+        return parameterValueRaw.substring(equalSign + 1);
     }
 
     @NonNull
@@ -97,6 +123,21 @@ public class TwitchUtils
                                 null,
                                 null,
                                 Collections.singletonList(userName)
+                        )
+                .execute();
+        return userList.getUsers();
+    }
+
+    @NonNull
+    public static List<User> retrieveUserListByID(@NonNull TwitchClient client, int userIID)
+    {
+        String userID = String.valueOf(userIID);
+
+        UserList userList = client.getHelix().getUsers
+                        (
+                                null,
+                                Collections.singletonList(userID),
+                                null
                         )
                 .execute();
         return userList.getUsers();

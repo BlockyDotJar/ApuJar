@@ -22,6 +22,7 @@ import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
+import dev.blocky.api.ServiceProvider;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -66,6 +67,9 @@ public class DeleteOwnerCommand implements ICommand
             chat.sendMessage(channelName, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
             return;
         }
+
+        int ownerID = SQLUtils.getOwnerIDByLogin(ownerToDemote);
+        ServiceProvider.deleteOwner(ownerID);
 
         SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{ownerToDemote}'");
 

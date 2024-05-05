@@ -25,6 +25,7 @@ import dev.blocky.twitch.utils.SQLUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
 
@@ -45,8 +46,21 @@ public class LocationPrivateCommand implements IPrivateCommand
             return;
         }
 
-        String displayName = SQLUtils.getLocationName(eventUserIID);
+        String locationName = SQLUtils.getLocationName(eventUserIID);
+        String countryCode = SQLUtils.getCountryCode(eventUserIID);
 
-        sendPrivateMessage(helix, eventUserID, STR.":D Your location is currently set to '\{displayName}'.");
+        String emoji = "\uD83C\uDFF4";
+
+        if (countryCode != null)
+        {
+            String code = countryCode.toUpperCase();
+
+            emoji = code.chars()
+                    .map(ch -> ch - 0x41 + 0x1F1E6)
+                    .mapToObj(Character::toString)
+                    .collect(Collectors.joining());
+        }
+
+        sendPrivateMessage(helix, eventUserID, STR.":D Your location is currently set to '\{locationName}' \{emoji}.");
     }
 }

@@ -36,7 +36,7 @@ import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.HashSet;
 
-public class SetProgessCommand implements ICommand
+public class SetProgressCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -116,6 +116,7 @@ public class SetProgessCommand implements ICommand
         }
 
         long progressDurationMillis = progressDuration.toMillis();
+
         String progressMillis = String.valueOf(progressDurationMillis);
         int PMS = Integer.parseInt(progressMillis);
 

@@ -40,6 +40,7 @@ public class DeletePrefixCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -53,9 +54,9 @@ public class DeletePrefixCommand implements ICommand
             return;
         }
 
-        String actualPrefix = SQLUtils.getActualPrefix(channelID);
+        String actualPrefix = SQLUtils.getPrefix(channelIID);
 
-        if (actualPrefix.equals("kok!"))
+        if (actualPrefix.equals("#"))
         {
             chat.sendMessage(channelName, "CoolStoryBob You don't have a custom prefix.");
             return;
