@@ -21,16 +21,18 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
-import dev.blocky.twitch.Main;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.time.Duration;
-import java.util.HashSet;
+import java.util.Set;
 
+import static dev.blocky.twitch.Main.startedAt;
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
+import static dev.blocky.twitch.utils.TwitchUtils.getActualChannelID;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class PingCommand implements ICommand
 {
@@ -38,11 +40,10 @@ public class PingCommand implements ICommand
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
-
+        
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
-        long startedAt = Main.getStartedAt();
         long now = System.currentTimeMillis();
         long uptime = now - startedAt;
 
@@ -55,12 +56,12 @@ public class PingCommand implements ICommand
 
         long ping = chat.getLatency();
 
-        HashSet<String> chatLogins = SQLUtils.getChatLogins();
+        Set<Chat> chatLogins = SQLUtils.getChats();
         int realChats = chatLogins.size() + 1;
 
         String messageToSend = STR."ppPong Chat-Ping: \{ping}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

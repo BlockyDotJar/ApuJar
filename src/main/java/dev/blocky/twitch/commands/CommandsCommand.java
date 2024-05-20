@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -36,10 +35,8 @@ public class CommandsCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
@@ -48,15 +45,15 @@ public class CommandsCommand implements ICommand
 
         if (chatsToSend.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{chatToSend}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{chatToSend}' found.");
             return;
         }
 
         User user = chatsToSend.getFirst();
         String userDisplayName = user.getDisplayName();
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."\{userDisplayName} peepoHappy \uD83D\uDC49 Here you can see everything important about the bot https://apujar.blockyjar.dev/ FeelsOkayMan");
+        sendChatMessage(channelID, STR."\{userDisplayName} peepoHappy \uD83D\uDC49 Here you can see everything important about the bot https://apujar.blockyjar.dev/ FeelsOkayMan");
     }
 }

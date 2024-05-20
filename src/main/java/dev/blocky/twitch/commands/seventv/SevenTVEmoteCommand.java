@@ -18,77 +18,61 @@
 package dev.blocky.twitch.commands.seventv;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.seventv.*;
+import dev.blocky.api.entities.seventv.SevenTVEmote;
+import dev.blocky.api.entities.seventv.SevenTVEmoteSet;
+import dev.blocky.api.entities.seventv.SevenTVTwitchUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SevenTVUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class SevenTVEmoteCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a emote.");
+            sendChatMessage(channelID, "FeelsMan Please specify a emote.");
             return;
         }
 
         String emoteToGetURLFrom = messageParts[1];
 
-        SevenTV sevenTV = SevenTVUtils.getUser(channelName);
-        SevenTVData sevenTVData = sevenTV.getData();
-        ArrayList<SevenTVUser> sevenTVUsers = sevenTVData.getUsers();
-        List<SevenTVUser> sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, channelName);
+        SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, channelIID);
 
-        if (sevenTVUsersFiltered.isEmpty())
+        if (sevenTVTwitchUser == null)
         {
-            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{channelName}' found.");
             return;
         }
 
-        SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVUserDisplayName = sevenTVUser.getUserDisplayName();
-        String sevenTVUserID = sevenTVUser.getUserID();
-
-        sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
-
-        SevenTVUserConnection sevenTVConnection = SevenTVUtils.getSevenTVUserConnection(sevenTVUser);
-
-        if (sevenTVConnection == null)
-        {
-            chat.sendMessage(channelName, STR."undefined No (7TV) emote set found for \{sevenTVUserDisplayName}.");
-            return;
-        }
-
-        SevenTVEmoteSet sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
-
-        sevenTV = ServiceProvider.getSevenTVEmoteSet(sevenTVEmoteSetID);
-        ArrayList<SevenTVEmote> sevenTVEmotes = sevenTV.getEmotes();
+        SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
+        List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
         List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToGetURLFrom);
 
         if (sevenTVEmotesFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToGetURLFrom}' found.");
+            sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToGetURLFrom}' found.");
             return;
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
         String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
-        chat.sendMessage(channelName, STR."SeemsGood Here is your 7tv emote link for the ' \{emoteToGetURLFrom} ' emote \uD83D\uDC49 https://7tv.app/emotes/\{sevenTVEmoteID}");
+        boolean isAnimated = sevenTVEmote.isAnimated();
+        boolean isListed = sevenTVEmote.isListed();
+        boolean isPrivate = sevenTVEmote.getEmoteFlags() == 1;
+
+        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote link for the ' \{emoteToGetURLFrom} ' emote (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed}) \uD83D\uDC49 https://7tv.app/emotes/\{sevenTVEmoteID}");
     }
 }

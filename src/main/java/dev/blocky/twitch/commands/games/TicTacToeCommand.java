@@ -18,18 +18,17 @@
 package dev.blocky.twitch.commands.games;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.TicTacToe;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -40,10 +39,7 @@ public class TicTacToeCommand implements ICommand
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
@@ -52,17 +48,17 @@ public class TicTacToeCommand implements ICommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> ticTacToeGames = SQLUtils.getTicTacToeGames();
+        TicTacToe ticTacToe = SQLUtils.getTicTacToeGame(channelIID);
 
-        if (ticTacToeGames.contains(channelIID))
+        if (ticTacToe != null)
         {
-            chat.sendMessage(channelName, "NOIDONTTHINKSO There can only be one game at a time in a channel.");
+            sendChatMessage(channelID, "NOIDONTTHINKSO There can only be one game at a time in a channel.");
             return;
         }
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -70,7 +66,7 @@ public class TicTacToeCommand implements ICommand
 
         if (!isValidUsername(userToPlayWith))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -78,7 +74,7 @@ public class TicTacToeCommand implements ICommand
 
         if (usersToPlayWith.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToPlayWith}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToPlayWith}' found.");
             return;
         }
 
@@ -89,11 +85,11 @@ public class TicTacToeCommand implements ICommand
 
         if (userIID == eventUserIID)
         {
-            chat.sendMessage(channelName, "UHM You can't play with yourself.");
+            sendChatMessage(channelID, "UHM You can't play with yourself.");
             return;
         }
 
-        String playerIDs = STR."[\{eventUserID}, \{userID}]";
+        String playerIDs = STR."\{eventUserID},\{userID}";
 
         LocalDateTime localDateTime = LocalDateTime.now();
 
@@ -105,17 +101,17 @@ public class TicTacToeCommand implements ICommand
             nextUserName = eventUserName;
             nextUserID = eventUserIID;
 
-            chat.sendMessage(channelName, STR."OH \{eventUserName} You wanna fight me huh? Get ready, cause this shit's about to get heavy AlienDance");
+            sendChatMessage(channelID, STR."OH \{eventUserName} You wanna fight me huh? Get ready, cause this shit's about to get heavy AlienDance");
         }
 
         SQLite.onUpdate(STR."INSERT INTO tictactoe(userID, playerIDs, board, nextUserID, round, startedAt) VALUES(\{channelID}, '\{playerIDs}', '[0, 0, 0, 0, 0, 0, 0, 0, 0]', \{nextUserID}, 1, '\{localDateTime}')");
 
         for (int i = 0; i < 3; i++)
         {
-            chat.sendMessage(channelName, "\u2B1C\u2B1C\u2B1C");
+            sendChatMessage(channelID, "\u2B1C\u2B1C\u2B1C");
             TimeUnit.MILLISECONDS.sleep(500);
         }
 
-        chat.sendMessage(channelName, STR."PogU It's your turn \{nextUserName} NOWAYING Use the 'tic' command with a value between 1 and 9.");
+        sendChatMessage(channelID, STR."PogU It's your turn \{nextUserName} NOWAYING Use the 'tic' command with a value between 1 and 9.");
     }
 }

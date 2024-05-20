@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -36,10 +35,8 @@ public class ChatIdentityCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
@@ -47,7 +44,7 @@ public class ChatIdentityCommand implements ICommand
 
         if (!isValidUsername(userToGetIdentityFrom))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -55,7 +52,7 @@ public class ChatIdentityCommand implements ICommand
 
         if (usersToGetIdentityFrom.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToGetIdentityFrom}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToGetIdentityFrom}' found.");
             return;
         }
 
@@ -65,8 +62,8 @@ public class ChatIdentityCommand implements ICommand
 
         String messageToSend = STR."CollectThemAll \{userDisplayName}'s badges and 7tv paints can be found and tested here PogU \uD83D\uDC49 https://vanity.zonian.dev/?u=\{userLogin}";
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

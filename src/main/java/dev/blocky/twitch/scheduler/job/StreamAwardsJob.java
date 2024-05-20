@@ -17,28 +17,26 @@
  */
 package dev.blocky.twitch.scheduler.job;
 
-import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
-import dev.blocky.twitch.Main;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.joda.time.LocalDateTime;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 
 import java.util.Date;
-import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static dev.blocky.twitch.Main.client;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 @Deprecated
 public class StreamAwardsJob implements Job
 {
     @Override
-    public void execute(@NonNull JobExecutionContext jobExecutionContext) throws JobExecutionException
+    public void execute(@NonNull JobExecutionContext jobExecutionContext)
     {
-        TwitchClient client = Main.getTwitchClient();
-        TwitchChat chat = client.getChat();
-
         try
         {
             Date scheduledFireTime = jobExecutionContext.getScheduledFireTime();
@@ -70,17 +68,21 @@ public class StreamAwardsJob implements Job
                 default -> STR."in \{remainingMinutes} Minuten";
             };
 
-            HashSet<String> chatLogins = SQLUtils.getEnabledEventNotificationChatLogins();
+            Set<String> chatLogins = SQLUtils.getEnabledEventNotificationChatLogins();
+
+            TwitchChat chat = client.getChat();
+            Map<String, String> chatIDs = chat.getChannelNameToChannelId();
 
             for (String chatLogin : chatLogins)
             {
-                chat.sendMessage(chatLogin, STR."Pag \{sentenceBegin} \{sentenceEnding} PauseChamp \uD83D\uDC49 https://twitch.tv/revedtv");
+                String chatID = chatIDs.get(chatLogin);
+                sendChatMessage(chatID, STR."Pag \{sentenceBegin} \{sentenceEnding} PauseChamp \uD83D\uDC49 https://twitch.tv/revedtv");
             }
         }
         catch (Exception e)
         {
             String error = e.getMessage();
-            chat.sendMessage("ApuJar", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
+            sendChatMessage("896181679", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
 
             e.printStackTrace();
         }

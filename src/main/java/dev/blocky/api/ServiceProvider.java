@@ -28,12 +28,16 @@ import dev.blocky.api.entities.modscanner.ModScanner;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.seventv.SevenTV;
 import dev.blocky.api.entities.seventv.SevenTVEmote;
-import dev.blocky.api.entities.seventv.SevenTVUser;
+import dev.blocky.api.entities.seventv.SevenTVEmoteSet;
+import dev.blocky.api.entities.seventv.SevenTVTwitchUser;
 import dev.blocky.api.entities.wordle.Wordle;
+import dev.blocky.api.entities.yt.NoEmbed;
+import dev.blocky.api.entities.yt.YouTubeDislikes;
 import dev.blocky.api.interceptor.*;
 import dev.blocky.api.request.BlockyJarBibleBody;
 import dev.blocky.api.request.BlockyJarUserBody;
 import dev.blocky.api.request.SevenTVGQLBody;
+import dev.blocky.api.request.TwitchGQLBody;
 import dev.blocky.api.services.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -55,8 +59,9 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ServiceProvider
 {
-    private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(sevenTVAccessToken, null);
-    private static final AuthInterceptor twitchAuthInterceptor = new AuthInterceptor(accessToken, clientID);
+    private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(STR."Bearer \{sevenTVAccessToken}", null, null, null);
+    private static final AuthInterceptor blockyjarAuthInterceptor = new AuthInterceptor(STR."Bearer \{accessToken}", clientID, null, null);
+    private static final AuthInterceptor twitchGQLAuthInterceptor = new AuthInterceptor(STR."OAuth \{oAuthToken}", "kimne78kx3ncx6brgo4mv6wki5h1ko", clientIntegrity, deviceID);
 
     private static final SevenTVGQLErrorInterceptor sevenTVGQLErrorInterceptor = new SevenTVGQLErrorInterceptor();
 
@@ -105,6 +110,9 @@ public class ServiceProvider
             case "WordleService" -> STR."https://www.nytimes.com/svc/wordle/v\{WORDLE_API_VERSION}/";
             case "LiLBService" -> "https://api.blxryer.de/";
             case "BlockyJarService" -> STR."https://api.blockyjar.dev/v\{BLOCKYJAR_API_VERSION}/";
+            case "NoEmbedService" -> "https://noembed.com/";
+            case "YouTubeDislikesService" -> "https://returnyoutubedislikeapi.com/";
+            case "TwitchGQLService" -> "https://gql.twitch.tv/";
             default -> null;
         };
 
@@ -172,29 +180,35 @@ public class ServiceProvider
     }
 
     @NonNull
-    public static SevenTV getSevenTVEmoteSet(@NonNull String emoteSetID) throws IOException
+    public static SevenTVEmoteSet getSevenTVEmoteSet(@NonNull int channelID, @NonNull String emoteSetID) throws IOException
     {
-        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class);
-        Call<SevenTV> sevenTVCall = sevenTVService.getEmoteSet(emoteSetID);
-        Response<SevenTV> response = sevenTVCall.execute();
+        SevenTVErrorInterceptor sevenTVErrorInterceptor = new SevenTVErrorInterceptor(channelID);
+
+        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVErrorInterceptor);
+        Call<SevenTVEmoteSet> sevenTVCall = sevenTVService.getEmoteSet(emoteSetID);
+        Response<SevenTVEmoteSet> response = sevenTVCall.execute();
         return response.body();
     }
 
-    @NonNull
-    public static SevenTVEmote getSevenTVEmote(@NonNull String emoteID) throws IOException
+    @Nullable
+    public static SevenTVEmote getSevenTVEmote(@NonNull int channelID, @NonNull String emoteID) throws IOException
     {
-        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class);
+        SevenTVErrorInterceptor sevenTVErrorInterceptor = new SevenTVErrorInterceptor(channelID);
+
+        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVErrorInterceptor);
         Call<SevenTVEmote> sevenTVCall = sevenTVService.getEmote(emoteID);
         Response<SevenTVEmote> response = sevenTVCall.execute();
         return response.body();
     }
 
-    @NonNull
-    public static SevenTVUser getSevenTVUser(@NonNull String userID) throws IOException
+    @Nullable
+    public static SevenTVTwitchUser getSevenTVUser(@NonNull int channelID, int userID) throws IOException
     {
-        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class);
-        Call<SevenTVUser> sevenTVCall = sevenTVService.getUser(userID);
-        Response<SevenTVUser> response = sevenTVCall.execute();
+        SevenTVErrorInterceptor sevenTVErrorInterceptor = new SevenTVErrorInterceptor(channelID);
+
+        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVErrorInterceptor);
+        Call<SevenTVTwitchUser> sevenTVCall = sevenTVService.getTwitchUser(userID);
+        Response<SevenTVTwitchUser> response = sevenTVCall.execute();
         return response.body();
     }
 
@@ -275,59 +289,84 @@ public class ServiceProvider
         return response.body();
     }
 
+    public static void postTwitchGQL(@NonNull TwitchGQLBody body) throws IOException
+    {
+        TwitchGQLService twitchGQLService = ServiceProvider.createService(TwitchGQLService.class, twitchGQLAuthInterceptor);
+        Call<Void> twitchGQLCall = twitchGQLService.postGQL(body);
+        twitchGQLCall.execute();
+    }
+
     public static void postAdmin(@NonNull BlockyJarUserBody body) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.postAdmin(body);
         blockyJarCall.execute();
     }
 
     public static void deleteAdmin(int adminID) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.deleteAdmin(adminID);
         blockyJarCall.execute();
     }
 
     public static void postOwner(@NonNull BlockyJarUserBody body) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.postOwner(body);
         blockyJarCall.execute();
     }
 
     public static void deleteOwner(int adminID) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.deleteOwner(adminID);
         blockyJarCall.execute();
     }
 
     public static void postBibleEntry(@NonNull BlockyJarBibleBody body) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.postBibleEntry(body);
         blockyJarCall.execute();
     }
 
     public static void deleteBibleEntry(int biblePage) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.deleteBibleEntry(biblePage);
         blockyJarCall.execute();
     }
 
     public static void patchBibleEntry(int biblePage, @NonNull BlockyJarBibleBody body) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.patchBibleEntry(biblePage, body);
         blockyJarCall.execute();
     }
 
     public static void patchUser(int userID, @NonNull BlockyJarUserBody body) throws IOException
     {
-        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, twitchAuthInterceptor);
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.patchUser(userID, body);
         blockyJarCall.execute();
+    }
+
+    @Nullable
+    public static NoEmbed getYouTubeEmbed(@NonNull String url) throws IOException
+    {
+        NoEmbedService noEmbedService = ServiceProvider.createService(NoEmbedService.class);
+        Call<NoEmbed> noEmbedCall = noEmbedService.getEmbed(url);
+        Response<NoEmbed> response = noEmbedCall.execute();
+        return response.body();
+    }
+
+    @Nullable
+    public static YouTubeDislikes getYouTubeVideoVotes(@NonNull String videoID) throws IOException
+    {
+        YouTubeDislikesService youTubeDislikesService = ServiceProvider.createService(YouTubeDislikesService.class);
+        Call<YouTubeDislikes> youTubeDislikesCall = youTubeDislikesService.getVotes(videoID);
+        Response<YouTubeDislikes> response = youTubeDislikesCall.execute();
+        return response.body();
     }
 }

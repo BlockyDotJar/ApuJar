@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.github;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
@@ -32,41 +31,41 @@ import java.util.Date;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class ChatterinoCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
+
+        boolean isWindowsParameter = hasRegExParameter(messageParts, "-exe");
+        boolean isMacOsParameter = hasRegExParameter(messageParts, "-dmg(=(arm64|x86))?");
+        boolean isLinuxParameter = hasRegExParameter(messageParts, "-deb(=(arm64|x86))?");
 
         String owner = "SevenTV";
         String repository = "chatterino7";
 
         if (messageParts.length >= 2)
         {
-            String chatterinoType = messageParts[1];
+            String chatterinoType = getParameterAsString(messageParts, "-(exe|dmg|deb)(=(arm64|x86))?");
 
-            switch (chatterinoType)
+            if (chatterinoType != null)
             {
-                case "chatterinohomies", "homies" ->
+                switch (chatterinoType)
                 {
-                    owner = "itzAlex";
-                    repository = "chatterino7";
-                }
-                case "chatterino2", "normal", "default" ->
-                {
-                    owner = "Chatterino";
-                    repository = "chatterino2";
-                }
-                case "dankerino", "dank" ->
-                {
-                    owner = "Mm2PL";
-                    repository = "dankerino";
+                    case "chatterinohomies", "homies" ->
+                    {
+                        owner = "itzAlex";
+                        repository = "chatterino7";
+                    }
+                    case "chatterino2", "normal", "default" ->
+                    {
+                        owner = "Chatterino";
+                        repository = "chatterino2";
+                    }
                 }
             }
         }
@@ -75,7 +74,6 @@ public class ChatterinoCommand implements ICommand
         String htmlURL = gitHubRelease.getHtmlURL();
         String tagName = gitHubRelease.getTagName();
         Date publishedAt = gitHubRelease.getPublishedAt();
-        boolean isPreRealse = gitHubRelease.isPreRelease();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         String readablePublishedAt = formatter.format(publishedAt);
@@ -83,17 +81,51 @@ public class ChatterinoCommand implements ICommand
         List<GitHubAsset> assets = gitHubRelease.getAssets();
         GitHubAsset asset = null;
 
-        if (assets.isEmpty())
+        if (assets.isEmpty() || (!isWindowsParameter && !isMacOsParameter && !isLinuxParameter))
         {
-            chat.sendMessage(channelName, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} (Pre-Release: \{isPreRealse}) \uD83D\uDC49 \{htmlURL}");
+            sendChatMessage(channelID, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} \uD83D\uDC49 \{htmlURL}");
             return;
+        }
+
+        String fileRaw = getParameterValue(messageParts, "-(exe|dmg|deb)(=(arm64|x86))?");
+        String neededFileType = null;
+        String neededArchitecture = null;
+
+        if (isWindowsParameter)
+        {
+            neededFileType = "exe";
+        }
+
+        if (isMacOsParameter)
+        {
+            neededFileType = "dmg";
+
+            if (fileRaw != null && (fileRaw.equals("x86") || fileRaw.equals("arm64")))
+            {
+                neededArchitecture = fileRaw;
+            }
+        }
+
+        if (isLinuxParameter)
+        {
+            neededFileType = "deb";
+
+            if (fileRaw != null && fileRaw.equals("x86"))
+            {
+                neededArchitecture = fileRaw;
+            }
         }
 
         for (GitHubAsset gitHubAsset : assets)
         {
             String gitHubAssetName = gitHubAsset.getAssetName();
 
-            if (!gitHubAssetName.endsWith(".exe"))
+            if (!gitHubAssetName.endsWith(STR.".\{neededFileType}"))
+            {
+                continue;
+            }
+
+            if (neededArchitecture != null && !gitHubAssetName.contains(neededArchitecture))
             {
                 continue;
             }
@@ -111,8 +143,8 @@ public class ChatterinoCommand implements ICommand
 
         String browserDownloadURL = asset.getBrowserDownloadURL();
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}, Pre-Release: \{isPreRealse}) \uD83D\uDC49 \{browserDownloadURL}");
+        sendChatMessage(channelID, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}) \uD83D\uDC49 \{browserDownloadURL}");
     }
 }

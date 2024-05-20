@@ -22,12 +22,12 @@ import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
 import java.util.stream.Collectors;
 
-import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 
 public class LocationPrivateCommand implements IPrivateCommand
 {
@@ -38,16 +38,16 @@ public class LocationPrivateCommand implements IPrivateCommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> weatherLocationUserIIDs = SQLUtils.getWeatherLocationUserIDs();
+        Location location = SQLUtils.getLocation(eventUserIID);
 
-        if (!weatherLocationUserIIDs.contains(eventUserIID))
+        if (location == null)
         {
-            sendPrivateMessage(helix, eventUserID, "4Head No location found in the database for your user id.");
+            sendWhisper(eventUserID, "4Head No location found in the database for your user id.");
             return;
         }
 
-        String locationName = SQLUtils.getLocationName(eventUserIID);
-        String countryCode = SQLUtils.getCountryCode(eventUserIID);
+        String locationName = location.getLocationName();
+        String countryCode = location.getCountryCode();
 
         String emoji = "\uD83C\uDFF4";
 
@@ -61,6 +61,6 @@ public class LocationPrivateCommand implements IPrivateCommand
                     .collect(Collectors.joining());
         }
 
-        sendPrivateMessage(helix, eventUserID, STR.":D Your location is currently set to '\{locationName}' \{emoji}.");
+        sendWhisper(eventUserID, STR.":D Your location is currently set to '\{locationName}' \{emoji}.");
     }
 }

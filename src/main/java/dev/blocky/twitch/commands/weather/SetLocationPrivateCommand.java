@@ -26,15 +26,16 @@ import dev.blocky.api.entities.maps.MapAdress;
 import dev.blocky.api.entities.maps.MapProperty;
 import dev.blocky.api.entities.maps.MapSearch;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
-import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 
 public class SetLocationPrivateCommand implements IPrivateCommand
 {
@@ -47,18 +48,18 @@ public class SetLocationPrivateCommand implements IPrivateCommand
 
         if (messageParts.length == 1)
         {
-            sendPrivateMessage(helix, eventUserID, ";) Please specify a location.");
+            sendWhisper(eventUserID, ";) Please specify a location.");
             return;
         }
 
-        String location = removeElements(messageParts, 1);
+        String userLocation = removeElements(messageParts, 1);
 
-        MapSearch mapSearch = ServiceProvider.getSearchedMaps(location);
+        MapSearch mapSearch = ServiceProvider.getSearchedMaps(userLocation);
         List<MapAdress> mapAdresses = mapSearch.getAddresses();
 
         if (mapAdresses.isEmpty())
         {
-            sendPrivateMessage(helix, eventUserID, STR.":/ No location called '\{location}' found.");
+            sendWhisper(eventUserID, STR.":/ No location called '\{userLocation}' found.");
             return;
         }
 
@@ -67,6 +68,7 @@ public class SetLocationPrivateCommand implements IPrivateCommand
 
         double latitude = mapProperty.getLatitude();
         double longitude = mapProperty.getLongitude();
+
         String locationName = mapProperty.getFormatted();
         String cityName = mapProperty.getCity();
         String countryCode = mapProperty.getCountryCode();
@@ -89,12 +91,13 @@ public class SetLocationPrivateCommand implements IPrivateCommand
                     .collect(Collectors.joining());
         }
 
-        double lat = SQLUtils.getLatitude(eventUserIID);
-        double lon = SQLUtils.getLongitude(eventUserIID);
+        Location location = SQLUtils.getLocation(eventUserIID);
+        double lat = location.getLatitude();
+        double lon = location.getLongitude();
 
         if (lat == latitude && lon == longitude)
         {
-            sendPrivateMessage(helix, eventUserID, STR."4Head The new location '\{locationName}' does exactly match with the old one.");
+            sendWhisper(eventUserID, STR."4Head The new location '\{locationName}' does exactly match with the old one.");
             return;
         }
 
@@ -102,12 +105,12 @@ public class SetLocationPrivateCommand implements IPrivateCommand
         {
             SQLite.onUpdate(STR."INSERT INTO weatherLocations(userID, latitude, longitude, locationName, cityName, countryCode, hideLocation) VALUES(\{eventUserIID}, \{latitude}, \{longitude}, '\{locationName}', '\{cityName}', '\{countryCode}', TRUE)");
 
-            sendPrivateMessage(helix, eventUserID, STR.":) Successfully added '\{locationName}' \{emoji} as your location.");
+            sendWhisper(eventUserID, STR.":) Successfully added '\{locationName}' \{emoji} as your location.");
             return;
         }
 
         SQLite.onUpdate(STR."UPDATE weatherLocations SET latitude = \{latitude}, longitude = \{longitude}, locationName = '\{locationName}', cityName = '\{cityName}', countryCode = '\{countryCode}' WHERE userID = \{eventUserIID}");
 
-        sendPrivateMessage(helix, eventUserID, STR.":O Successfully updated your location to '\{locationName}' \{emoji} . You can change the visibility of your location with 'hidelocation'. (Your location doesn't get revealed for other users, as long as you don't change the visibility with this command)");
+        sendWhisper(eventUserID, STR.":O Successfully updated your location to '\{locationName}' \{emoji} . You can change the visibility of your location with 'hidelocation'. (Your location doesn't get revealed for other users, as long as you don't change the visibility with this command)");
     }
 }

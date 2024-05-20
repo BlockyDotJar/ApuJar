@@ -18,11 +18,9 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
-import com.github.twitch4j.helix.TwitchHelix;
 import com.github.twitch4j.helix.domain.BanUserInput;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
@@ -30,11 +28,13 @@ import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
+import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import static dev.blocky.twitch.Main.helix;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class CrossbanCommand implements ICommand
@@ -42,10 +42,8 @@ public class CrossbanCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -53,7 +51,7 @@ public class CrossbanCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "MEGALUL Please specify a user.");
+            sendChatMessage(channelID, "MEGALUL Please specify a user.");
             return;
         }
 
@@ -61,7 +59,7 @@ public class CrossbanCommand implements ICommand
 
         if (!isValidUsername(userToBan))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -69,7 +67,7 @@ public class CrossbanCommand implements ICommand
 
         if (usersToBan.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToBan}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToBan}' found.");
             return;
         }
 
@@ -86,19 +84,21 @@ public class CrossbanCommand implements ICommand
 
         if (eventUserIID == userIID)
         {
-            chat.sendMessage(channelName, "FeelsDankMan You definitely don't want to crossban yourself.");
+            sendChatMessage(channelID, "FeelsDankMan You definitely don't want to crossban yourself.");
             return;
         }
 
-        HashSet<String> chatLogins = SQLUtils.getChatLogins();
-        int bannedChats = chatLogins.size();
+        Set<Chat> chats = SQLUtils.getChats();
+        int bannedChats = chats.size();
 
-        for (String chatLogin : chatLogins)
+        for (Chat chat : chats)
         {
             BanUserInput banUserInput = BanUserInput.builder()
                     .userId(userID)
                     .reason(reason)
                     .build();
+
+            String chatLogin = chat.getUserLogin();
 
             List<User> chatUsers = retrieveUserList(client, chatLogin);
             User chatUser = chatUsers.getFirst();
@@ -116,8 +116,7 @@ public class CrossbanCommand implements ICommand
 
             try
             {
-                TwitchHelix twitchHelix = client.getHelix();
-                twitchHelix.banUser(null, chatUserID, "896181679", banUserInput).execute();
+                helix.banUser(null, chatUserID, "896181679", banUserInput).execute();
             }
             catch (Exception ignored)
             {
@@ -127,10 +126,10 @@ public class CrossbanCommand implements ICommand
 
         if (bannedChats == 0)
         {
-            chat.sendMessage(channelName, STR."User '\{userToBan}' is already banned in every chat that i'm mod in NotLikeThis");
+            sendChatMessage(channelID, STR."User '\{userToBan}' is already banned in every chat that i'm mod in NotLikeThis");
             return;
         }
 
-        chat.sendMessage(channelName, STR."Successfully crossbanned '\{userToBan}' from \{bannedChats} chats LEL");
+        sendChatMessage(channelID, STR."Successfully crossbanned '\{userToBan}' from \{bannedChats} chats LEL");
     }
 }

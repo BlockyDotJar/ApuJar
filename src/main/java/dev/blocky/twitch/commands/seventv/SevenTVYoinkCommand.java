@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.seventv;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -27,12 +26,13 @@ import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.*;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.SevenTVEmoteChangeAction;
 import dev.blocky.twitch.utils.SevenTVUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
@@ -41,8 +41,6 @@ public class SevenTVYoinkCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
@@ -55,7 +53,7 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -63,7 +61,7 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (messageParts.length == 2)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a emote.");
+            sendChatMessage(channelID, "FeelsMan Please specify a emote.");
             return;
         }
 
@@ -77,7 +75,7 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (!isValidUsername(userToYoink))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -85,113 +83,69 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (usersToYoink.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToYoink}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToYoink}' found.");
             return;
         }
 
         User user = usersToYoink.getFirst();
-        String userLogin = user.getLogin();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
 
-        SevenTV sevenTV = SevenTVUtils.getUser(userLogin);
-        SevenTVData sevenTVData = sevenTV.getData();
-        ArrayList<SevenTVUser> sevenTVUsers = sevenTVData.getUsers();
-        List<SevenTVUser> sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, userLogin);
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Set<Integer> ownerIDs = owners.keySet();
 
-        SevenTVUser sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVUserDisplayName = sevenTVUser.getUserDisplayName();
-        String sevenTVUserID = sevenTVUser.getUserID();
-
-        if (sevenTVUsersFiltered.isEmpty())
-        {
-            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{userLogin}' found.");
-            return;
-        }
-
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
-
-        sevenTV = SevenTVUtils.getUser(channelName);
-        sevenTVData = sevenTV.getData();
-        sevenTVUsers = sevenTVData.getUsers();
-        sevenTVUsersFiltered = SevenTVUtils.getFilteredUsers(sevenTVUsers, channelName);
-
-        if (sevenTVUsersFiltered.isEmpty())
-        {
-            chat.sendMessage(channelName, STR."undefined No (7TV) user with name '\{channelName}' found.");
-            return;
-        }
-
-        sevenTVUser = sevenTVUsersFiltered.getFirst();
-        String sevenTVChannelDisplayName = sevenTVUser.getUserDisplayName();
-        String sevenTVChannelID = sevenTVUser.getUserID();
-
-        boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, eventUserIID, sevenTVChannelID, eventUserName);
+        boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, eventUserIID);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
-            chat.sendMessage(channelName, "ManFeels You can't add emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
+            sendChatMessage(channelID, "ManFeels You can't add emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
             return;
         }
 
-        sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
+        SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, userIID);
 
-        SevenTVUserConnection sevenTVConnection = SevenTVUtils.getSevenTVUserConnection(sevenTVUser);
-
-        if (sevenTVConnection == null)
+        if (sevenTVTwitchUser == null)
         {
-            chat.sendMessage(channelName, STR."undefined No (7TV) emote set found for \{sevenTVUserDisplayName}.");
             return;
         }
 
-        SevenTVEmoteSet sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
+        SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
 
-        sevenTV = ServiceProvider.getSevenTVEmoteSet(sevenTVEmoteSetID);
-        ArrayList<SevenTVEmote> sevenTVEmotes = sevenTV.getEmotes();
+        List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
         List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToYoink);
 
         if (sevenTVEmotesFiltered.isEmpty())
         {
-            chat.sendMessage(channelName, STR."FeelsGoodMan No emote with name '\{emoteToYoink}' found.");
+            sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToYoink}' found.");
             return;
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
         String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
-        sevenTVEmote = ServiceProvider.getSevenTVEmote(sevenTVEmoteID);
-
         boolean isAnimated = sevenTVEmote.isAnimated();
         boolean isListed = sevenTVEmote.isListed();
         boolean isPrivate = sevenTVEmote.getEmoteFlags() == 1;
 
-        sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVChannelID);
+        sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, channelIID);
 
-        sevenTVConnection = SevenTVUtils.getSevenTVUserConnection(sevenTVUser);
-
-        if (sevenTVConnection == null)
+        if (sevenTVTwitchUser == null)
         {
-            chat.sendMessage(channelName, STR."undefined No (7TV) emote set found for \{sevenTVChannelDisplayName}.");
             return;
         }
 
-        sevenTVEmoteSet = sevenTVConnection.getEmoteSet();
-        sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
+        sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
+        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
 
         SevenTV emoteAddition = SevenTVUtils.changeEmote(SevenTVEmoteChangeAction.ADD, sevenTVEmoteSetID, sevenTVEmoteID, emoteAlias);
 
-        ArrayList<SevenTVError> errors = emoteAddition.getErrors();
+        List<SevenTVError> errors = emoteAddition.getErrors();
 
-        if (errors != null)
+        if (SevenTVUtils.checkErrors(channelID, errors))
         {
-            SevenTVError error = errors.getFirst();
-            SevenTVErrorExtension errorExtension = error.getErrorExtension();
-            String errorMessage = errorExtension.getErrorMessage();
-            int errorCode = errorExtension.getErrorCode();
-
-            chat.sendMessage(channelName, STR."(7TV) error (\{errorCode}) undefined \ud83d\udc4d \{errorMessage}");
             return;
         }
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed})");
+        sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed})");
     }
 }

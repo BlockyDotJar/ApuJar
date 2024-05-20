@@ -18,16 +18,17 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TimeUnit;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class ExitCommand implements ICommand
 {
@@ -36,12 +37,10 @@ public class ExitCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
-        chat.sendMessage(channelName, "ManFeels Preparing to shutdown...");
+        sendChatMessage(channelID, "ManFeels Preparing to shutdown...");
 
         for (int i = 5; i > 0; i--)
         {
@@ -52,7 +51,7 @@ public class ExitCommand implements ICommand
 
             if (i == 1)
             {
-                chat.sendMessage(channelName, "GigaSignal Disconnecting from Twitch websocket...");
+                sendChatMessage(channelID, "GigaSignal Disconnecting from Twitch websocket...");
 
                 logger.info("Bot stops in 1 second.");
             }

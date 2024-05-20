@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.weather;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.helix.domain.User;
@@ -28,9 +27,9 @@ import dev.blocky.api.entities.openmeteo.OpenMeteoCurrentWeather;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.WeatherUtils;
+import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,14 +42,12 @@ public class UserWeatherCommand implements ICommand
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -58,7 +55,7 @@ public class UserWeatherCommand implements ICommand
 
         if (!isValidUsername(userToGetWeatherFrom))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -66,7 +63,7 @@ public class UserWeatherCommand implements ICommand
 
         if (usersToGetWeatherFrom.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToGetWeatherFrom}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToGetWeatherFrom}' found.");
             return;
         }
 
@@ -75,20 +72,20 @@ public class UserWeatherCommand implements ICommand
         String userID = user.getId();
         int userIID = Integer.parseInt(userID);
 
-        HashSet<Integer> weatherLocationUserIIDs = SQLUtils.getWeatherLocationUserIDs();
+        Location location = SQLUtils.getLocation(userIID);
 
-        if (!weatherLocationUserIIDs.contains(userIID))
+        if (location == null)
         {
-            chat.sendMessage(channelName, "FeelsMan Please the specified user was not found in the location database Weird The user needs to set an location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
+            sendChatMessage(channelID, "FeelsMan Please the specified user was not found in the location database Weird The user needs to set an location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
             return;
         }
 
-        double latitude = SQLUtils.getLatitude(userIID);
-        double longitude = SQLUtils.getLatitude(userIID);
+        double latitude = location.getLatitude();
+        double longitude = location.getLatitude();
 
-        String locationName = SQLUtils.getLocationName(userIID);
-        String cityName = SQLUtils.getCityName(userIID);
-        String countryCode = SQLUtils.getCountryCode(userIID);
+        String locationName = location.getLocationName();
+        String cityName = location.getCityName();
+        String countryCode = location.getCountryCode();
 
         String emoji = "\uD83C\uDFF4";
 
@@ -147,23 +144,23 @@ public class UserWeatherCommand implements ICommand
 
         String weather = weatherBuilder.toString();
 
-        boolean hideLocation = SQLUtils.hidesLocation(userIID);
+        boolean hideLocation = location.hidesLocation();
 
         if (hideLocation)
         {
-            chat.sendMessage(channelName, STR."Weather for \{userDisplayName}'s location FeelsGoodMan Secret location Susge \{weather}");
+            sendChatMessage(channelID, STR."Weather for \{userDisplayName}'s location FeelsGoodMan Secret location Susge \{weather}");
             return;
         }
 
-        String location = cityName;
+        String userLocation = cityName;
 
         if (cityName == null)
         {
-            location = locationName;
+            userLocation = locationName;
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."Weather for \{userDisplayName}'s location FeelsGoodMan \{location} \{emoji} \{weather}");
+        sendChatMessage(channelID, STR."Weather for \{userDisplayName}'s location FeelsGoodMan \{userLocation} \{emoji} \{weather}");
     }
 }

@@ -25,14 +25,17 @@ import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class PartCommand implements ICommand
 {
@@ -42,7 +45,7 @@ public class PartCommand implements ICommand
         TwitchChat chat = client.getChat();
 
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -51,11 +54,12 @@ public class PartCommand implements ICommand
 
         String chatToPart = getUserAsString(messageParts, eventUser);
 
-        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Collection<String> ownerLogins = owners.values();
 
         if (chatToPart.equalsIgnoreCase("ApuJar") || ownerLogins.contains(chatToPart))
         {
-            chat.sendMessage(channelName, "TriHard \u270A I'll stay here.");
+            sendChatMessage(channelID, "TriHard \u270A I'll stay here.");
             return;
         }
 
@@ -64,28 +68,29 @@ public class PartCommand implements ICommand
             IVR ivr = ServiceProvider.getIVRModVip(chatToPart);
             boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
-            HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
-            HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+            Map<Integer, String> admins = SQLUtils.getAdmins();
+            Set<Integer> adminIDs = admins.keySet();
+
+            Set<Integer> ownerIDs = owners.keySet();
 
             if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
             {
-                chat.sendMessage(channelName, "ManFeels Can't leave channel, because you aren't broadcaster or mod at this channel.");
+                sendChatMessage(channelID, "ManFeels Can't leave channel, because you aren't broadcaster or mod at this channel.");
                 return;
             }
         }
 
         if (!chat.isChannelJoined(chatToPart))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob I'm not even in \{chatToPart}'s chat.");
+            sendChatMessage(channelID, STR."CoolStoryBob I'm not even in \{chatToPart}'s chat.");
             return;
         }
 
         chat.leaveChannel(chatToPart);
 
-        SQLite.onUpdate(STR."DELETE FROM chats WHERE userLogin ='\{chatToPart}'");
-        SQLite.onUpdate(STR."DELETE FROM eventNotifications WHERE userLogin ='\{chatToPart}'");
+        SQLite.onUpdate(STR."DELETE FROM chats WHERE userLogin = '\{chatToPart}'");
 
-        chat.sendMessage(channelName, STR."MrDestructoid Successfully left from \{chatToPart}'s chat.");
+        sendChatMessage(channelID, STR."MrDestructoid Successfully left from \{chatToPart}'s chat.");
     }
 }
 

@@ -18,40 +18,35 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashMap;
+import java.util.Map;
 
-import static dev.blocky.twitch.utils.SQLUtils.removeApostrophe;
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class EditGlobalCommandCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a global command name.");
+            sendChatMessage(channelID, "FeelsMan Please specify a global command name.");
             return;
         }
 
         if (messageParts.length == 2)
         {
-            chat.sendMessage(channelName, "FeelsGoodMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
             return;
         }
 
@@ -60,18 +55,18 @@ public class EditGlobalCommandCommand implements ICommand
         String gcNameRaw = messageParts[1];
         String gcMessageRaw = removeElements(messageParts, 2);
 
-        String gcName = removeApostrophe(gcNameRaw);
-        String gcMessage = removeApostrophe(gcMessageRaw);
+        String gcName = removeIllegalCharacters(gcNameRaw);
+        String gcMessage = removeIllegalCharacters(gcMessageRaw);
 
         if (gcMessage.isBlank())
         {
-            chat.sendMessage(channelName, "monkaLaugh The global command name/message can't contain the character ' haha");
+            sendChatMessage(channelID, "monkaLaugh The global command name/message can't only contain the character ' haha");
             return;
         }
 
         if (gcName.startsWith("/") || gcMessage.startsWith("/"))
         {
-            chat.sendMessage(channelName, "monkaLaugh The global command name/message can't start with a / (slash) haha");
+            sendChatMessage(channelID, "monkaLaugh The global command name/message can't start with a / (slash) haha");
             return;
         }
 
@@ -80,22 +75,22 @@ public class EditGlobalCommandCommand implements ICommand
             gcName = gcName.substring(actualPrefix.length());
         }
 
-        HashMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
+        Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
         if (!globalCommands.containsKey(gcName))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
+            sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
             return;
         }
 
         if (globalCommands.containsKey(gcName) && globalCommands.get(gcName).equals(gcMessage))
         {
-            chat.sendMessage(channelName, STR."4Head The new value for '\{gcName}' does exactly match with the old one.");
+            sendChatMessage(channelID, STR."4Head The new value for '\{gcName}' does exactly match with the old one.");
             return;
         }
 
         SQLite.onUpdate(STR."UPDATE globalCommands SET message = '\{gcMessage}' WHERE name = '\{gcName}'");
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully edited global command '\{gcName}'");
+        sendChatMessage(channelID, STR."SeemsGood Successfully edited global command '\{gcName}'");
     }
 }

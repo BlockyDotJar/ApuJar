@@ -27,13 +27,15 @@ import java.io.IOException;
 
 public class AuthInterceptor implements Interceptor
 {
-    private final String accessToken;
-    private final String clientID;
+    private final String accessToken, clientID;
+    private final String clientIntegrity, deviceID;
 
-    public AuthInterceptor(@NonNull String accessToken, @Nullable String clientID)
+    public AuthInterceptor(@NonNull String accessToken, @Nullable String clientID, @Nullable String clientIntegrity, @Nullable String deviceID)
     {
         this.accessToken = accessToken;
         this.clientID = clientID;
+        this.clientIntegrity = clientIntegrity;
+        this.deviceID = deviceID;
     }
 
     @Override
@@ -41,11 +43,21 @@ public class AuthInterceptor implements Interceptor
     {
         Request.Builder builder = chain.request()
                 .newBuilder()
-                .addHeader("Authorization", STR."Bearer \{accessToken}");
+                .addHeader("Authorization", accessToken);
 
         if (clientID != null)
         {
             builder.addHeader("Client-Id", clientID);
+        }
+
+        if (clientIntegrity != null)
+        {
+            builder.addHeader("Client-Integrity", clientIntegrity);
+        }
+
+        if (deviceID != null)
+        {
+            builder.addHeader("X-Device-Id", deviceID);
         }
 
         Request request = builder.build();

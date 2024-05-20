@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.github;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
@@ -32,23 +31,23 @@ import java.util.Date;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class ChattyCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
+
+        boolean hasEXEParameter = hasParameter(messageParts, "-exe");
+        boolean hasZIPParameter = hasParameter(messageParts, "-zip");
 
         GitHubRelease gitHubRelease = ServiceProvider.getGitHubLatestRelease("chatty", "chatty");
         String htmlURL = gitHubRelease.getHtmlURL();
         String tagName = gitHubRelease.getTagName();
         Date publishedAt = gitHubRelease.getPublishedAt();
-        boolean isPreRealse = gitHubRelease.isPreRelease();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         String readablePublishedAt = formatter.format(publishedAt);
@@ -56,17 +55,29 @@ public class ChattyCommand implements ICommand
         List<GitHubAsset> assets = gitHubRelease.getAssets();
         GitHubAsset asset = null;
 
-        if (assets.isEmpty())
+        if (assets.isEmpty() || (!hasEXEParameter && !hasZIPParameter))
         {
-            chat.sendMessage(channelName, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} (Pre-Release: \{isPreRealse}) \uD83D\uDC49 \{htmlURL}");
+            sendChatMessage(channelID, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} \uD83D\uDC49 \{htmlURL}");
             return;
+        }
+
+        String neededFileType = null;
+
+        if (hasEXEParameter)
+        {
+            neededFileType = "exe";
+        }
+
+        if (hasZIPParameter)
+        {
+            neededFileType = "zip";
         }
 
         for (GitHubAsset gitHubAsset : assets)
         {
             String gitHubAssetName = gitHubAsset.getAssetName();
 
-            if (!gitHubAssetName.endsWith(".exe"))
+            if (!gitHubAssetName.endsWith(STR.".\{neededFileType}"))
             {
                 continue;
             }
@@ -84,8 +95,8 @@ public class ChattyCommand implements ICommand
 
         String browserDownloadURL = asset.getBrowserDownloadURL();
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}, Pre-Release: \{isPreRealse}) \uD83D\uDC49 \{browserDownloadURL}");
+        sendChatMessage(channelID, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}) \uD83D\uDC49 \{browserDownloadURL}");
     }
 }

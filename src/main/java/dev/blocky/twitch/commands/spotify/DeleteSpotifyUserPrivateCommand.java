@@ -21,13 +21,12 @@ import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
-
-import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 
 public class DeleteSpotifyUserPrivateCommand implements IPrivateCommand
 {
@@ -38,16 +37,16 @@ public class DeleteSpotifyUserPrivateCommand implements IPrivateCommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
+        SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
 
-        if (!spotifyUserIIDs.contains(eventUserIID))
+        if (spotifyUser == null)
         {
-            sendPrivateMessage(helix, eventUserID, "4Head No Spotify credentials found in the database with your id.");
+            sendWhisper(eventUserID, "4Head No Spotify credentials found in the database with your id.");
             return;
         }
 
         SQLite.onUpdate(STR."DELETE FROM spotifyCredentials WHERE userID = \{eventUserIID}");
 
-        sendPrivateMessage(helix, eventUserID, "SeemsGood Successfully removed Spotify credential from the database.");
+        sendWhisper(eventUserID, "SeemsGood Successfully removed Spotify credentials.");
     }
 }

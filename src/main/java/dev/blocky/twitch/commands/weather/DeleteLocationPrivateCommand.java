@@ -21,13 +21,12 @@ import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-
-import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 
 public class DeleteLocationPrivateCommand implements IPrivateCommand
 {
@@ -38,16 +37,16 @@ public class DeleteLocationPrivateCommand implements IPrivateCommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> weatherLocationUserIIDs = SQLUtils.getWeatherLocationUserIDs();
+        Location location = SQLUtils.getLocation(eventUserIID);
 
-        if (!weatherLocationUserIIDs.contains(eventUserIID))
+        if (location == null)
         {
-            sendPrivateMessage(helix, eventUserID, "4Head No location found in the database for your user id.");
+            sendWhisper(eventUserID, "4Head No location found in the database for your user id.");
             return;
         }
 
         SQLite.onUpdate(STR."DELETE FROM weatherLocations WHERE userID = \{eventUserIID}");
 
-        sendPrivateMessage(helix, eventUserID, ":O Successfully deleted your location from our database :D");
+        sendWhisper(eventUserID, ":O Successfully deleted your location from our database :D");
     }
 }

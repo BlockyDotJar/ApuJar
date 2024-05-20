@@ -20,19 +20,22 @@ package dev.blocky.twitch.manager;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.Set;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class TwitchConfigurator
 {
-    private final HashSet<String> chatLogins;
+    private final Set<Chat> chats;
     private final TwitchClient client;
 
     public TwitchConfigurator(@NonNull TwitchClient client) throws SQLException
     {
-        this.chatLogins = SQLUtils.getChatLogins();
+        this.chats = SQLUtils.getChats();
         this.client = client;
     }
 
@@ -40,12 +43,15 @@ public class TwitchConfigurator
     {
         TwitchChat chat = client.getChat();
 
-        chat.sendMessage("ApuJar", "ppCircle Trying to connect to Twitch websocket...");
+        sendChatMessage("896181679", "ppCircle Trying to connect to Twitch websocket...");
 
         int chatCount = 1;
 
-        for (String chatLogin : chatLogins)
+        for (Chat ch : chats)
         {
+            String chatLogin = ch.getUserLogin();
+            int chatID = ch.getUserID();
+
             try
             {
                 chat.joinChannel(chatLogin);
@@ -54,12 +60,18 @@ public class TwitchConfigurator
             catch (Exception e)
             {
                 String error = e.getMessage();
-                chat.sendMessage("ApuJar", STR."Weird Error while trying to connect to \{chatLogin}'s chat FeelsGoodMan \{error}");
+
+                if (chatCount >= 100)
+                {
+                    sendChatMessage(chatID, "heyy Because i'm in over 100 channels, it is possible, that i am not able to look into your chat anymore due to some Twitch API changes https://links.blockyjar.dev/m8mrybgQKR1 You might need to give moderator permission to me to work properly FeelsOkayMan");
+                }
+
+                sendChatMessage("896181679", STR."Weird Error while trying to connect to \{chatLogin}'s chat FeelsGoodMan \{error}");
 
                 e.printStackTrace();
             }
         }
 
-        chat.sendMessage("ApuJar", STR."TriFi Successfully connected to \{chatCount} chats.");
+        sendChatMessage("896181679", STR."TriFi Successfully connected to \{chatCount} chats.");
     }
 }

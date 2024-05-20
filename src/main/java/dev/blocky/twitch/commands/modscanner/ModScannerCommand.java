@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.modscanner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -39,10 +38,8 @@ public class ModScannerCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
@@ -50,7 +47,7 @@ public class ModScannerCommand implements ICommand
 
         if (!isValidUsername(userToLookup))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -58,7 +55,7 @@ public class ModScannerCommand implements ICommand
 
         if (usersToLookup.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToLookup}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToLookup}' found.");
             return;
         }
 
@@ -66,10 +63,9 @@ public class ModScannerCommand implements ICommand
 
         String messageToSend = null;
 
-        boolean hasChannelParameter = Arrays.stream(messageParts).anyMatch("-channel"::equalsIgnoreCase);
-        boolean hasChParameter = Arrays.stream(messageParts).anyMatch("-ch"::equalsIgnoreCase);
+        boolean hasChannelParameter = hasRegExParameter(messageParts, "-ch(annel)?");
 
-        if (!hasChannelParameter && !hasChParameter)
+        if (!hasChannelParameter)
         {
             ModScanner modScanner = ServiceProvider.getModScannerUser(userToLookup);
 
@@ -83,7 +79,7 @@ public class ModScannerCommand implements ICommand
             messageToSend = STR."PogChamp \{userDisplayName} is moderator in \{modCount}, vip in \{vipCount} and founder in \{founderCount} channel! o_O https://mod.sc/\{userLogin}";
         }
 
-        if (hasChannelParameter || hasChParameter)
+        if (hasChannelParameter)
         {
             ModScanner modScanner = ServiceProvider.getModScannerChannel(userToLookup);
 
@@ -96,8 +92,8 @@ public class ModScannerCommand implements ICommand
             messageToSend = STR."PogChamp \{userDisplayName} has \{modCount} moderators, \{vipCount} vips and \{founderCount} founder in its channel! o_O https://mod.sc/channel/\{userDisplayName}";
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

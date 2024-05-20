@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.spotify;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -26,6 +25,7 @@ import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
+import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
@@ -34,7 +34,6 @@ import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.personalization.simplified.GetUsersTopTracksRequest;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -46,10 +45,8 @@ public class SongsCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
@@ -57,7 +54,7 @@ public class SongsCommand implements ICommand
 
         if (!isValidUsername(userToGetTopSongsFrom))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -65,7 +62,7 @@ public class SongsCommand implements ICommand
 
         if (usersToGetTopSongsFrom.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToGetTopSongsFrom}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToGetTopSongsFrom}' found.");
             return;
         }
 
@@ -74,29 +71,26 @@ public class SongsCommand implements ICommand
         String userID = user.getId();
         int userIID = Integer.parseInt(userID);
 
-        boolean hasLongParameter = Arrays.stream(messageParts).anyMatch("-long"::equalsIgnoreCase);
-        boolean hasLParameter = Arrays.stream(messageParts).anyMatch("-l"::equalsIgnoreCase);
-
-        boolean hasShortParameter = Arrays.stream(messageParts).anyMatch("-short"::equalsIgnoreCase);
-        boolean hasSParameter = Arrays.stream(messageParts).anyMatch("-s"::equalsIgnoreCase);
+        boolean hasLongParameter = hasRegExParameter(messageParts, "-l(ong)?");
+        boolean hasShortParameter = hasRegExParameter(messageParts, "-s(hort)?");
 
         String timeRange = "medium_term";
 
-        if (hasLongParameter || hasLParameter)
+        if (hasLongParameter)
         {
             timeRange = "long_term";
         }
 
-        if (hasShortParameter || hasSParameter)
+        if (hasShortParameter)
         {
             timeRange = "short_term";
         }
 
-        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
+        SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(userIID);
 
-        if (!spotifyUserIIDs.contains(userIID))
+        if (spotifyUser == null)
         {
-            chat.sendMessage(channelName, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
+            sendChatMessage(channelID, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
@@ -128,8 +122,8 @@ public class SongsCommand implements ICommand
 
         String topUserTracks = String.join(" | ", topUserTracksRaw);
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."FeelsOkayMan Here are \{userDisplayName}'s top 5 tracks \uD83D\uDC49 \{topUserTracks}");
+        sendChatMessage(channelID, STR."FeelsOkayMan Here are \{userDisplayName}'s top 5 tracks \uD83D\uDC49 \{topUserTracks}");
     }
 }

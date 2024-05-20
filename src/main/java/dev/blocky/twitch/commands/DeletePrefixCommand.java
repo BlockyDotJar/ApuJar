@@ -18,25 +18,24 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class DeletePrefixCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
@@ -50,7 +49,7 @@ public class DeletePrefixCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "ManFeels You can't delete a prefix, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "ManFeels You can't delete a prefix, because you aren't the broadcaster or moderator.");
             return;
         }
 
@@ -58,12 +57,12 @@ public class DeletePrefixCommand implements ICommand
 
         if (actualPrefix.equals("#"))
         {
-            chat.sendMessage(channelName, "CoolStoryBob You don't have a custom prefix.");
+            sendChatMessage(channelID, "CoolStoryBob You don't have a custom prefix.");
             return;
         }
 
         SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
-        chat.sendMessage(channelName, "8-) Successfully deleted prefix.");
+        sendChatMessage(channelID, "8-) Successfully deleted prefix.");
     }
 }

@@ -7,11 +7,11 @@ plugins {
 
     id("com.github.ben-manes.versions") version ("0.51.0")
 
-    kotlin("jvm") version("1.9.23")
+    kotlin("jvm") version("1.9.24")
 }
 
 group = "dev.blocky.twitch"
-version = "1.0.4"
+version = "2.0.0"
 description = "A useful bot for Twitch with many cool utility features."
 
 repositories {

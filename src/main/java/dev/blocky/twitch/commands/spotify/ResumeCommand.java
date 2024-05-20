@@ -18,13 +18,13 @@
 package dev.blocky.twitch.commands.spotify;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
+import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
@@ -40,17 +40,16 @@ import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.HashSet;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class ResumeCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -76,11 +75,11 @@ public class ResumeCommand implements ICommand
             }
         }
 
-        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
+        SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
 
-        if (!spotifyUserIDs.contains(eventUserIID))
+        if (spotifyUser == null)
         {
-            chat.sendMessage(channelName, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
+            sendChatMessage(channelID, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
@@ -93,7 +92,7 @@ public class ResumeCommand implements ICommand
 
         if (devices.length == 0 || !anyActiveDevice)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
         }
 
@@ -102,7 +101,7 @@ public class ResumeCommand implements ICommand
 
         if (currentlyPlaying != null && currentlyPlaying.getIs_playing())
         {
-            chat.sendMessage(channelName, STR."AlienDance \{eventUserName} you're already listening to a song.");
+            sendChatMessage(channelID, STR."AlienDance \{eventUserName} you're already listening to a song.");
             return;
         }
 
@@ -152,7 +151,7 @@ public class ResumeCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                chat.sendMessage(channelName, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
                 return;
             }
 
@@ -166,6 +165,6 @@ public class ResumeCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        chat.sendMessage(channelName, STR."jamm \{eventUserName} resumed his/her song at position \{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}.");
+        sendChatMessage(channelID, STR."jamm \{eventUserName} resumed his/her song at position \{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}.");
     }
 }

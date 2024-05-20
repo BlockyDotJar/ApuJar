@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -40,16 +39,14 @@ public class SubageCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -58,7 +55,7 @@ public class SubageCommand implements ICommand
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
-            chat.sendMessage(channelName, "o_O One or both usernames aren't matching with RegEx R-)");
+            sendChatMessage(channelID, "o_O One or both usernames aren't matching with RegEx R-)");
             return;
         }
 
@@ -67,7 +64,7 @@ public class SubageCommand implements ICommand
 
         if (users.isEmpty() || secondUsers.isEmpty())
         {
-            chat.sendMessage(channelName, ":| One or both users not found.");
+            sendChatMessage(channelID, ":| One or both users not found.");
             return;
         }
 
@@ -81,7 +78,7 @@ public class SubageCommand implements ICommand
 
         if (secondUserBroadcasterType.isEmpty())
         {
-            chat.sendMessage(channelName, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
+            sendChatMessage(channelID, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
             return;
         }
 
@@ -112,7 +109,7 @@ public class SubageCommand implements ICommand
                 messageToSend =  STR."\{messageToSend} before, Ended: \{readableEnd})";
             }
 
-            chat.sendMessage(channelName, messageToSend);
+            sendChatMessage(channelID, messageToSend);
             return;
         }
 
@@ -174,8 +171,8 @@ public class SubageCommand implements ICommand
             messageToSend = STR."\{messageToSend} \{gifterDisplayName} was so nice and gifted a tier \{subTier} sub to \{userDisplayName} on \{readableGiftDate}";
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

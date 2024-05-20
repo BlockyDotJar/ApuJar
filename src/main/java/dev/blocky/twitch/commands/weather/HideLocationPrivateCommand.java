@@ -21,13 +21,12 @@ import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
-
-import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 
 public class HideLocationPrivateCommand implements IPrivateCommand
 {
@@ -40,7 +39,7 @@ public class HideLocationPrivateCommand implements IPrivateCommand
 
         if (messageParts.length == 1)
         {
-            sendPrivateMessage(helix, eventUserID, ";) Please specify a boolean. (Either true or false)");
+            sendWhisper(eventUserID, ";) Please specify a boolean. (Either true or false)");
             return;
         }
 
@@ -48,29 +47,29 @@ public class HideLocationPrivateCommand implements IPrivateCommand
 
         if (!hideValue.matches("^true|false$"))
         {
-            sendPrivateMessage(helix, eventUserID, ":O Invalid value specified. (Choose between true or false)");
+            sendWhisper(eventUserID, ":O Invalid value specified. (Choose between true or false)");
             return;
         }
 
-        HashSet<Integer> weatherLocationUserIIDs = SQLUtils.getWeatherLocationUserIDs();
+        Location location = SQLUtils.getLocation(eventUserIID);
 
-        if (!weatherLocationUserIIDs.contains(eventUserIID))
+        if (location == null)
         {
-            sendPrivateMessage(helix, eventUserID, "4Head No location found in the database for your user id.");
+            sendWhisper(eventUserID, "4Head No location found in the database for your user id.");
             return;
         }
 
         boolean hideLocation = Boolean.parseBoolean(hideValue);
-        boolean hidesLocation = SQLUtils.hidesLocation(eventUserIID);
+        boolean hidesLocation = location.hidesLocation();
 
         if (hideLocation == hidesLocation)
         {
-            sendPrivateMessage(helix, eventUserID, "4Head The new value does exactly match with the old one.");
+            sendWhisper(eventUserID, "4Head The new value does exactly match with the old one.");
             return;
         }
 
         SQLite.onUpdate(STR."UPDATE weatherLocations SET hideLocation = \{hideLocation} WHERE userID = \{eventUserIID}");
 
-        sendPrivateMessage(helix, eventUserID, STR.":O Successfully updated your location visibility to '\{hideLocation}'.");
+        sendWhisper(eventUserID, STR.":O Successfully updated your location visibility to '\{hideLocation}'.");
     }
 }

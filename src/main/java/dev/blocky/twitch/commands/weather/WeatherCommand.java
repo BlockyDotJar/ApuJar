@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.weather;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -31,62 +30,59 @@ import dev.blocky.api.entities.openmeteo.OpenMeteoCurrentWeather;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.WeatherUtils;
+import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class WeatherCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> weatherLocationUserIIDs = SQLUtils.getWeatherLocationUserIDs();
+        Location location = SQLUtils.getLocation(eventUserIID);
 
-        if (messageParts.length == 1 && !weatherLocationUserIIDs.contains(eventUserIID))
+        if (messageParts.length == 1 && location == null)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
+            sendChatMessage(channelID, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
             return;
         }
 
-        double latitude = SQLUtils.getLatitude(eventUserIID);
-        double longitude = SQLUtils.getLatitude(eventUserIID);
+        double latitude = location.getLatitude();
+        double longitude = location.getLatitude();
 
-        String locationName = SQLUtils.getLocationName(eventUserIID);
-        String cityName = SQLUtils.getCityName(eventUserIID);
-        String countryCode = SQLUtils.getCountryCode(eventUserIID);
+        String locationName = location.getLocationName();
+        String cityName = location.getCityName();
+        String countryCode = location.getCountryCode();
 
         if (messageParts.length > 1)
         {
-            String location = removeElements(messageParts, 1);
+            String userLocation = removeElements(messageParts, 1);
 
-            if (location.isBlank())
+            if (userLocation.isBlank())
             {
-                chat.sendMessage(channelName, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
+                sendChatMessage(channelID, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
                 return;
             }
 
-            MapSearch mapSearch = ServiceProvider.getSearchedMaps(location);
+            MapSearch mapSearch = ServiceProvider.getSearchedMaps(userLocation);
             List<MapAdress> mapAdresses = mapSearch.getAddresses();
 
             if (mapAdresses.isEmpty())
             {
-                chat.sendMessage(channelName, STR."UNLUCKY No location called '\{location}' found.");
+                sendChatMessage(channelID, STR."UNLUCKY No location called '\{userLocation}' found.");
                 return;
             }
 
@@ -157,26 +153,26 @@ public class WeatherCommand implements ICommand
 
         String weather = weatherBuilder.toString();
 
-        if (weatherLocationUserIIDs.contains(eventUserIID) && messageParts.length == 1)
+        if (location != null && messageParts.length == 1)
         {
-            boolean hideLocation = SQLUtils.hidesLocation(eventUserIID);
+            boolean hideLocation = location.hidesLocation();
 
             if (hideLocation)
             {
-                chat.sendMessage(channelName, STR."FeelsGoodMan Secret location Susge \{weather}");
+                sendChatMessage(channelID, STR."FeelsGoodMan Secret location Susge \{weather}");
                 return;
             }
         }
 
-        String location = cityName;
+        String userLocation = cityName;
 
         if (cityName == null)
         {
-            location = locationName;
+            userLocation = locationName;
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."FeelsGoodMan \{location} \{emoji} \{weather}");
+        sendChatMessage(channelID, STR."FeelsGoodMan \{userLocation} \{emoji} \{weather}");
     }
 }

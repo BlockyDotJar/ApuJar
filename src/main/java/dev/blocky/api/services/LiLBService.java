@@ -18,6 +18,7 @@
 package dev.blocky.api.services;
 
 import dev.blocky.api.entities.lilb.LiLBChatter;
+import dev.blocky.api.entities.seventv.SevenTVSubage;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Path;
@@ -26,4 +27,7 @@ public interface LiLBService
 {
     @GET("blocky/{login}")
     Call<LiLBChatter> getChatter(@Path("login") String login);
+
+    @GET("7tvsa/{login}")
+    Call<SevenTVSubage> getSubage(@Path("login") String login);
 }

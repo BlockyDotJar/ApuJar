@@ -18,17 +18,18 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class GlobalSayCommand implements ICommand
 {
@@ -37,14 +38,12 @@ public class GlobalSayCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsGoodMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
             return;
         }
 
@@ -52,20 +51,24 @@ public class GlobalSayCommand implements ICommand
 
         if (messageToSend.startsWith("/"))
         {
-            chat.sendMessage(channelName, "4Head / (slash) commands are not allowed in global commands.");
+            sendChatMessage(channelID, "4Head / (slash) commands are not allowed in global commands.");
             return;
         }
 
-        HashSet<String> chatLogins = SQLUtils.getChatLogins();
+        Set<Chat> chats = SQLUtils.getChats();
 
-        for (String chatLogin : chatLogins)
+        for (Chat chat : chats)
         {
-            chat.sendMessage(chatLogin, messageToSend);
+            int chatIID = chat.getUserID();
+            String chatID = String.valueOf(chatIID);
+
+            sendChatMessage(chatID, messageToSend);
+
             TimeUnit.MILLISECONDS.sleep(50);
         }
 
-        int chats = chatLogins.size();
+        int chatCount = chats.size();
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully sent message in \{chats} chats.");
+        sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{chatCount} chats.");
     }
 }

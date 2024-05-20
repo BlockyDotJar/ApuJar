@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
@@ -36,14 +35,12 @@ public class CheckNameCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -51,7 +48,7 @@ public class CheckNameCommand implements ICommand
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -59,12 +56,12 @@ public class CheckNameCommand implements ICommand
 
         if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(channelName, STR."Saved Username '\{userToCheck}' is available.");
+            sendChatMessage(channelID, STR."Saved Username '\{userToCheck}' is available.");
             return;
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."monakS Username '\{userToCheck}' is used.");
+        sendChatMessage(channelID, STR."monakS Username '\{userToCheck}' is used.");
     }
 }

@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -38,10 +37,8 @@ public class IsPartnerCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
@@ -49,7 +46,7 @@ public class IsPartnerCommand implements ICommand
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -57,7 +54,7 @@ public class IsPartnerCommand implements ICommand
 
         if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
@@ -67,12 +64,12 @@ public class IsPartnerCommand implements ICommand
 
         if (!ivrUserRoles.isPartner())
         {
-            chat.sendMessage(channelName, STR."Sadge \{ivrUserDisplayName} isn't a Twitch partner at the moment.");
+            sendChatMessage(channelID, STR."Sadge \{ivrUserDisplayName} isn't a Twitch partner at the moment.");
             return;
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."DinoDance \{ivrUserDisplayName} is a Twitch partner POGGERS");
+        sendChatMessage(channelID, STR."DinoDance \{ivrUserDisplayName} is a Twitch partner POGGERS");
     }
 }

@@ -20,7 +20,7 @@ package dev.blocky.api.entities.seventv;
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class SevenTV
 {
@@ -28,10 +28,7 @@ public class SevenTV
     SevenTVData data;
 
     @SerializedName("errors")
-    ArrayList<SevenTVError> errors;
-
-    @SerializedName("emotes")
-    ArrayList<SevenTVEmote> emotes;
+    List<SevenTVError> errors;
 
     @Nullable
     public SevenTVData getData()
@@ -40,15 +37,9 @@ public class SevenTV
     }
 
     @Nullable
-    public ArrayList<SevenTVError> getErrors()
+    public List<SevenTVError> getErrors()
     {
         return errors;
-    }
-
-    @Nullable
-    public ArrayList<SevenTVEmote> getEmotes()
-    {
-        return emotes;
     }
 
     SevenTV()

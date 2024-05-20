@@ -17,10 +17,10 @@
  */
 package dev.blocky.twitch.utils;
 
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
+import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import io.github.cdimascio.dotenv.Dotenv;
-import org.joda.time.DateTime;
 import org.joda.time.LocalDateTime;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.SpotifyHttpManager;
@@ -29,19 +29,16 @@ import se.michaelthelin.spotify.requests.authorization.authorization_code.Author
 
 import java.net.URI;
 
-import static dev.blocky.twitch.utils.OSUtils.getFilePath;
-
 public class SpotifyUtils
 {
     @NonNull
     public static SpotifyApi getSpotifyAPI(int userID) throws Exception
     {
-        String accessToken = SQLUtils.getSpotifyAccessToken(userID);
-        String refreshToken = SQLUtils.getSpotifyRefreshToken(userID);
-        String expiresOn = SQLUtils.getSpotifyExpiresOn(userID);
+        SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(userID);
 
-        DateTime expiresOnDate = new DateTime(expiresOn);
-        LocalDateTime expiresOnLocalDate = expiresOnDate.toLocalDateTime();
+        String accessToken = spotifyUser.getAccessToken();
+        String refreshToken = spotifyUser.getRefreshToken();
+        LocalDateTime expiresOnLocalDate = spotifyUser.getExpiresOn();
 
         SpotifyApi spotifyAPI = new SpotifyApi.Builder()
                 .setAccessToken(accessToken)

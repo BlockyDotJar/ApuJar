@@ -28,28 +28,10 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
+
 public class SevenTVUtils
 {
-    @NonNull
-    public static SevenTV getUser(@NonNull String userName) throws IOException
-    {
-        String query = """
-                    query SearchUsers($query: String!) {
-                        users(query: $query) {
-                            id
-                            username
-                            display_name
-                        }
-                    }
-                """;
-
-        Map<String, Object> variables = Map.of("query", userName);
-
-        SevenTVGQLBody gql = new SevenTVGQLBody("SearchUsers", variables, query);
-
-        return ServiceProvider.postSevenTVGQL(gql);
-    }
-
     @NonNull
     public static SevenTV searchEmotes(@NonNull String emoteName) throws IOException
     {
@@ -59,6 +41,9 @@ public class SevenTVUtils
                         items {
                             id
                             name
+                            flags
+                            listed
+                            animated
                         }
                     }
                 }
@@ -83,7 +68,7 @@ public class SevenTVUtils
         Map<String, Object> variables = Map.of
                 (
                         "query", emoteName,
-                        "limit", 25,
+                        "limit", 50,
                         "page", 1,
                         "sort", sort,
                         "filter", filter
@@ -123,6 +108,55 @@ public class SevenTVUtils
     }
 
     @NonNull
+    public static SevenTV getUserCosmentics(@NonNull String sevenTVUserID) throws IOException
+    {
+        String query = """
+                    query GetUserCosmetics($id: ObjectID!) {
+                        user(id: $id) {
+                            cosmetics {
+                                id
+                                kind
+                                selected
+                            }
+                        }
+                    }
+                """;
+
+        Map<String, Object> variables = Map.of("id", sevenTVUserID);
+
+        SevenTVGQLBody gql = new SevenTVGQLBody("GetUserCosmetics", variables, query);
+
+        return ServiceProvider.postSevenTVGQL(gql);
+    }
+
+    @NonNull
+    public static SevenTV getCosmentics(@NonNull String cosmeticID) throws IOException
+    {
+        String query = """
+                query GetCosmestics($list: [ObjectID!]) {
+                    cosmetics(list: $list) {
+                        paints {
+                            id
+                            name
+                        }
+                        badges {
+                            id
+                            name
+                        }
+                    }
+                }
+                """;
+
+
+        List<String> list = Collections.singletonList(cosmeticID);
+        Map<String, Object> variables = Map.of("list", list);
+
+        SevenTVGQLBody gql = new SevenTVGQLBody("GetCosmestics", variables, query);
+
+        return ServiceProvider.postSevenTVGQL(gql);
+    }
+
+    @NonNull
     public static List<SevenTVEmote> getFilteredEmotes(@NonNull List<SevenTVEmote> sevenTVEmotes, @NonNull String emoteName)
     {
         SevenTVEmoteComparator emoteComparator = new SevenTVEmoteComparator(emoteName);
@@ -137,104 +171,69 @@ public class SevenTVUtils
                 .toList();
     }
 
-    @NonNull
-    public static List<SevenTVUser> getFilteredUsers(@NonNull List<SevenTVUser> sevenTVUsers, @NonNull String userName)
+    private static boolean isAllowedEditorLocal(int channelID, int userID) throws SQLException
     {
-        return sevenTVUsers.stream()
-                .filter(sevenTVUser ->
-                {
-                    String sevenTVUsername = sevenTVUser.getUserName();
-                    return sevenTVUsername.equalsIgnoreCase(userName);
-                })
-                .toList();
-    }
-
-    @Nullable
-    public static SevenTVUserConnection getSevenTVUserConnection(@NonNull SevenTVUser sevenTVUser)
-    {
-        ArrayList<SevenTVUserConnection> sevenTVUserConnections = sevenTVUser.getUserConnections();
-
-        for (SevenTVUserConnection sevenTVUserConnection : sevenTVUserConnections)
-        {
-            String platform = sevenTVUserConnection.getPlatform();
-
-            if (platform.equals("TWITCH"))
-            {
-                return sevenTVUserConnection;
-            }
-        }
-        return null;
-    }
-
-    public static boolean isAllowedEditor(int channelID, int userID) throws SQLException
-    {
-        String allowedUserIDsRaw = SQLUtils.getSevenTVAllowedUserIDs(channelID);
+        Set<String> allowedUserIDsRaw = SQLUtils.getSevenTVAllowedUserIDs(channelID);
 
         if (allowedUserIDsRaw != null)
         {
-            List<Integer> allowedUserIIDs = null;
-
-            if (allowedUserIDsRaw.contains(","))
-            {
-                String[] allowedUserIDs = allowedUserIDsRaw.split(",");
-
-                allowedUserIIDs = Arrays.stream(allowedUserIDs)
+            List<Integer> allowedUserIIDs = allowedUserIDsRaw.stream()
                         .mapToInt(Integer::parseInt)
                         .boxed()
                         .toList();
-            }
 
-            if (allowedUserIIDs == null)
-            {
-                int allowedUserIID = Integer.parseInt(allowedUserIDsRaw);
-                allowedUserIIDs = Collections.singletonList(allowedUserIID);
-            }
-
-            for (int allowedUserIID : allowedUserIIDs)
-            {
-                if (allowedUserIID == userID)
-                {
-                    return true;
-                }
-            }
+            return allowedUserIIDs.stream().anyMatch(allowedUserIID -> allowedUserIID == userID);
         }
+
         return false;
     }
 
-    public static boolean isAllowedEditor(int channelID, int userID, @NonNull String sevenTVUserID, @NonNull String userName) throws SQLException, IOException
+    public static boolean isAllowedEditor(int channelIID, int userID) throws SQLException, IOException
     {
-        boolean isAllowedEditor = isAllowedEditor(channelID, userID);
+        boolean isAllowedEditor = isAllowedEditorLocal(channelIID, userID);
 
         if (isAllowedEditor)
         {
             return true;
         }
 
-        SevenTVUser sevenTVUser = ServiceProvider.getSevenTVUser(sevenTVUserID);
-        ArrayList<SevenTVUser> sevenTVUserEditors = sevenTVUser.getUserEditors();
+        SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, channelIID);
 
-        SevenTV sevenTV = SevenTVUtils.getUser(userName);
-        SevenTVData sevenTVData = sevenTV.getData();
-        ArrayList<SevenTVUser> sevenTVUsers = sevenTVData.getUsers();
-        List<SevenTVUser> sevenTVUsersFiltered = getFilteredUsers(sevenTVUsers, userName);
-
-        if (sevenTVUsersFiltered.isEmpty())
+        if (sevenTVTwitchUser == null)
         {
             return false;
         }
 
-        sevenTVUser = sevenTVUsersFiltered.getFirst();
-        sevenTVUserID = sevenTVUser.getUserID();
+        SevenTVUser sevenTVUser = sevenTVTwitchUser.getUser();
+        List<SevenTVUser> sevenTVEditors = sevenTVUser.getEditors();
 
-        for (SevenTVUser sevenTVUserEditor : sevenTVUserEditors)
+        sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, userID);
+
+        if (sevenTVTwitchUser == null)
         {
-            String sevenTVUserEditorID = sevenTVUserEditor.getUserID();
+            return false;
+        }
 
-            if (!sevenTVUserEditorID.equals(sevenTVUserID))
-            {
-                continue;
-            }
+        sevenTVUser = sevenTVTwitchUser.getUser();
+        String sevenTVUserID = sevenTVUser.getUserID();
 
+        return sevenTVEditors.stream().anyMatch(sevenTVEditor ->
+        {
+            String sevenTVEditorID = sevenTVEditor.getUserID();
+            return sevenTVEditorID.equals(sevenTVUserID);
+        });
+    }
+
+    public static boolean checkErrors(@NonNull String channelID, @Nullable List<SevenTVError> errors)
+    {
+        if (errors != null)
+        {
+            SevenTVError error = errors.getFirst();
+            SevenTVErrorExtension errorExtension = error.getErrorExtension();
+            String errorMessage = errorExtension.getErrorMessage();
+            int errorCode = errorExtension.getErrorCode();
+
+            sendChatMessage(channelID, STR."(7TV) error (\{errorCode}) undefined \ud83d\udc4d \{errorMessage}");
             return true;
         }
 

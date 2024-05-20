@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -30,20 +29,21 @@ import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class SpamCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -52,7 +52,7 @@ public class SpamCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a number of messages.");
+            sendChatMessage(channelID, "FeelsMan Please specify a number of messages.");
             return;
         }
         
@@ -60,23 +60,24 @@ public class SpamCommand implements ICommand
 
         if (!StringUtils.isNumeric(spamCount))
         {
-            chat.sendMessage(channelName, "ManFeels The first parameter isn't an integer.");
+            sendChatMessage(channelID, "ManFeels The first parameter isn't an integer.");
             return;
         }
 
         if (messageParts.length == 2)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsMan Please specify a message.");
             return;
         }
 
         int messageCount = Integer.parseInt(spamCount);
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Set<Integer> ownerIDs = owners.keySet();
 
         if (messageCount > 100 && !ownerIDs.contains(eventUserIID))
         {
-            chat.sendMessage(channelName, "ManFeels Number can't be bigger than 100, because you aren't an owner.");
+            sendChatMessage(channelID, "ManFeels Number can't be bigger than 100, because you aren't an owner.");
             return;
         }
 
@@ -86,7 +87,7 @@ public class SpamCommand implements ICommand
         {
             if (!ownerIDs.contains(eventUserIID))
             {
-                chat.sendMessage(channelName, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
+                sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
                 return;
             }
 
@@ -96,23 +97,23 @@ public class SpamCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
                 return;
             }
 
             if (!selfModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
                 return;
             }
         }
 
         for (int i = 0; i < messageCount; i++)
         {
-            chat.sendMessage(channelName, messageToSend);
+            sendChatMessage(channelID, messageToSend);
             TimeUnit.MILLISECONDS.sleep(50);
         }
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully spammed \{messageCount} messages.");
+        sendChatMessage(channelID, STR."SeemsGood Successfully spammed \{messageCount} messages.");
     }
 }

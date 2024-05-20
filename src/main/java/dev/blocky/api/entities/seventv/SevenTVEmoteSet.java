@@ -20,15 +20,51 @@ package dev.blocky.api.entities.seventv;
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
+import java.util.List;
+
 public class SevenTVEmoteSet
 {
     @SerializedName("id")
     String emoteSetID;
 
+    @SerializedName("name")
+    String emoteSetName;
+
+    @SerializedName("emote_count")
+    int emoteCount;
+
+    @SerializedName("capacity")
+    int capacity;
+
+    @SerializedName("emotes")
+    List<SevenTVEmote> emotes;
+
     @Nullable
     public String getEmoteSetID()
     {
         return emoteSetID;
+    }
+
+    @Nullable
+    public String getEmoteSetName()
+    {
+        return emoteSetName;
+    }
+
+    public int getEmoteCount()
+    {
+        return emoteCount;
+    }
+
+    public int getCapacity()
+    {
+        return capacity;
+    }
+
+    @Nullable
+    public List<SevenTVEmote> getEmotes()
+    {
+        return emotes;
     }
 
     SevenTVEmoteSet()

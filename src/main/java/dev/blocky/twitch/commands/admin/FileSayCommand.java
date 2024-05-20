@@ -18,10 +18,11 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Command;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -29,22 +30,25 @@ import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.UnknownHostException;
-import java.util.Arrays;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static dev.blocky.twitch.utils.TwitchUtils.getFilteredParts;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class FileSayCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a link to a text file.");
+            sendChatMessage(channelID, "FeelsMan Please specify a link to a text file.");
             return;
         }
 
@@ -52,7 +56,7 @@ public class FileSayCommand implements ICommand
 
         if (!link.startsWith("https://") && !link.startsWith("http://"))
         {
-            chat.sendMessage(channelName, "FeelsMan Invalid link specified.");
+            sendChatMessage(channelID, "FeelsMan Invalid link specified.");
             return;
         }
 
@@ -68,22 +72,16 @@ public class FileSayCommand implements ICommand
 
             if (statusCode != 200)
             {
-                chat.sendMessage(channelName, STR."DankThink Server returned status code \{statusCode}.");
+                sendChatMessage(channelID, STR."DankThink Server returned status code \{statusCode}.");
                 return;
             }
 
             Headers headers = response.headers();
             String contentType = headers.get("Content-Type");
 
-            if (contentType == null)
-            {
-                chat.sendMessage(channelName, "DankThink Server doesn't return any 'Content-Type' header.");
-                return;
-            }
-
             if (!contentType.contains("text/plain"))
             {
-                chat.sendMessage(channelName, "DankThink Server doesn't return plain text as response.");
+                sendChatMessage(channelID, "DankThink Server doesn't return plain text as response.");
                 return;
             }
 
@@ -91,29 +89,84 @@ public class FileSayCommand implements ICommand
 
             if (body.isBlank())
             {
-                chat.sendMessage(channelName, "DankThink Server returned empty response.");
+                sendChatMessage(channelID, "DankThink Server returned empty response.");
                 return;
             }
 
             String[] linesRaw = body.split("\n");
-            String[] lines = Arrays.stream(linesRaw)
-                    .filter(line -> !line.isBlank())
-                    .map(String::strip)
-                    .toArray(String[]::new);
+            String[] lines = getFilteredParts(linesRaw);
 
             for (String line : lines)
             {
-                chat.sendMessage(channelName, line);
+                Set<Command> commands = SQLUtils.getCommands();
+
+                String actualPrefix = SQLUtils.getPrefix(channelIID);
+                int prefixLength = actualPrefix.length();
+
+                String[] linePartsRaw = line.split(" ");
+                String[] lineParts = getFilteredParts(linePartsRaw);
+
+                String command = lineParts[0];
+
+                if (command.startsWith(actualPrefix) && command.length() > prefixLength)
+                {
+                    command = command.substring(prefixLength);
+
+                    for (Command cmd : commands)
+                    {
+                        Set<String> commandsAndAliases = cmd.getCommandAndAliases();
+                        ICommand commandOrAlias = cmd.getCommandAsClass();
+
+                        if (commandsAndAliases.contains(command))
+                        {
+                            Set<String> adminCommands = SQLUtils.getAdminCommands();
+                            Set<String> ownerCommands = SQLUtils.getOwnerCommands();
+
+                            if (adminCommands.contains(command) || ownerCommands.contains(command))
+                            {
+                                sendChatMessage(channelID, "4Head Admin or owner commands aren't allowed to use here :P");
+                                continue;
+                            }
+
+                            String message = line.substring(prefixLength);
+
+                            String[] messagePartsRaw = message.split(" ");
+                            messageParts = getFilteredParts(messagePartsRaw);
+
+                            String[] prefixedMessagePartsRaw = command.split(" ");
+                            prefixedMessageParts = getFilteredParts(prefixedMessagePartsRaw);
+
+                            commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
+                        }
+                    }
+                }
+
+                Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
+
+                if (globalCommands.containsKey(command))
+                {
+                    String message = globalCommands.get(command);
+                    sendChatMessage(channelID, message);
+
+                    TimeUnit.SECONDS.sleep(1);
+                    continue;
+                }
+
+                if (!line.startsWith(actualPrefix))
+                {
+                    sendChatMessage(channelID, line);
+                }
+
                 TimeUnit.SECONDS.sleep(1);
             }
 
             int lineCount = lines.length;
 
-            chat.sendMessage(channelName, STR."WOW Successfully sent \{lineCount} lines.");
+            sendChatMessage(channelID, STR."WOW Successfully sent \{lineCount} lines.");
         }
         catch (UnknownHostException _)
         {
-            chat.sendMessage(channelName, "FeelsMan Invalid link specified.");
+            sendChatMessage(channelID, "FeelsMan Invalid link specified.");
         }
     }
 }

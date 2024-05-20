@@ -17,36 +17,39 @@
  */
 package dev.blocky.twitch.scheduler.job;
 
-import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
-import dev.blocky.twitch.Main;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 
-import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import static dev.blocky.twitch.Main.client;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 @Deprecated
 public class AprilFoolsJob implements Job
 {
     @Override
-    public void execute(@NonNull JobExecutionContext context) throws JobExecutionException
+    public void execute(@NonNull JobExecutionContext context)
     {
-        TwitchClient client = Main.getTwitchClient();
-        TwitchChat chat = client.getChat();
-
         try
         {
-            HashSet<String> chatLogins = SQLUtils.getEnabledEventNotificationChatLogins();
+            Set<String> chatLogins = SQLUtils.getEnabledEventNotificationChatLogins();
+
+            TwitchChat chat = client.getChat();
+            Map<String, String> chatIDs = chat.getChannelNameToChannelId();
 
             for (String chatLogin : chatLogins)
             {
+                String chatID = chatIDs.get(chatLogin);
+
                 for (int i = 0; i < 3;i++)
                 {
-                    chat.sendMessage(chatLogin, STR."DinkDonk \{chatLogin} :tf: Sch\u00F6nen 1. April Tomfoolery SmokeTime");
+                    sendChatMessage(chatID, STR."DinkDonk \{chatLogin} :tf: Sch\u00F6nen 1. April Tomfoolery SmokeTime");
 
                     TimeUnit.SECONDS.sleep(1);
                 }
@@ -55,7 +58,7 @@ public class AprilFoolsJob implements Job
         catch (Exception e)
         {
             String error = e.getMessage();
-            chat.sendMessage("ApuJar", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
+            sendChatMessage("896181679", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
 
             e.printStackTrace();
         }

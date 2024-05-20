@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -40,17 +39,15 @@ public class FollowageCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -59,19 +56,19 @@ public class FollowageCommand implements ICommand
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equals(eventUserName))
         {
-            chat.sendMessage(channelName, "FeelsMan You can't follow yourself.");
+            sendChatMessage(channelID, "FeelsMan You can't follow yourself.");
             return;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
-            chat.sendMessage(channelName, STR."FeelsDankMan \{userToCheck} can't follow hisself/herself.");
+            sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't follow hisself/herself.");
             return;
         }
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
-            chat.sendMessage(channelName, "o_O One or both usernames aren't matching with RegEx R-)");
+            sendChatMessage(channelID, "o_O One or both usernames aren't matching with RegEx R-)");
             return;
         }
 
@@ -80,7 +77,7 @@ public class FollowageCommand implements ICommand
 
         if (users.isEmpty() || secondUsers.isEmpty())
         {
-            chat.sendMessage(channelName, ":| One or both users not found.");
+            sendChatMessage(channelID, ":| One or both users not found.");
             return;
         }
 
@@ -96,15 +93,15 @@ public class FollowageCommand implements ICommand
 
         if (followedAt == null)
         {
-            chat.sendMessage(channelName, STR."Bad \{userDisplayName} isn't following \{secondUserDisplayName} at the moment.");
+            sendChatMessage(channelID, STR."Bad \{userDisplayName} isn't following \{secondUserDisplayName} at the moment.");
             return;
         }
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         String readableFollowedAt = formatter.format(followedAt);
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."Strong \{userDisplayName} follows \{secondUserDisplayName} since \{readableFollowedAt} Gladge");
+        sendChatMessage(channelID, STR."Strong \{userDisplayName} follows \{secondUserDisplayName} since \{readableFollowedAt} Gladge");
     }
 }

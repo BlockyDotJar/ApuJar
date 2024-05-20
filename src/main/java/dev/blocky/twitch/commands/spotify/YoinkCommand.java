@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.spotify;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -27,6 +26,7 @@ import com.google.gson.JsonArray;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
+import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
@@ -44,7 +44,6 @@ import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -55,10 +54,8 @@ public class YoinkCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -67,7 +64,7 @@ public class YoinkCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "WideHardo Please specify the user.");
+            sendChatMessage(channelID, "WideHardo Please specify the user.");
             return;
         }
 
@@ -100,7 +97,7 @@ public class YoinkCommand implements ICommand
 
         if (!isValidUsername(userToYoinkSongFrom))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -108,20 +105,27 @@ public class YoinkCommand implements ICommand
 
         if (usersToYoinkSongFrom.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToYoinkSongFrom}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToYoinkSongFrom}' found.");
             return;
         }
 
         User user = usersToYoinkSongFrom.getFirst();
         String userDisplayName = user.getDisplayName();
+        String userLogin = user.getLogin();
         String userID = user.getId();
         int userIID = Integer.parseInt(userID);
 
-        HashSet<Integer> spotifyUserIIDs = SQLUtils.getSpotifyUserIDs();
-
-        if (!spotifyUserIIDs.contains(userIID))
+        if (userLogin.equals(eventUserName))
         {
-            chat.sendMessage(channelName, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
+            sendChatMessage(channelID, STR."4Head \{userDisplayName} you can't yoink your own song.");
+            return;
+        }
+
+        SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(userIID);
+
+        if (spotifyUser == null)
+        {
+            sendChatMessage(channelID, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
@@ -132,26 +136,32 @@ public class YoinkCommand implements ICommand
 
         if (currentlyPlaying == null)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{userDisplayName} isn't listening to a song.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{userDisplayName} isn't listening to a song.");
             return;
         }
 
         SpotifyApi eventUserSpotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
 
-        GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
+        GetUsersAvailableDevicesRequest deviceRequest = eventUserSpotifyAPI.getUsersAvailableDevices().build();
         Device[] devices = deviceRequest.execute();
 
         boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
 
         if (devices.length == 0 || !anyActiveDevice)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
         String itemName = playlistItem.getName();
         String itemID = playlistItem.getId();
+
+        if (itemID == null)
+        {
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you can't yoink local file songs.");
+            return;
+        }
 
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
         Track track = trackRequest.execute();
@@ -214,7 +224,7 @@ public class YoinkCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                chat.sendMessage(channelName, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
                 return;
             }
 
@@ -232,6 +242,6 @@ public class YoinkCommand implements ICommand
 
         String messageToSend = STR."AlienDance \{eventUserName} you yoinked \{userDisplayName}'s song '\{itemName}' by \{artists} from \{albumName} WideHardo (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

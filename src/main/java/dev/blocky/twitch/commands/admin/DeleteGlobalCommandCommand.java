@@ -18,31 +18,29 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashMap;
+import java.util.Map;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class DeleteGlobalCommandCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a global command.");
+            sendChatMessage(channelID, "FeelsMan Please specify a global command.");
             return;
         }
 
@@ -55,16 +53,16 @@ public class DeleteGlobalCommandCommand implements ICommand
             gcName = gcName.substring(actualPrefix.length());
         }
 
-        HashMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
+        Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
         if (!globalCommands.containsKey(gcName))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
+            sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
             return;
         }
 
         SQLite.onUpdate(STR."DELETE FROM globalCommands WHERE name = '\{gcName}'");
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully deleted global command '\{gcName}'");
+        sendChatMessage(channelID, STR."SeemsGood Successfully deleted global command '\{gcName}'");
     }
 }

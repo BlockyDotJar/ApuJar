@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -27,22 +26,19 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import java.net.URI;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class GoogleCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a search query.");
+            sendChatMessage(channelID, "FeelsMan Please specify a search query.");
             return;
         }
 
@@ -57,10 +53,10 @@ public class GoogleCommand implements ICommand
                         , null
                 );
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
         String ascii = googleUri.toASCIIString();
 
-        chat.sendMessage(channelName, STR."Chatting Here is your Google search query: \{ascii}");
+        sendChatMessage(channelID, STR."Chatting Here is your Google search query: \{ascii}");
     }
 }

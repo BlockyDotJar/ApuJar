@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -39,46 +37,56 @@ public class IsInChatCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
-        String userToLookup = getUserAsString(messageParts, eventUser);
-
-        if (!isValidUsername(userToLookup))
+        if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
-        List<User> usersToLookup = retrieveUserList(client, userToLookup);
+        String userToCheck = getUserAsString(messageParts, 1);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
 
-        if (usersToLookup.isEmpty())
+        if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToLookup}' found.");
+            sendChatMessage(channelID, "o_O One or both usernames aren't matching with RegEx R-)");
             return;
         }
 
-        User user = usersToLookup.getFirst();
+        List<User> users = retrieveUserList(client, userToCheck);
+        List<User> secondUsers = retrieveUserList(client, secondUserToCheck);
+
+        if (users.isEmpty() || secondUsers.isEmpty())
+        {
+            sendChatMessage(channelID, ":| One or both users not found.");
+            return;
+        }
+
+        User user = users.getFirst();
         String userDisplayName = user.getDisplayName();
         String userLogin = user.getLogin();
 
-        LiLBChatter lilbChatter = ServiceProvider.getChatter(channelName);
+        User secondUser = secondUsers.getFirst();
+        String secondUserDisplayName = secondUser.getDisplayName();
+        String secondUserLogin = secondUser.getLogin();
+
+        LiLBChatter lilbChatter = ServiceProvider.getChatter(secondUserLogin);
         List<String> chatters = lilbChatter.getChatters();
 
         boolean isInChat = chatters.stream().anyMatch(userLogin::equalsIgnoreCase);
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        if (isInChat)
+        if (!isInChat)
         {
-            chat.sendMessage(channelName, STR."mhm \{userDisplayName} is not in this chat.");
+            sendChatMessage(channelID, STR."mhm \{userDisplayName} is not in \{secondUserDisplayName}'s chat.");
             return;
         }
 
-        chat.sendMessage(channelName, STR."Susge \{userDisplayName} is currently in this chat.");
+        sendChatMessage(channelID, STR."Susge \{userDisplayName} is currently in \{secondUserDisplayName}'s chat.");
     }
 }

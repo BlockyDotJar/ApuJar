@@ -18,19 +18,19 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.request.BlockyJarUserBody;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
@@ -39,14 +39,12 @@ public class AddAdminCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
@@ -54,7 +52,7 @@ public class AddAdminCommand implements ICommand
 
         if (!isValidUsername(chatToPromote))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -62,7 +60,7 @@ public class AddAdminCommand implements ICommand
 
         if (chatsToPromote.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{chatToPromote}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{chatToPromote}' found.");
             return;
         }
 
@@ -72,12 +70,15 @@ public class AddAdminCommand implements ICommand
         String userDisplayName = user.getDisplayName();
         int userIID = Integer.parseInt(userID);
 
-        HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        Map<Integer, String> admins = SQLUtils.getAdmins();
+        Set<Integer> adminIDs = admins.keySet();
+
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Set<Integer> ownerIDs = owners.keySet();
 
         if (adminIDs.contains(userIID) || ownerIDs.contains(userIID))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob Already promoted \{chatToPromote}.");
+            sendChatMessage(channelID, STR."CoolStoryBob Already promoted \{chatToPromote}.");
             return;
         }
 
@@ -86,6 +87,6 @@ public class AddAdminCommand implements ICommand
         BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
         ServiceProvider.postAdmin(body);
 
-        chat.sendMessage(channelName, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
+        sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
     }
 }

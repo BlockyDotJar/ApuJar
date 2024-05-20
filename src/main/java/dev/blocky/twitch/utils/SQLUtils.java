@@ -17,27 +17,43 @@
  */
 package dev.blocky.twitch.utils;
 
+import com.google.gson.Gson;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.request.BlockyJarUserBody;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
+import dev.blocky.twitch.utils.serialization.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.collections4.BidiMap;
+import org.apache.commons.collections4.bidimap.DualHashBidiMap;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Map.Entry;
 
 public class SQLUtils
 {
-    @NonNull
-    public static <T> HashSet<T> getAll(@NonNull String sql, @NonNull String columnLabel, @NonNull Class<T> clazz) throws SQLException
+    @Nullable
+    public static <T> T get(@NonNull String sql, @NonNull String columnLabel, @NonNull Class<T> clazz) throws SQLException
     {
         try (ResultSet result = SQLite.onQuery(sql))
         {
-            HashSet<T> set = new HashSet<>();
+            return result.getObject(columnLabel, clazz);
+        }
+    }
+
+    @NonNull
+    public static <T> Set<T> getAll(@NonNull String sql, @NonNull String columnLabel, @NonNull Class<T> clazz) throws SQLException
+    {
+        try (ResultSet result = SQLite.onQuery(sql))
+        {
+            Set<T> set = new HashSet<>();
 
             while (result.next())
             {
@@ -49,11 +65,74 @@ public class SQLUtils
     }
 
     @NonNull
-    public static <U, T> HashMap<U, T> getAllMapped(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<U> clazz, @NonNull Class<T> extraClazz) throws SQLException
+    public static Map<String, Object> getMapped(@NonNull String sql, @NonNull Map<String, Class<?>> columnLabels) throws SQLException
     {
         try (ResultSet result = SQLite.onQuery(sql))
         {
-            HashMap<U, T> map = new HashMap<>();
+            Map<String, Object> map = new HashMap<>();
+            List<Boolean> nils = new ArrayList<>();
+
+            for (String columnLabel : columnLabels.keySet())
+            {
+                Class<?> clazz = columnLabels.get(columnLabel);
+                Object value = switch (clazz.getSimpleName())
+                {
+                    case "String" -> result.getString(columnLabel);
+                    case "Integer" -> result.getInt(columnLabel);
+                    case "Boolean" -> result.getBoolean(columnLabel);
+                    case "Double" -> result.getDouble(columnLabel);
+                    default -> null;
+                };
+
+                boolean wasNull = result.wasNull();
+
+                nils.add(wasNull);
+                map.put(columnLabel, value);
+            }
+
+            boolean allNil = nils.stream().allMatch(nil -> nil);
+
+            if (allNil)
+            {
+                return null;
+            }
+
+            return map;
+        }
+    }
+
+    @NonNull
+    public static List<Map<String, Object>> getAllMapped(@NonNull String sql, @NonNull Map<String, Class<?>> columnLabels) throws SQLException
+    {
+        try (ResultSet result = SQLite.onQuery(sql))
+        {
+            List<Map<String, Object>> results = new ArrayList<>();
+
+            while (result.next())
+            {
+                Map<String, Object> map = new HashMap<>();
+
+                for (String columnLabel : columnLabels.keySet())
+                {
+                    Class<?> clazz = columnLabels.get(columnLabel);
+                    Object value = result.getObject(columnLabel, clazz);
+
+                    map.put(columnLabel, value);
+                }
+
+                results.add(map);
+            }
+
+            return results;
+        }
+    }
+
+    @NonNull
+    public static <U, T> BidiMap<U, T> getAllMapped(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<U> clazz, @NonNull Class<T> extraClazz) throws SQLException
+    {
+        try (ResultSet result = SQLite.onQuery(sql))
+        {
+            BidiMap<U, T> map = new DualHashBidiMap<>();
 
             while (result.next())
             {
@@ -70,94 +149,134 @@ public class SQLUtils
     }
 
     @NonNull
-    public static <T> HashMap<T, T> getAllMapped(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<T> clazz) throws SQLException
+    public static <T> BidiMap<T, T> getAllMapped(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<T> clazz) throws SQLException
     {
         return getAllMapped(sql, columnLabels, clazz, clazz);
     }
 
     @NonNull
-    public static <T, E> ArrayList<Triple<T, T, E>> getTriples(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<T> clazz, @NonNull Class<E> extraClazz) throws SQLException
+    public static <T> T serializeResult(@NonNull Class<T> clazz, @NonNull Map<String, Object> results)
     {
-        try (ResultSet result = SQLite.onQuery(sql))
+        Gson gson = new Gson();
+        String jsonToSerialize = gson.toJson(results);
+        return gson.fromJson(jsonToSerialize, clazz);
+    }
+
+    @NonNull
+    public static Set<Chat> getChats() throws SQLException
+    {
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "userID", Integer.class,
+                        "userLogin", String.class,
+                        "eventsEnabled", Boolean.class
+                );
+
+        List<Map<String, Object>> results = getAllMapped("SELECT * FROM chats", columnLabels);
+
+        Set<Chat> chats = new HashSet<>();
+
+        for (Map<String, Object> result : results)
         {
-            ArrayList<Triple<T, T, E>> triples = new ArrayList<>();
-
-            while (result.next())
-            {
-                String firstColumnLabel = columnLabels.getFirst();
-                String middleColumnLabel = columnLabels.get(1);
-                String lastColumnLabel = columnLabels.getLast();
-
-                T key = result.getObject(firstColumnLabel, clazz);
-                T value = result.getObject(middleColumnLabel, clazz);
-                E extraValue = result.getObject(lastColumnLabel, extraClazz);
-
-                Triple<T, T, E> triple = Triple.of(key, value, extraValue);
-                triples.add(triple);
-            }
-            return triples;
+            Chat keyword = serializeResult(Chat.class, result);
+            chats.add(keyword);
         }
+
+        return chats;
     }
 
     @Nullable
-    public static <T> T get(@NonNull String sql, @NonNull String columnLabel, @NonNull Class<T> clazz) throws SQLException
+    public static Chat getChat(int userID) throws SQLException
     {
-        try (ResultSet result = SQLite.onQuery(sql))
+        Set<Chat> chats = getChats();
+
+        Optional<Chat> chat = chats.stream()
+                .filter(ch ->
+                {
+                    int chatID = ch.getUserID();
+                    return chatID == userID;
+                })
+                .findFirst();
+
+        return chat.orElse(null);
+    }
+
+    @NonNull
+    public static BidiMap<Integer, String> getAdmins() throws SQLException
+    {
+        return getAllMapped("SELECT userID, userLogin FROM admins", List.of("userID", "userLogin"), Integer.class, String.class);
+    }
+
+    @NonNull
+    public static BidiMap<Integer, String> getOwners() throws SQLException
+    {
+        return getAllMapped("SELECT userID, userLogin FROM admins WHERE isOwner = TRUE", List.of("userID", "userLogin"), Integer.class, String.class);
+    }
+
+    @NonNull
+    public static Set<Command> getCommands() throws SQLException
+    {
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "command", String.class,
+                        "aliases", String.class,
+                        "requiresAdmin", Boolean.class,
+                        "requiresOwner", Boolean.class,
+                        "class", String.class
+                );
+
+        List<Map<String, Object>> results = getAllMapped("SELECT * FROM commands", columnLabels);
+
+        Set<Command> commands = new HashSet<>();
+
+        for (Map<String, Object> result : results)
         {
-            return result.getObject(columnLabel, clazz);
+            Command command = serializeResult(Command.class, result);
+            commands.add(command);
         }
+
+        return commands;
     }
 
     @NonNull
-    public static HashSet<String> getChatLogins() throws SQLException
+    public static Set<String> getAdminCommands() throws SQLException
     {
-        return getAll("SELECT userLogin FROM chats", "userLogin", String.class);
+        return getCommands().stream()
+                .filter(Command::requiresAdmin)
+                .flatMap(command -> command.getCommandAndAliases().stream())
+                .collect(Collectors.toSet());
     }
 
     @NonNull
-    public static HashSet<String> getAdminLogins() throws SQLException
+    public static Set<String> getOwnerCommands() throws SQLException
     {
-        return getAll("SELECT userLogin FROM admins", "userLogin", String.class);
+        return getCommands().stream()
+                .filter(Command::requiresOwner)
+                .flatMap(command -> command.getCommandAndAliases().stream())
+                .collect(Collectors.toSet());
     }
 
     @NonNull
-    public static HashSet<Integer> getAdminIDs() throws SQLException
+    public static Set<PrivateCommand> getPrivateCommands() throws SQLException
     {
-        return getAll("SELECT userID FROM admins", "userID", Integer.class);
-    }
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "command", String.class,
+                        "aliases", String.class,
+                        "class", String.class
+                );
 
-    public static int getAdminIDByLogin(@NonNull String userLogin) throws SQLException
-    {
-        return get(STR."SELECT userID FROM admins WHERE userLogin = '\{userLogin}'", "userID", Integer.class);
-    }
+        List<Map<String, Object>> results = getAllMapped("SELECT * FROM privateCommands", columnLabels);
 
-    @NonNull
-    public static HashSet<String> getAdminCommands() throws SQLException
-    {
-        return getAll("SELECT command FROM adminCommands WHERE requiresOwner = FALSE", "command", String.class);
-    }
+        Set<PrivateCommand> privateCommands = new HashSet<>();
 
-    @NonNull
-    public static HashSet<String> getOwnerLogins() throws SQLException
-    {
-        return getAll("SELECT userLogin FROM admins WHERE isOwner = TRUE", "userLogin", String.class);
-    }
+        for (Map<String, Object> result : results)
+        {
+            PrivateCommand privateCommand = serializeResult(PrivateCommand.class, result);
+            privateCommands.add(privateCommand);
+        }
 
-    @NonNull
-    public static HashSet<Integer> getOwnerIDs() throws SQLException
-    {
-        return getAll("SELECT userID FROM admins WHERE isOwner = TRUE", "userID", Integer.class);
-    }
-
-    public static int getOwnerIDByLogin(@NonNull String userLogin) throws SQLException
-    {
-        return get(STR."SELECT userID FROM admins WHERE isOwner = TRUE AND userLogin = '\{userLogin}'", "userID", Integer.class);
-    }
-
-    @NonNull
-    public static HashSet<String> getOwnerCommands() throws SQLException
-    {
-        return getAll("SELECT command FROM adminCommands WHERE requiresOwner = TRUE", "command", String.class);
+        return privateCommands;
     }
 
     @NonNull
@@ -168,177 +287,134 @@ public class SQLUtils
     }
 
     @NonNull
-    public static HashMap<String, String> getGlobalCommands() throws SQLException
+    public static Map<String, String> getGlobalCommands() throws SQLException
     {
         return getAllMapped("SELECT name, message FROM globalCommands", List.of("name", "message"), String.class);
     }
 
-    @NonNull
-    public static HashSet<Integer> getSpotifyUserIDs() throws SQLException
+    @Nullable
+    public static SpotifyUser getSpotifyUser(int userID) throws SQLException
     {
-        return getAll("SELECT userID FROM spotifyCredentials", "userID", Integer.class);
-    }
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "accessToken", String.class,
+                        "refreshToken", String.class,
+                        "expiresOn", String.class
+                );
 
-    @NonNull
-    public static String getSpotifyAccessToken(int userID) throws SQLException
-    {
-        return get(STR."SELECT accessToken FROM spotifyCredentials WHERE userID = \{userID}", "accessToken", String.class);
-    }
+        Map<String, Object> results = getMapped(STR."SELECT * FROM spotifyCredentials WHERE userID = \{userID}", columnLabels);
 
-    @NonNull
-    public static String getSpotifyRefreshToken(int userID) throws SQLException
-    {
-        return get(STR."SELECT refreshToken FROM spotifyCredentials WHERE userID = \{userID}", "refreshToken", String.class);
-    }
-
-    @NonNull
-    public static String getSpotifyExpiresOn(int userID) throws SQLException
-    {
-        return get(STR."SELECT expiresOn FROM spotifyCredentials WHERE userID = \{userID}", "expiresOn", String.class);
-    }
-
-    @NonNull
-    public static String getSevenTVAllowedUserIDs(int userID) throws SQLException
-    {
-        return get(STR."SELECT allowedUserIDs FROM sevenTVUsers WHERE userID = \{userID}", "allowedUserIDs", String.class);
-    }
-
-    @NonNull
-    public static List<Triple<String, String, Boolean>> getKeywords(int userID) throws SQLException
-    {
-        return getTriples(STR."SELECT name, message, exactMatch FROM customKeywords WHERE userID = \{userID}", List.of("name", "message", "exactMatch"), String.class, Boolean.class);
-    }
-
-    @NonNull
-    public static HashSet<String> getEnabledEventNotificationChatLogins() throws SQLException
-    {
-        return getAll("SELECT userLogin FROM eventNotifications WHERE enabled = TRUE", "userLogin", String.class);
-    }
-
-    public static boolean hasEnabledEventNotifications(int userID) throws SQLException
-    {
-        return get(STR."SELECT enabled FROM eventNotifications WHERE userID = \{userID}", "enabled", Boolean.class);
-    }
-
-    @NonNull
-    public static HashSet<Integer> getWeatherLocationUserIDs() throws SQLException
-    {
-        return getAll("SELECT userID FROM weatherLocations", "userID", Integer.class);
-    }
-
-    public static double getLatitude(int userID) throws SQLException
-    {
-        String latitude = get(STR."SELECT latitude FROM weatherLocations WHERE userID = \{userID}", "latitude", String.class);
-
-        if (latitude == null)
-        {
-            return -1.0;
-        }
-
-        return Double.parseDouble(latitude);
-    }
-
-    public static double getLongitude(int userID) throws SQLException
-    {
-        String longitude = get(STR."SELECT longitude FROM weatherLocations WHERE userID = \{userID}", "longitude", String.class);
-
-        if (longitude == null)
-        {
-            return -1.0;
-        }
-
-        return Double.parseDouble(longitude);
-    }
-
-    @NonNull
-    public static String getLocationName(int userID) throws SQLException
-    {
-        return get(STR."SELECT locationName FROM weatherLocations WHERE userID = \{userID}", "locationName", String.class);
+        return serializeResult(SpotifyUser.class, results);
     }
 
     @Nullable
-    public static String getCityName(int userID) throws SQLException
+    public static Set<String> getSevenTVAllowedUserIDs(int userID) throws SQLException
     {
-        return get(STR."SELECT cityName FROM weatherLocations WHERE userID = \{userID}", "cityName", String.class);
+        String allowedUserIDs = get(STR."SELECT * FROM sevenTVUsers WHERE userID = \{userID}", "allowedUserIDs", String.class);
+
+        if (allowedUserIDs == null)
+        {
+            return null;
+        }
+
+        String[] sevenTVAllowedUserIDs = allowedUserIDs.split(",");
+
+        if (ArrayUtils.isEmpty(sevenTVAllowedUserIDs))
+        {
+            return Collections.singleton(allowedUserIDs);
+        }
+
+        return Arrays.stream(sevenTVAllowedUserIDs).collect(Collectors.toSet());
+    }
+
+    @NonNull
+    public static Set<Keyword> getKeywords(int userID) throws SQLException
+    {
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "name", String.class,
+                        "message", String.class,
+                        "exactMatch", Boolean.class
+                );
+
+        List<Map<String, Object>> results = getAllMapped(STR."SELECT * FROM customKeywords WHERE userID = \{userID}", columnLabels);
+
+        Set<Keyword> keywords = new HashSet<>();
+
+        for (Map<String, Object> result : results)
+        {
+            Keyword keyword = serializeResult(Keyword.class, result);
+            keywords.add(keyword);
+        }
+
+        return keywords;
+    }
+
+    @NonNull
+    public static Set<String> getEnabledEventNotificationChatLogins() throws SQLException
+    {
+        return getAll("SELECT userLogin FROM chats WHERE eventsEnabled = TRUE", "userLogin", String.class);
     }
 
     @Nullable
-    public static String getCountryCode(int userID) throws SQLException
+    public static Location getLocation(int userID) throws SQLException
     {
-        return get(STR."SELECT countryCode FROM weatherLocations WHERE userID = \{userID}", "countryCode", String.class);
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "latitude", Double.class,
+                        "longitude", Double.class,
+                        "locationName", String.class,
+                        "cityName", String.class,
+                        "countryCode", String.class,
+                        "hideLocation", Boolean.class
+                );
+
+        Map<String, Object> results = getMapped(STR."SELECT * FROM weatherLocations WHERE userID = \{userID}", columnLabels);
+
+        return serializeResult(Location.class, results);
     }
 
-    public static boolean hidesLocation(int userID) throws SQLException
+    @Nullable
+    public static TicTacToe getTicTacToeGame(int channelID) throws SQLException
     {
-        return get(STR."SELECT hideLocation FROM weatherLocations WHERE userID = \{userID}", "hideLocation", Boolean.class);
-    }
+        Map<String, Class<?>> columnLabels = Map.of
+                (
+                        "playerIDs", String.class,
+                        "board", String.class,
+                        "nextUserID", String.class,
+                        "round", Integer.class,
+                        "startedAt", String.class
+                );
 
-    @NonNull
-    public static HashSet<Integer> getTicTacToeGames() throws SQLException
-    {
-        return getAll("SELECT userID FROM tictactoe", "userID", Integer.class);
-    }
+        Map<String, Object> results = getMapped(STR."SELECT * FROM tictactoe WHERE userID = \{channelID}", columnLabels);
 
-    @NonNull
-    public static List<Integer> getTicTacToePlayerIDs(int channelID) throws SQLException
-    {
-        String playerIDsRaw = get(STR."SELECT playerIDs FROM tictactoe WHERE userID = \{channelID}", "playerIDs", String.class);
-        int playerIDsLength = playerIDsRaw.length();
-
-        String playerIDs = playerIDsRaw.substring(1, playerIDsLength - 1);
-        String[] playerIDParts = playerIDs.split(", ");
-
-        return Arrays.stream(playerIDParts)
-                .mapToInt(Integer::parseInt)
-                .boxed()
-                .toList();
-    }
-
-    @NonNull
-    public static int[] getTicTacToeBoard(int channelID) throws SQLException
-    {
-        String boardRaw = get(STR."SELECT board FROM tictactoe WHERE userID = \{channelID}", "board", String.class);
-        int boardLength = boardRaw.length();
-
-        String board = boardRaw.substring(1, boardLength - 1);
-        String[] boardParts = board.split(", ");
-
-        return Arrays.stream(boardParts)
-                .mapToInt(Integer::parseInt)
-                .toArray();
-    }
-
-    public static int getTicTacToeNexUserID(int channelID) throws SQLException
-    {
-        return get(STR."SELECT nextUserID FROM tictactoe WHERE userID = \{channelID}", "nextUserID", Integer.class);
-    }
-
-    public static int getTicTacToeRound(int channelID) throws SQLException
-    {
-        return get(STR."SELECT round FROM tictactoe WHERE userID = \{channelID}", "round", Integer.class);
+        return serializeResult(TicTacToe.class, results);
     }
 
     @NonNull
-    public static String getTicTacToeStartedAt(int channelID) throws SQLException
+    public static Map<Integer, LocalDateTime> getTicTacToeStartTimes() throws SQLException
     {
-        return get(STR."SELECT startedAt FROM tictactoe WHERE userID = \{channelID}", "startedAt", String.class);
-    }
+        Map<Integer, String> results = getAllMapped("SELECT userID, startedAt FROM tictactoe", List.of("userID", "startedAt"), Integer.class, String.class);
+        Set<Entry<Integer, String>> resultEntries = results.entrySet();
 
-    @NonNull
-    public static Map<Integer, String> getTicTacToeStartTimes() throws SQLException
-    {
-        return getAllMapped("SELECT userID, startedAt FROM tictactoe", List.of("userID", "startedAt"), Integer.class, String.class);
-    }
-
-    @NonNull
-    public static String removeApostrophe(@NonNull String prefix)
-    {
-        return StringUtils.remove(prefix, "'");
+        return resultEntries.stream()
+                .collect
+                        (
+                                Collectors.toMap
+                                        (
+                                                Entry::getKey,
+                                                entry ->
+                                                {
+                                                    String value = entry.getValue();
+                                                    return LocalDateTime.parse(value);
+                                                }
+                                        )
+                        );
     }
 
     public static void correctUserLogin(int userID, @NonNull String newUserLogin) throws SQLException, IOException
     {
-        List<String> tables = List.of("chats", "admins", "eventNotifications");
+        List<String> tables = List.of("chats", "admins", "bible");
 
         for (String table : tables)
         {

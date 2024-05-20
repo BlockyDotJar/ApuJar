@@ -17,45 +17,33 @@
  */
 package dev.blocky.twitch.scheduler.job;
 
-import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.helix.domain.User;
-import dev.blocky.twitch.Main;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import static java.util.Map.Entry;
+import static dev.blocky.twitch.Main.client;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class TicTacToeJob implements Job
 {
     @Override
-    public void execute(@NonNull JobExecutionContext context) throws JobExecutionException
+    public void execute(@NonNull JobExecutionContext context)
     {
-        TwitchClient client = Main.getTwitchClient();
-        TwitchChat chat = client.getChat();
-
         try
         {
-            Map<Integer, String> ticTacToeStartTimes = SQLUtils.getTicTacToeStartTimes();
+            Map<Integer, LocalDateTime> ticTacToeStartTimes = SQLUtils.getTicTacToeStartTimes();
 
-            Set<Entry<Integer, String>> entries = ticTacToeStartTimes.entrySet();
-
-            for (Entry<Integer, String> entry : entries)
+            for (int channelID : ticTacToeStartTimes.keySet())
             {
-                int channelID = entry.getKey();
-
-                String startedAtRaw = entry.getValue();
-                LocalDateTime startedAt = LocalDateTime.parse(startedAtRaw);
+                LocalDateTime startedAt = ticTacToeStartTimes.get(channelID);
 
                 LocalDateTime now = LocalDateTime.now();
                 LocalDateTime tenMinutesAgo = now.minusMinutes(10);
@@ -67,16 +55,16 @@ public class TicTacToeJob implements Job
                     List<User> users = TwitchUtils.retrieveUserListByID(client, channelID);
 
                     User user = users.getFirst();
-                    String userLogin = user.getLogin();
+                    String userID = user.getId();
 
-                    chat.sendMessage(userLogin, "Waiting Deleted tictactoe round, beacause it lasted to long Okay");
+                    sendChatMessage(userID, "Waiting Deleted tictactoe round, beacause it lasted to long Okay");
                 }
             }
         }
         catch (Exception e)
         {
             String error = e.getMessage();
-            chat.sendMessage("ApuJar", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
+            sendChatMessage("896181679", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
 
             e.printStackTrace();
         }

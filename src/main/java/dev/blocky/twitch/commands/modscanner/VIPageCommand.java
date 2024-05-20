@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.modscanner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -43,17 +42,15 @@ public class VIPageCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsDankMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsDankMan Please specify a user.");
             return;
         }
 
@@ -62,19 +59,19 @@ public class VIPageCommand implements ICommand
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
-            chat.sendMessage(channelName, "DIESOFCRINGE You can't be vip in your own chat.");
+            sendChatMessage(channelID, "DIESOFCRINGE You can't be vip in your own chat.");
             return;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
-            chat.sendMessage(channelName, STR."FeelsDankMan \{userToCheck} can't be vip in his/her own chat.");
+            sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be vip in his/her own chat.");
             return;
         }
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
-            chat.sendMessage(channelName, "o_O One or both usernames don't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O One or both usernames don't match with RegEx R-)");
             return;
         }
 
@@ -83,7 +80,7 @@ public class VIPageCommand implements ICommand
 
         if (usersToCheck.isEmpty() || secondsUserToCheck.isEmpty())
         {
-            chat.sendMessage(channelName, ":| One or both users not found.");
+            sendChatMessage(channelID, ":| One or both users not found.");
             return;
         }
 
@@ -134,7 +131,7 @@ public class VIPageCommand implements ICommand
 
         if (!isVIP)
         {
-            chat.sendMessage(channelName, STR."forsenLaughingAtYou \{userDisplayName} isn't vip in \{secondUserDisplayName}'s chat at the moment.");
+            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't vip in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
@@ -147,8 +144,8 @@ public class VIPageCommand implements ICommand
         }
 
         String messageToSend = STR."NOWAYING \{userDisplayName} is vip in \{secondUserDisplayName}'s chat since \{readableGrantDate} PogU";
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

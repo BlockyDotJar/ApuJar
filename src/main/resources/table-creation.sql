@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS chats(userID INTEGER, userLogin TEXT, eventsEnabled BOOLEAN);
+CREATE TABLE IF NOT EXISTS admins(userID INTEGER, userLogin TEXT, isOwner BOOLEAN);
+CREATE TABLE IF NOT EXISTS customPrefixes(userID INTEGER, prefix TEXT);
+CREATE TABLE IF NOT EXISTS commands(command TEXT, aliases TEXT, requiresAdmin BOOLEAN, requiresOwner BOOLEAN, class TEXT);
+CREATE TABLE IF NOT EXISTS privateCommands(command TEXT, aliases TEXT, class TEXT);
+CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name TEXT, message TEXT);
+CREATE TABLE IF NOT EXISTS globalCommands(name TEXT, message TEXT);
+CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name TEXT, message TEXT, exactMatch BOOLEAN);
+CREATE TABLE IF NOT EXISTS bible(page INTEGER, entry TEXT, addedAt TEXT, userID INTEGER, userLogin TEXT);
+CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken TEXT, refreshToken TEXT, expiresOn TEXT);
+CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs TEXT);
+CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL, locationName TEXT, cityName TEXT, countryCode TEXT, hideLocation BOOLEAN);
+CREATE TABLE IF NOT EXISTS tictactoe(userID INTEGER, playerIDs TEXT, board TEXT, nextUserID INTEGER, round INTEGER, startedAt TEXT);

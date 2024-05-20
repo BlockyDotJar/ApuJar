@@ -18,57 +18,60 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.collections4.BidiMap;
 
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Map;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class DeleteAdminCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
-        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
-        HashSet<String> adminLogins = SQLUtils.getAdminLogins();
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Collection<String> ownerLogins = owners.values();
+
+        BidiMap<Integer, String> admins = SQLUtils.getAdmins();
+        Collection<String> adminLogins = admins.values();
 
         String adminToDemote = getUserAsString(messageParts, 1);
 
         if (ownerLogins.contains(adminToDemote))
         {
-            chat.sendMessage(channelName, "TriHard Won't demote an owner.");
+            sendChatMessage(channelID, "TriHard Won't demote an owner.");
             return;
         }
 
         if (!adminLogins.contains(adminToDemote))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob \{adminToDemote} isn't even an admin.");
+            sendChatMessage(channelID, STR."CoolStoryBob \{adminToDemote} isn't even an admin.");
             return;
         }
 
-        int adminID = SQLUtils.getAdminIDByLogin(adminToDemote);
+        int adminID = admins.getKey(adminToDemote);
         ServiceProvider.deleteAdmin(adminID);
 
         SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{adminToDemote}'");
 
-        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{adminToDemote}.");
+        sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{adminToDemote}.");
     }
 }

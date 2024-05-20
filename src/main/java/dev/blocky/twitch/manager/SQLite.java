@@ -15,13 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.sql;
+package dev.blocky.twitch.manager;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.*;
 
 import static dev.blocky.twitch.utils.OSUtils.getFilePath;
@@ -74,20 +78,16 @@ public class SQLite
         return stmt.executeQuery(sql);
     }
 
-    public void initDatabase() throws SQLException
+    public void initDatabase() throws SQLException, IOException
     {
-        onUpdate("CREATE TABLE IF NOT EXISTS chats(userID INTEGER, userLogin TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS admins(userID INTEGER, userLogin TEXT, isOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customPrefixes(userID INTEGER, prefix TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS adminCommands(command TEXT, requiresOwner BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customCommands(userID INTEGER, name TEXT, message TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS customKeywords(userID INTEGER, name TEXT, message TEXT, exactMatch BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS globalCommands(name TEXT, message TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS bible(page INTEGER, entry TEXT, addedAt TEXT, userID INTEGER, userLogin TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS spotifyCredentials(userID INTEGER, accessToken TEXT, refreshToken TEXT, expiresOn TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS sevenTVUsers(userID INTEGER, allowedUserIDs TEXT)");
-        onUpdate("CREATE TABLE IF NOT EXISTS eventNotifications(userID INTEGER, userLogin TEXT, enabled BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS weatherLocations(userID INTEGER, latitude REAL, longitude REAL, locationName TEXT, cityName TEXT, countryCode TEXT, hideLocation BOOLEAN)");
-        onUpdate("CREATE TABLE IF NOT EXISTS tictactoe(userID INTEGER, playerIDs TEXT, board TEXT, nextUserID INTEGER, round INTEGER, startedAt TEXT)");
+        if (SystemUtils.IS_OS_WINDOWS)
+        {
+            File file = new File("src/main/resources/table-creation.sql");
+            Path path = file.toPath();
+
+            String sql = Files.readString(path);
+
+            stmt.executeLargeUpdate(sql);
+        }
     }
 }

@@ -37,7 +37,7 @@ public class LiLBChatter
     @NonNull
     public List<String> getChatters()
     {
-        List<String> nonViewer = CollectionUtils.collate(moderators, viewers);
+        List<String> nonViewer = CollectionUtils.collate(moderators, vips);
         return CollectionUtils.collate(nonViewer, viewers);
     }
 

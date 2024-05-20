@@ -19,21 +19,30 @@ package dev.blocky.twitch.utils;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.common.events.domain.EventUser;
-import com.github.twitch4j.helix.TwitchHelix;
-import com.github.twitch4j.helix.domain.User;
-import com.github.twitch4j.helix.domain.UserList;
+import com.github.twitch4j.helix.domain.*;
+import com.netflix.hystrix.exception.HystrixRuntimeException;
+import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRModVIP;
+import dev.blocky.api.entities.ivr.IVRSubage;
+import dev.blocky.api.entities.ivr.IVRSubageMeta;
+import dev.blocky.api.request.TwitchGQLBody;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.RegExUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ContextedRuntimeException;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static dev.blocky.twitch.Main.helix;
+import static dev.blocky.twitch.manager.CommandManager.ratelimitedChats;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class TwitchUtils
@@ -67,7 +76,8 @@ public class TwitchUtils
         {
             return null;
         }
-        return value;
+
+        return value.strip();
     }
 
     @NonNull
@@ -115,6 +125,16 @@ public class TwitchUtils
         return parameterValueRaw.substring(equalSign + 1);
     }
 
+    public static boolean hasParameter(@NonNull String[] messageParts, @NonNull String parameter)
+    {
+        return Arrays.stream(messageParts).anyMatch(parameter::equalsIgnoreCase);
+    }
+
+    public static boolean hasRegExParameter(@NonNull String[] messageParts, @NonNull String parameters)
+    {
+        return Arrays.stream(messageParts).anyMatch(messagePart -> messagePart.matches(parameters));
+    }
+
     @NonNull
     public static List<User> retrieveUserList(@NonNull TwitchClient client, @NonNull String userName)
     {
@@ -152,6 +172,21 @@ public class TwitchUtils
     }
 
     @NonNull
+    public static String[] getFilteredParts(@NonNull String[] messageParts)
+    {
+        return Arrays.stream(messageParts)
+                .filter(messagePart -> !messagePart.isBlank())
+                .map(String::strip)
+                .toArray(String[]::new);
+    }
+
+    @NonNull
+    public static String[] removeElementsAsArray(@NonNull String[] messageParts, int start)
+    {
+        return Arrays.copyOfRange(messageParts, start, messageParts.length);
+    }
+
+    @NonNull
     public static String removeElements(@NonNull String[] messageParts, int start)
     {
         messageParts = Arrays.copyOfRange(messageParts, start, messageParts.length);
@@ -159,9 +194,9 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String getActualChannel(@Nullable String sendChannel, @NonNull String channelName)
+    public static String getActualChannelID(@Nullable String fallbackChannelID, @NonNull String channelID)
     {
-        return sendChannel == null ? channelName : sendChannel;
+        return fallbackChannelID == null ? channelID : fallbackChannelID;
     }
 
     public static boolean hasModeratorPerms(@NonNull IVR ivr, @NonNull String userName)
@@ -178,8 +213,162 @@ public class TwitchUtils
         return false;
     }
 
-    public static void sendPrivateMessage(@NonNull TwitchHelix helix, @NonNull String userID, @NonNull String message)
+    @NonNull
+    public static String removeIllegalCharacters(@NonNull String prefix)
+    {
+        return StringUtils.remove(prefix, "'");
+    }
+
+    public static void sendChatMessage(@NonNull String channelID, @NonNull String message)
+    {
+        int channelIID = Integer.parseInt(channelID);
+        sendChatMessage(channelIID, message);
+    }
+
+    public static void sendChatMessage(int channelIID, @NonNull String message)
+    {
+        String channelID = String.valueOf(channelIID);
+
+        try
+        {
+            ChatMessage chatMessage = new ChatMessage(channelID, "896181679", message, null);
+
+            SentChatMessageWrapper wrapper = helix.sendChatMessage(null, chatMessage).execute();
+            SentChatMessage sentChatMessage = wrapper.get();
+
+            ChatDropReason chatDropReason = sentChatMessage.getDropReason();
+
+            if (!sentChatMessage.isSent())
+            {
+                return;
+            }
+
+            if (chatDropReason != null)
+            {
+                String dropReason = chatDropReason.getMessage();
+                String dropCode = chatDropReason.getCode();
+
+                if (dropCode.equals("msg_duplicate"))
+                {
+                    long currentTimeMillis = System.currentTimeMillis();
+                    ratelimitedChats.put(channelIID, currentTimeMillis);
+                    return;
+                }
+
+                String messageToSend = STR."Channel message dropped unexpectedly FeelsGoodMan '\{dropCode}' - \{dropReason}";
+                ChatMessage failedChatMessage = new ChatMessage("896181679", "896181679", messageToSend, null);
+
+                helix.sendChatMessage(null, failedChatMessage).execute();
+            }
+        }
+        catch (HystrixRuntimeException | ContextedRuntimeException _)
+        {
+            long currentTimeMillis = System.currentTimeMillis();
+
+            ratelimitedChats.put(channelIID, currentTimeMillis);
+        }
+    }
+
+    public static void sendWhisper(@NonNull String userID, @NonNull String message)
     {
         helix.sendWhisper(null, "896181679", userID, message).execute();
+    }
+
+    public static boolean checkChatSettings(@NonNull String[] messageParts, @NonNull String userDisplayName, @NonNull String userID, @NonNull String channelID) throws IOException
+    {
+        ChatSettingsWrapper chatSettingsWrapper = helix.getChatSettings(null, userID, null).execute();
+        ChatSettings chatSettings = chatSettingsWrapper.getChatSettings();
+
+        if (chatSettings.isEmoteOnlyMode())
+        {
+            EmoteList emoteList = helix.getGlobalEmotes(null).execute();
+
+            List<Emote> emotes = emoteList.getEmotes();
+            List<String> emoteNames = emotes.stream()
+                    .map(Emote::getName)
+                    .toList();
+
+            messageParts = removeElementsAsArray(messageParts, 2);
+
+            boolean validMessage = Arrays.stream(messageParts).allMatch(emoteNames::contains);
+
+            if (!validMessage)
+            {
+                sendChatMessage(channelID, STR."mhm Emote only mode detected in channel \{userDisplayName}, your message doesn't only contain global twitch emotes.");
+                return false;
+            }
+        }
+
+        if (chatSettings.isFollowersOnlyMode())
+        {
+            OutboundFollowing outboundFollowing = helix.getFollowedChannels(null, "896181679", userID, 100, null).execute();
+            List<OutboundFollow> follows = outboundFollowing.getFollows();
+
+            if (follows.isEmpty())
+            {
+                int userIID = Integer.parseInt(userID);
+                followUser(userIID);
+
+                sendChatMessage(channelID, STR."mhm Followers only mode detected in channel \{userDisplayName}, no follow detected, automatically followed user.");
+            }
+        }
+
+        if (chatSettings.isSubscribersOnlyMode())
+        {
+            IVRSubage ivrSubage = ServiceProvider.getIVRSubage("ApuJar", userDisplayName);
+            IVRSubageMeta ivrSubageMeta = ivrSubage.getSubageMeta();
+
+            if (ivrSubageMeta == null)
+            {
+                sendChatMessage(channelID, STR."mhm Subscriber only mode detected in channel \{userDisplayName}, no sub detected, not able to deliver the message.");
+                return false;
+            }
+        }
+
+        if (chatSettings.isSlowMode())
+        {
+            sendChatMessage(channelID, STR."mhm Slow mode detected in channel \{userDisplayName}, message maybe not sendable.");
+        }
+
+        return true;
+    }
+
+    public static void followUser(int userID) throws IOException
+    {
+        Map<String, Object> input = Map.of
+                (
+                        "disableNotifications", true,
+                        "targetID", userID
+                );
+
+        Map<String, Object> variables = Map.of("input", input);
+
+        Map<String, Object> persistedQuery = Map.of
+                (
+                        "version", 1,
+                        "sha256Hash", "800e7346bdf7e5278a3c1d3f21b2b56e2639928f86815677a7126b093b2fdd08"
+                );
+
+        Map<String, Object> extensions = Map.of("persistedQuery", persistedQuery);
+
+        TwitchGQLBody body = new TwitchGQLBody("FollowButton_FollowUser", variables, extensions);
+        ServiceProvider.postTwitchGQL(body);
+    }
+
+    public static void unfollowUser(int userID) throws IOException
+    {
+        Map<String, Object> input = Map.of("targetID", userID);
+        Map<String, Object> variables = Map.of("input", input);
+
+        Map<String, Object> persistedQuery = Map.of
+                (
+                        "version", 1,
+                        "sha256Hash", "f7dae976ebf41c755ae2d758546bfd176b4eeb856656098bb40e0a672ca0d880"
+                );
+
+        Map<String, Object> extensions = Map.of("persistedQuery", persistedQuery);
+
+        TwitchGQLBody body = new TwitchGQLBody("FollowButton_UnfollowUser", variables, extensions);
+        ServiceProvider.postTwitchGQL(body);
     }
 }

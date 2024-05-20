@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -26,16 +25,16 @@ import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
+import dev.blocky.twitch.utils.serialization.Command;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
-import static java.util.Map.Entry;
 
 public class UserSayCommand implements ICommand
 {
@@ -44,10 +43,9 @@ public class UserSayCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -56,13 +54,13 @@ public class UserSayCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a chat.");
+            sendChatMessage(channelID, "FeelsMan Please specify a chat.");
             return;
         }
 
         if (messageParts.length == 2)
         {
-            chat.sendMessage(channelName, "FeelsGoodMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
             return;
         }
 
@@ -70,7 +68,7 @@ public class UserSayCommand implements ICommand
 
         if (!isValidUsername(chatToSay))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -78,25 +76,25 @@ public class UserSayCommand implements ICommand
 
         if (usersToSay.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{chatToSay}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{chatToSay}' found.");
             return;
         }
 
         User user = usersToSay.getFirst();
         String userDisplayName = user.getDisplayName();
-        String userLogin = user.getLogin();
         String userID = user.getId();
         int userIID = Integer.parseInt(userID);
 
         String messageToSend = removeElements(messageParts, 2);
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Set<Integer> ownerIDs = owners.keySet();
 
         if (messageToSend.startsWith("/"))
         {
             if (!ownerIDs.contains(eventUserIID))
             {
-                chat.sendMessage(channelName, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
+                sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
                 return;
             }
 
@@ -106,51 +104,60 @@ public class UserSayCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
                 return;
             }
 
             if (!selfModeratorPerms && !channelName.equalsIgnoreCase("ApuJar"))
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
                 return;
             }
         }
 
-        ConcurrentHashMap<List<String>, ICommand> commands = CommandManager.getCommandsAsMap();
-        Set<Entry<List<String>, ICommand>> entries = commands.entrySet();
+        Set<Command> commands = SQLUtils.getCommands();
 
         String actualPrefix = SQLUtils.getPrefix(userIID);
         int prefixLength = actualPrefix.length();
 
         String command = messageParts[2];
 
-        if (command.length() > prefixLength)
+        boolean isSendable = checkChatSettings(messageParts, userDisplayName, userID, channelID);
+
+        if (!isSendable)
+        {
+            return;
+        }
+
+        if (command.startsWith(actualPrefix) && command.length() > prefixLength)
         {
             command = command.substring(prefixLength);
 
-            for (Entry<List<String>, ICommand> entry : entries)
+            for (Command cmd : commands)
             {
-                List<String> commandsAndAliases = entry.getKey();
-                ICommand commandOrAlias = entry.getValue();
+                Set<String> commandsAndAliases = cmd.getCommandAndAliases();
+                ICommand commandOrAlias = cmd.getCommandAsClass();
 
                 if (commandsAndAliases.contains(command))
                 {
-                    HashSet<String> adminCommands = SQLUtils.getAdminCommands();
-                    HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
+                    Set<String> adminCommands = SQLUtils.getAdminCommands();
+                    Set<String> ownerCommands = SQLUtils.getOwnerCommands();
 
                     if (adminCommands.contains(command) || ownerCommands.contains(command))
                     {
-                        chat.sendMessage(channelName, "4Head Admin or owner commands aren't allowed to use here :P");
+                        sendChatMessage(channelID, "4Head Admin or owner commands aren't allowed to use here :P");
                         return;
                     }
 
-                    channelToSend = userLogin;
+                    channelToSend = userID;
 
                     String message = messageToSend.substring(prefixLength);
 
-                    prefixedMessageParts = messageToSend.split(" ");
-                    messageParts = message.split(" ");
+                    String[] messagePartsRaw = message.split(" ");
+                    messageParts = getFilteredParts(messagePartsRaw);
+
+                    String[] prefixedMessagePartsRaw = messageToSend.split(" ");
+                    prefixedMessageParts = getFilteredParts(prefixedMessagePartsRaw);
 
                     commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
 
@@ -160,16 +167,18 @@ public class UserSayCommand implements ICommand
             }
         }
 
-        HashMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
+        Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
         if (globalCommands.containsKey(command))
         {
             String message = globalCommands.get(command);
-            chat.sendMessage(channelToSend, message);
+
+            sendChatMessage(userID, message);
+            sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
             return;
         }
 
-        chat.sendMessage(userLogin, messageToSend);
-        chat.sendMessage(channelName, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
+        sendChatMessage(userID, messageToSend);
+        sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
     }
 }

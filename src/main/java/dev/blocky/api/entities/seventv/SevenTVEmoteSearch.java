@@ -20,15 +20,15 @@ package dev.blocky.api.entities.seventv;
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class SevenTVEmoteSearch
 {
     @SerializedName("items")
-    ArrayList<SevenTVEmote> items;
+    List<SevenTVEmote> items;
 
     @NonNull
-    public ArrayList<SevenTVEmote> getItems()
+    public List<SevenTVEmote> getItems()
     {
         return items;
     }

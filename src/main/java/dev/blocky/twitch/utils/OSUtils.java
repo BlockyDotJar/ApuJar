@@ -18,7 +18,6 @@
 package dev.blocky.twitch.utils;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.SystemUtils;
 
 public class OSUtils
@@ -34,7 +33,7 @@ public class OSUtils
         return STR."/usr/local/apujar/\{filePath}";
     }
 
-    @Nullable
+    @NonNull
     public static String getDirectoryPath()
     {
         if (SystemUtils.IS_OS_WINDOWS)

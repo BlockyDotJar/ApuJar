@@ -31,14 +31,12 @@ import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.api.exceptions.Unauthorized;
 import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.manager.PrivateCommandManager;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.manager.TwitchConfigurator;
 import dev.blocky.twitch.scheduler.InformationMessageScheduler;
 import dev.blocky.twitch.scheduler.TicTacToeScheduler;
-import dev.blocky.twitch.sql.SQLite;
 import dev.blocky.twitch.utils.OSUtils;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import io.github.cdimascio.dotenv.Dotenv;
-import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,28 +52,33 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class Main
 {
     private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
-    private static TwitchClient client;
-    private static long startedAt;
+    public static TwitchClient client;
+    public static TwitchHelix helix;
 
-    public static String clientID;
-    public static String accessToken;
+    public static long startedAt;
+
+    public static String accessToken, oAuthToken, clientID;
+    public static String clientIntegrity, deviceID;
 
     public static String sevenTVAccessToken;
 
-    public static void main() throws SQLException, SchedulerException
+    public static OAuth2Credential oAuth2Credential;
+
+    public static void main(String[] args) throws Exception
     {
         startedAt = System.currentTimeMillis();
 
         new Main();
     }
 
-    public Main() throws SQLException, SchedulerException
+    public Main() throws Exception
     {
         SQLite.connect().initDatabase();
 
@@ -86,9 +89,12 @@ public class Main
                 .filename(".twitch")
                 .load();
 
-        clientID = env.get("CLIENT_ID");
         accessToken = env.get("ACCESS_TOKEN");
+        oAuthToken = env.get("OAUTH_TOKEN");
         String refreshToken = env.get("REFRESH_TOKEN");
+        clientID = env.get("CLIENT_ID");
+        deviceID = env.get("X_DEVICE_ID");
+        clientIntegrity = env.get("CLIENT_INTEGRITY");
 
         sevenTVAccessToken = env.get("SEVENTV_ACCESS_TOKEN");
 
@@ -116,8 +122,11 @@ public class Main
                 String newEnvContent = STR.
                         """
                                 ACCESS_TOKEN=\{refrehedAccessToken}
+                                OAUTH_TOKEN=\{oAuthToken}
                                 REFRESH_TOKEN=\{refreshedRefreshToken}
                                 CLIENT_ID=\{clientID}
+                                X_DEVICE_ID=\{deviceID}
+                                CLIENT_INTEGRITY=\{clientIntegrity}
                                 SEVENTV_ACCESS_TOKEN=\{sevenTVAccessToken}
                                 """;
 
@@ -184,6 +193,9 @@ public class Main
                 .withEnableChat(true);
 
         client = clientBuilder.build();
+        helix = client.getHelix();
+
+        oAuth2Credential = credential;
 
         TwitchConfigurator configurator = new TwitchConfigurator(client);
         configurator.configure();
@@ -191,10 +203,8 @@ public class Main
         EventManager eventManager = client.getEventManager();
         SimpleEventHandler eventHandler = eventManager.getEventHandler(SimpleEventHandler.class);
 
-        TwitchHelix helix = client.getHelix();
-
-        new CommandManager(eventHandler, client);
-        new PrivateCommandManager(eventHandler, helix);
+        new CommandManager(eventHandler);
+        new PrivateCommandManager(eventHandler);
 
         new InformationMessageScheduler();
         new TicTacToeScheduler();
@@ -224,7 +234,7 @@ public class Main
 
                     if (line.equalsIgnoreCase("exit"))
                     {
-                        chat.sendMessage("ApuJar", "ManFeels Preparing to shutdown...");
+                        sendChatMessage("896181679", "ManFeels Preparing to shutdown...");
 
                         for (int i = 5; i > 0; i--)
                         {
@@ -235,7 +245,7 @@ public class Main
 
                             if (i == 1)
                             {
-                                chat.sendMessage("ApuJar", "GigaSignal Disconnecting from Twitch websocket...");
+                                sendChatMessage("896181679", "GigaSignal Disconnecting from Twitch websocket...");
 
                                 logger.info("Bot stops in 1 second.");
                             }
@@ -255,7 +265,7 @@ public class Main
 
                         chat.reconnect();
 
-                        chat.sendMessage("ApuJar", "GigaSignal Successfully reconncted to Twitch websocket...");
+                        sendChatMessage("896181679", "GigaSignal Successfully reconncted to Twitch websocket...");
                     }
                 }
             }
@@ -264,16 +274,5 @@ public class Main
                 e.printStackTrace();
             }
         }).start();
-    }
-
-    @Nullable
-    public static TwitchClient getTwitchClient()
-    {
-        return client;
-    }
-
-    public static long getStartedAt()
-    {
-        return startedAt;
     }
 }

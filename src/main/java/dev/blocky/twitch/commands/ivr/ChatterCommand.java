@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -39,10 +38,8 @@ public class ChatterCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
 
@@ -50,7 +47,7 @@ public class ChatterCommand implements ICommand
 
         if (!isValidUsername(userToCheck))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -58,7 +55,7 @@ public class ChatterCommand implements ICommand
 
         if (ivrUsers.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{userToCheck}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
@@ -84,8 +81,8 @@ public class ChatterCommand implements ICommand
         String chatterCount = decimalFormat.format(userChatterCount);
         String viewerCount = decimalFormat.format(viewers);
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."Susge Their are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderators}, VIP: \{vips}, Viewer: \{viewerCount})");
+        sendChatMessage(channelID, STR."Susge Their are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderators}, VIP: \{vips}, Viewer: \{viewerCount})");
     }
 }

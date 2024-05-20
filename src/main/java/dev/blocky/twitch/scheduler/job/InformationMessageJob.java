@@ -17,22 +17,17 @@
  */
 package dev.blocky.twitch.scheduler.job;
 
-import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
-import dev.blocky.twitch.Main;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class InformationMessageJob implements Job
 {
     @Override
-    public void execute(@NonNull JobExecutionContext context) throws JobExecutionException
+    public void execute(@NonNull JobExecutionContext context)
     {
-        TwitchClient client = Main.getTwitchClient();
-        TwitchChat chat = client.getChat();
-
-        chat.sendMessage("ApuJar", "BatChest To add me to your chat or to one that you are mod in, use the '#join' command and specify a channel if needed Okay To remove me use '#part' with the specified channel if needed FeelsOkayMan Also check out my commands \uD83D\uDC49 https://apujar.blockyjar.dev/commands/utility.html Okay By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg");
+        sendChatMessage("896181679", "BatChest To add me to your chat or to one that you are mod in, use the '#join' command and specify a channel if needed Okay To remove me use '#part' with the specified channel if needed FeelsOkayMan Also check out my commands \uD83D\uDC49 https://apujar.blockyjar.dev/commands/utility.html Okay By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg");
     }
 }

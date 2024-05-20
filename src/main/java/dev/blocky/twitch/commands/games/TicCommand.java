@@ -18,35 +18,33 @@
 package dev.blocky.twitch.commands.games;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TTTMinimaxAI;
+import dev.blocky.twitch.utils.serialization.TicTacToe;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static dev.blocky.twitch.utils.TwitchUtils.retrieveUserListByID;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class TicCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
@@ -55,57 +53,49 @@ public class TicCommand implements ICommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> ticTacToeGames = SQLUtils.getTicTacToeGames();
+        TicTacToe ticTacToe = SQLUtils.getTicTacToeGame(channelIID);
 
-        if (!ticTacToeGames.contains(channelIID))
+        if (ticTacToe == null)
         {
-            chat.sendMessage(channelName, "FeelsDankMan Use the 'tictactoe' command to start a game.");
+            sendChatMessage(channelID, "FeelsDankMan Use the 'tictactoe' command to start a game.");
             return;
         }
 
-        int currentUserID = SQLUtils.getTicTacToeNexUserID(channelIID);
+        int currentUserID = ticTacToe.getNextUserID();
 
         if (eventUserIID != currentUserID)
         {
-            chat.sendMessage(channelName, STR."WTF It's not your turn \{eventUserName}.");
+            sendChatMessage(channelID, STR."WTF It's not your turn \{eventUserName}.");
             return;
         }
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a field.");
+            sendChatMessage(channelID, "FeelsMan Please specify a field.");
             return;
         }
 
         String position = messageParts[1];
 
-        if (position.length() > 1)
+        if (position.matches("^[1-9]$"))
         {
-            chat.sendMessage(channelName, "FeelsMan Invalid value specified. (Choose between 1 and 9)");
-            return;
-        }
-
-        char pos = position.charAt(0);
-
-        if (!Character.isDigit(pos))
-        {
-            chat.sendMessage(channelName, "FeelsMan Invalid value specified. (Choose between 1 and 9)");
+            sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between 1 and 9)");
             return;
         }
 
         int index = Integer.parseInt(position);
 
-        int[] board = SQLUtils.getTicTacToeBoard(channelIID);
+        int[] board = ticTacToe.getBoard();
 
         if (board[index - 1] != 0)
         {
-            chat.sendMessage(channelName, STR."FeelsDankMan Position \{position} is already specified.");
+            sendChatMessage(channelID, STR."FeelsDankMan Position \{position} is already specified.");
             return;
         }
 
         board[index - 1] = 1;
 
-        List<Integer> playerIDs = SQLUtils.getTicTacToePlayerIDs(channelIID);
+        List<Integer> playerIDs = ticTacToe.getPlayerIDs();
 
         int player1ID = playerIDs.getFirst();
         int player2ID = playerIDs.getLast();
@@ -122,14 +112,12 @@ public class TicCommand implements ICommand
             nextUserID = player2ID;
         }
 
-        int round = SQLUtils.getTicTacToeRound(channelIID);
+        int round = ticTacToe.getRound();
 
-        String startedAt = SQLUtils.getTicTacToeStartedAt(channelIID);
-
-        LocalDateTime ttcStartedAt = LocalDateTime.parse(startedAt);
+        LocalDateTime startedAt = ticTacToe.getStartedAt();
         LocalDateTime now = LocalDateTime.now();
 
-        Duration duration = Duration.between(ttcStartedAt, now);
+        Duration duration = Duration.between(startedAt, now);
 
         long SS = duration.toSecondsPart();
         long MM = duration.toMinutes();
@@ -173,7 +161,7 @@ public class TicCommand implements ICommand
 
             String messageToSend = STR."\{left}\{middle}\{right}";
 
-            chat.sendMessage(channelName, messageToSend);
+            sendChatMessage(channelID, messageToSend);
 
             TimeUnit.MILLISECONDS.sleep(500);
         }
@@ -189,7 +177,7 @@ public class TicCommand implements ICommand
         {
             SQLite.onUpdate(STR."DELETE FROM tictactoe WHERE userID = \{channelID}");
 
-            chat.sendMessage(channelName, STR."UNLUCKY The tic tac toe session ended with a tie. (Game lasted \{MM}:\{SS} | 9 rounds)");
+            sendChatMessage(channelID, STR."UNLUCKY The tic tac toe session ended with a tie. (Game lasted \{MM}:\{SS} | 9 rounds)");
             return;
         }
 
@@ -197,7 +185,7 @@ public class TicCommand implements ICommand
         {
             SQLite.onUpdate(STR."DELETE FROM tictactoe WHERE userID = \{channelID}");
 
-            chat.sendMessage(channelName, STR."Pag \{eventUserName} (\u274C) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
+            sendChatMessage(channelID, STR."Pag \{eventUserName} (\u274C) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
             return;
         }
 
@@ -207,20 +195,22 @@ public class TicCommand implements ICommand
 
             if (aiTurn)
             {
-                chat.sendMessage(channelName, STR."EZ I (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
+                sendChatMessage(channelID, STR."EZ I (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
                 return;
             }
 
-            chat.sendMessage(channelName, STR."Pag \{eventUserName} (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
+            sendChatMessage(channelID, STR."Pag \{eventUserName} (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
             return;
         }
 
-        String newBoard = Arrays.toString(board);
+        String newBoard = Arrays.stream(board)
+                .mapToObj(String::valueOf)
+                .collect(Collectors.joining (","));
 
         String messageToSend = STR."PogU Its your turn \{userDisplayName} NOWAYING Use the 'tic' command with a value between 1 and 9. (Round \{nextRound})";
 
         SQLite.onUpdate(STR."UPDATE tictactoe SET board = '\{newBoard}', nextUserID = \{nextUserID}, round = \{nextRound} WHERE userID = \{channelID}");
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

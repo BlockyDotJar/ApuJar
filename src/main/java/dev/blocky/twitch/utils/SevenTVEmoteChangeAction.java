@@ -15,32 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.seventv;
+package dev.blocky.twitch.utils;
 
-import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-public class SevenTVUserConnection
+public enum SevenTVEmoteChangeAction
 {
-    @SerializedName("platform")
-    String platform;
+    ADD("ADD"), REMOVE("REMOVE"), UPDATE("UPDATE");
 
-    @SerializedName("emote_set")
-    SevenTVEmoteSet emoteSet;
-
-    @NonNull
-    public String getPlatform()
-    {
-        return platform;
-    }
-
-    @NonNull
-    public SevenTVEmoteSet getEmoteSet()
-    {
-        return emoteSet;
-    }
-
-    SevenTVUserConnection()
+    SevenTVEmoteChangeAction(@NonNull String action)
     {
     }
 }

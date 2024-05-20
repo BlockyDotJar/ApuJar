@@ -18,31 +18,29 @@
 package dev.blocky.twitch.commands.games;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
+import dev.blocky.twitch.utils.serialization.TicTacToe;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
+
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class LeaveCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
@@ -51,33 +49,31 @@ public class LeaveCommand implements ICommand
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        HashSet<Integer> ticTacToeGames = SQLUtils.getTicTacToeGames();
+        TicTacToe ticTacToe = SQLUtils.getTicTacToeGame(channelIID);
 
-        if (!ticTacToeGames.contains(channelIID))
+        if (ticTacToe == null)
         {
-            chat.sendMessage(channelName, "FeelsDankMan No tictactoe game found.");
+            sendChatMessage(channelID, "FeelsDankMan No tictactoe game found.");
             return;
         }
 
-        List<Integer> playerIDs = SQLUtils.getTicTacToePlayerIDs(channelIID);
+        List<Integer> playerIDs = ticTacToe.getPlayerIDs();
 
         int player1ID = playerIDs.getFirst();
         int player2ID = playerIDs.getLast();
 
         if (eventUserIID != player1ID && eventUserIID != player2ID)
         {
-            chat.sendMessage(channelName, "FeelsDankMan You don't even play along.");
+            sendChatMessage(channelID, "FeelsDankMan You don't even play along.");
             return;
         }
 
-        int round = SQLUtils.getTicTacToeRound(channelIID);
+        int round = ticTacToe.getRound();
 
-        String startedAt = SQLUtils.getTicTacToeStartedAt(channelIID);
-
-        LocalDateTime ttcStartedAt = LocalDateTime.parse(startedAt);
+        LocalDateTime startedAt = ticTacToe.getStartedAt();
         LocalDateTime now = LocalDateTime.now();
 
-        Duration duration = Duration.between(ttcStartedAt, now);
+        Duration duration = Duration.between(startedAt, now);
 
         long SS = duration.toSecondsPart();
         long MM = duration.toMinutes();
@@ -96,6 +92,6 @@ public class LeaveCommand implements ICommand
 
         SQLite.onUpdate(STR."DELETE FROM tictactoe WHERE userID = \{channelID}");
 
-        chat.sendMessage(channelName, STR."YIPPEE \{eventUserName} left the game. \{userDisplayName} won the game! happie (Game lasted \{MM}:\{SS} | \{round} rounds)");
+        sendChatMessage(channelID, STR."YIPPEE \{eventUserName} left the game. \{userDisplayName} won the game! happie (Game lasted \{MM}:\{SS} | \{round} rounds)");
     }
 }

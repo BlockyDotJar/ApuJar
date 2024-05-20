@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -31,8 +30,9 @@ import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
@@ -42,10 +42,9 @@ public class UserSpamCommand implements ICommand
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -54,13 +53,13 @@ public class UserSpamCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a chat.");
+            sendChatMessage(channelID, "FeelsMan Please specify a chat.");
             return;
         }
 
         if (messageParts.length == 2)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a number of messages.");
+            sendChatMessage(channelID, "FeelsMan Please specify a number of messages.");
             return;
         }
 
@@ -68,23 +67,24 @@ public class UserSpamCommand implements ICommand
 
         if (!StringUtils.isNumeric(spamCount))
         {
-            chat.sendMessage(channelName, "ManFeels The second parameter isn't an integer.");
+            sendChatMessage(channelID, "ManFeels The second parameter isn't an integer.");
             return;
         }
 
         if (messageParts.length == 3)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsMan Please specify a message.");
             return;
         }
 
         int messageCount = Integer.parseInt(spamCount);
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Set<Integer> ownerIDs = owners.keySet();
 
         if (messageCount > 100 && !ownerIDs.contains(eventUserIID))
         {
-            chat.sendMessage(channelName, "ManFeels Number can't be bigger than 100, because you aren't an owner.");
+            sendChatMessage(channelID, "ManFeels Number can't be bigger than 100, because you aren't an owner.");
             return;
         }
 
@@ -92,7 +92,7 @@ public class UserSpamCommand implements ICommand
 
         if (!isValidUsername(chatToSpam))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -100,13 +100,13 @@ public class UserSpamCommand implements ICommand
 
         if (chatsToSpam.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{chatToSpam}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{chatToSpam}' found.");
             return;
         }
 
         User user = chatsToSpam.getFirst();
-        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
+        String userID = user.getId();
 
         String messageToSend = removeElements(messageParts, 3);
 
@@ -114,7 +114,7 @@ public class UserSpamCommand implements ICommand
         {
             if (!ownerIDs.contains(eventUserIID))
             {
-                chat.sendMessage(channelName, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
+                sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
                 return;
             }
 
@@ -124,23 +124,23 @@ public class UserSpamCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
                 return;
             }
 
             if (!selfModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
                 return;
             }
         }
 
         for (int i = 0; i < messageCount; i++)
         {
-            chat.sendMessage(userLogin, messageToSend);
+            sendChatMessage(userID, messageToSend);
             TimeUnit.MILLISECONDS.sleep(50);
         }
 
-        chat.sendMessage(channelName, STR."SeemsGood Successfully spammed \{messageCount} messages in \{userDisplayName}'s chat.");
+        sendChatMessage(channelID, STR."SeemsGood Successfully spammed \{messageCount} messages in \{userDisplayName}'s chat.");
     }
 }

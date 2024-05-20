@@ -31,9 +31,6 @@ public class GitHubRelease
     @SerializedName("tag_name")
     String tagName;
 
-    @SerializedName("prerelease")
-    boolean isPreRelease;
-
     @SerializedName("published_at")
     Date publishedAt;
 
@@ -50,11 +47,6 @@ public class GitHubRelease
     public String getTagName()
     {
         return tagName;
-    }
-
-    public boolean isPreRelease()
-    {
-        return isPreRelease;
     }
 
     @NonNull

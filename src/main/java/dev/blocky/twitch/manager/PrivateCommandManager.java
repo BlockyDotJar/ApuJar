@@ -20,58 +20,40 @@ package dev.blocky.twitch.manager;
 import com.github.philippheuer.events4j.simple.SimpleEventHandler;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
-import com.github.twitch4j.helix.TwitchHelix;
-import dev.blocky.twitch.commands.spotify.AddSpotifyUserPrivateCommand;
-import dev.blocky.twitch.commands.spotify.DeleteSpotifyUserPrivateCommand;
-import dev.blocky.twitch.commands.weather.DeleteLocationPrivateCommand;
-import dev.blocky.twitch.commands.weather.HideLocationPrivateCommand;
-import dev.blocky.twitch.commands.weather.LocationPrivateCommand;
-import dev.blocky.twitch.commands.weather.SetLocationPrivateCommand;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.PrivateCommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static dev.blocky.twitch.utils.TwitchUtils.sendPrivateMessage;
+import static dev.blocky.twitch.Main.helix;
+import static dev.blocky.twitch.utils.TwitchUtils.getFilteredParts;
+import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class PrivateCommandManager
 {
-    private static ConcurrentHashMap<List<String>, IPrivateCommand> privateCommands;
-    private final TwitchHelix helix;
-
-    public PrivateCommandManager(@NonNull SimpleEventHandler eventHandler, @NonNull TwitchHelix helix)
+    public PrivateCommandManager(@NonNull SimpleEventHandler eventHandler)
     {
-        this.helix = helix;
-
         eventHandler.onEvent(PrivateMessageEvent.class, this::onPrivateMessage);
-
-        privateCommands = new ConcurrentHashMap<>();
-
-        privateCommands.put(List.of("addspotifyuser", "addspotifyu"), new AddSpotifyUserPrivateCommand());
-        privateCommands.put(List.of("deletespotifyuser", "delspotifyuser", "delspotifyu"), new DeleteSpotifyUserPrivateCommand());
-
-        privateCommands.put(List.of("setlocation"), new SetLocationPrivateCommand());
-        privateCommands.put(List.of("hidelocation"), new HideLocationPrivateCommand());
-        privateCommands.put(List.of("location"), new LocationPrivateCommand());
-        privateCommands.put(List.of("deletelocation", "dellocation"), new DeleteLocationPrivateCommand());
     }
 
     boolean onPrivateMessage(@NonNull String commandOrAlias, @NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception
     {
-        for (List<String> privateCommandKeys : privateCommands.keySet())
+        Set<PrivateCommand> privateCommands = SQLUtils.getPrivateCommands();
+
+        for (PrivateCommand privateCmd : privateCommands)
         {
-            boolean commandExists = privateCommandKeys.stream().anyMatch(commandOrAlias::equalsIgnoreCase);
+            Set<String> commandAndAliases = privateCmd.getCommandAndAliases();
+            boolean commandExists = commandAndAliases.stream().anyMatch(commandOrAlias::equalsIgnoreCase);
 
             if (commandExists)
             {
-                IPrivateCommand command = privateCommands.get(privateCommandKeys);
-                command.onPrivateCommand(event, helix, messageParts);
+                IPrivateCommand privateCommand = privateCmd.getCommandAsClass();
+                privateCommand.onPrivateCommand(event, helix, messageParts);
                 return true;
             }
         }
@@ -98,39 +80,29 @@ public class PrivateCommandManager
 
             if (PREFIX_MATCHER.matches())
             {
-                sendPrivateMessage(helix, eventUserID, STR."4Head The prefix for your chat is is '\{actualPrefix}'");
+                sendWhisper(eventUserID, STR."4Head The prefix for your chat is is '\{actualPrefix}'");
                 return;
             }
 
             String commandRaw = message.strip();
-            String[] messageParts = commandRaw.split(" ");
+
+            String[] messagePartsRaw = commandRaw.split(" ");
+            String[] messageParts = getFilteredParts(messagePartsRaw);
 
             if (messageParts.length > 0)
             {
                 String command = messageParts[0];
 
-                HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
-                HashSet<String> adminCommands = SQLUtils.getAdminCommands();
-
-                HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
-                HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
-
-                if ((!adminIDs.contains(eventUserIID) && adminCommands.contains(command)) && (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command)))
+                if (!command.isBlank())
                 {
-                    sendPrivateMessage(helix, eventUserID, "4Head You don't have any permission to do that :P");
-                    return;
-                }
-
-                if (!command.isBlank() && !onPrivateMessage(command, event, messageParts))
-                {
-                    sendPrivateMessage(helix, eventUserID, STR.":/ '\{command}' command wasn't found.");
+                    onPrivateMessage(command, event, messageParts);
                 }
             }
         }
         catch (Exception e)
         {
             String error = e.getMessage();
-            sendPrivateMessage(helix, eventUserID, STR."SirMad Error while trying to execute an command PogChamp \{error}");
+            sendWhisper(eventUserID, STR."SirMad Error while trying to execute an command PogChamp \{error}");
 
             e.printStackTrace();
         }

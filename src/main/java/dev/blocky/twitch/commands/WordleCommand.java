@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.api.ServiceProvider;
@@ -30,18 +29,15 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.getActualChannel;
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class WordleCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         LocalDate now = LocalDate.now();
@@ -54,7 +50,7 @@ public class WordleCommand implements ICommand
 
             if (!wordleDay.matches("^\\d{2}\\.\\d{2}\\.\\d{4}$"))
             {
-                chat.sendMessage(channelName, "no Date schema must match to DD.MM.YYYY (e.g. 21.04.2024)");
+                sendChatMessage(channelID, "no Date schema must match to DD.MM.YYYY (e.g. 21.04.2024)");
                 return;
             }
         }
@@ -74,13 +70,13 @@ public class WordleCommand implements ICommand
 
         if (wordleDate.isBefore(wordleRelease))
         {
-            chat.sendMessage(channelName, "LULE Wordle was released on 19.06.2021");
+            sendChatMessage(channelID, "LULE Wordle was released on 19.06.2021");
             return;
         }
 
         if (wordleDate.isAfter(now))
         {
-            chat.sendMessage(channelName, "LULE That day lies in the future.");
+            sendChatMessage(channelID, "LULE That day lies in the future.");
             return;
         }
 
@@ -97,8 +93,8 @@ public class WordleCommand implements ICommand
             editor = "unknown";
         }
 
-        channelName = getActualChannel(channelToSend, channelName);
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        chat.sendMessage(channelName, STR."Nerd Your needed wordle (\{id}) answer is '\{solution}'. (Added by \{editor} | \{daysSinceLaunch} days since launch)");
+        sendChatMessage(channelID, STR."Nerd Your needed wordle (\{id}) answer is '\{solution}'. (Added by \{editor} | \{daysSinceLaunch} days since launch)");
     }
 }

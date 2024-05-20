@@ -18,28 +18,35 @@
 package dev.blocky.api.entities.seventv;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.util.ArrayList;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 public class SevenTVData
 {
-    @SerializedName("users")
-    ArrayList<SevenTVUser> users;
-
     @SerializedName("emotes")
     SevenTVEmoteSearch emotes;
 
-    @NonNull
-    public ArrayList<SevenTVUser> getUsers()
-    {
-        return users;
-    }
+    @SerializedName("user")
+    SevenTVUser user;
 
-    @NonNull
+    @SerializedName("cosmetics")
+    SevenTVCosmetic cosmetics;
+
+    @Nullable
     public SevenTVEmoteSearch getEmotes()
     {
         return emotes;
+    }
+
+    @Nullable
+    public SevenTVUser getUser()
+    {
+        return user;
+    }
+
+    @Nullable
+    public SevenTVCosmetic getCosmetics()
+    {
+        return cosmetics;
     }
 
     SevenTVData()

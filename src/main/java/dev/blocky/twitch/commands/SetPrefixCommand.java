@@ -18,27 +18,25 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import static dev.blocky.twitch.utils.SQLUtils.removeApostrophe;
+import static dev.blocky.twitch.utils.TwitchUtils.removeIllegalCharacters;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class SetPrefixCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
@@ -49,12 +47,12 @@ public class SetPrefixCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a prefix.");
+            sendChatMessage(channelID, "FeelsMan Please specify a prefix.");
             return;
         }
 
         String prefixRaw = messageParts[1];
-        String prefix = removeApostrophe(prefixRaw);
+        String prefix = removeIllegalCharacters(prefixRaw);
         String actualPrefix = SQLUtils.getPrefix(channelIID);
 
         IVR ivr = ServiceProvider.getIVRModVip(channelName);
@@ -62,25 +60,25 @@ public class SetPrefixCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            chat.sendMessage(channelName, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or moderator.");
             return;
         }
 
         if (prefix.equals("/"))
         {
-            chat.sendMessage(channelName, "monkaLaugh The new prefix can't be / (slash) haha");
+            sendChatMessage(channelID, "monkaLaugh The new prefix can't be / (slash) haha");
             return;
         }
 
         if (actualPrefix.equals(prefix))
         {
-            chat.sendMessage(channelName, "CoolStoryBob The new prefix matches exactly with the old one.");
+            sendChatMessage(channelID, "CoolStoryBob The new prefix matches exactly with the old one.");
             return;
         }
 
         if (prefix.isBlank())
         {
-            chat.sendMessage(channelName, "monkaLaugh The new prefix can't contain the character ' haha");
+            sendChatMessage(channelID, "monkaLaugh The new prefix can't contain the character ' haha");
             return;
         }
 
@@ -88,7 +86,7 @@ public class SetPrefixCommand implements ICommand
         {
             SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
-            chat.sendMessage(channelName, "8-) Successfully deleted prefix.");
+            sendChatMessage(channelID, "8-) Successfully deleted prefix.");
             return;
         }
 
@@ -96,12 +94,12 @@ public class SetPrefixCommand implements ICommand
         {
             SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix) VALUES(\{channelID}, '\{prefix}')");
 
-            chat.sendMessage(channelName, STR."8-) Successfully set prefix to \{prefix}");
+            sendChatMessage(channelID, STR."8-) Successfully set prefix to \{prefix}");
             return;
         }
 
         SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{prefix}' WHERE userID = \{channelID}");
 
-        chat.sendMessage(channelName, STR."8-) Successfully set prefix to \{prefix}");
+        sendChatMessage(channelID, STR."8-) Successfully set prefix to \{prefix}");
     }
 }

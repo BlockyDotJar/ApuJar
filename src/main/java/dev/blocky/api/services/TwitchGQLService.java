@@ -15,15 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.seventv;
+package dev.blocky.api.services;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import dev.blocky.api.request.TwitchGQLBody;
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.Headers;
+import retrofit2.http.POST;
 
-public enum SevenTVEmoteChangeAction
+public interface TwitchGQLService
 {
-    ADD("ADD"), REMOVE("REMOVE"), UPDATE("UPDATE");
-
-    SevenTVEmoteChangeAction(@NonNull String action)
-    {
-    }
+    @POST("gql")
+    @Headers("Content-Type: application/json")
+    Call<Void> postGQL(@Body TwitchGQLBody body);
 }

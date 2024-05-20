@@ -18,29 +18,28 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.collections4.BidiMap;
 
-import java.util.HashSet;
+import java.util.Collection;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class DeleteOwnerCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -48,31 +47,32 @@ public class DeleteOwnerCommand implements ICommand
 
         if (eventUserIID != 755628467)
         {
-            chat.sendMessage(channelName, "oop You are not my founder.");
+            sendChatMessage(channelID, "oop You are not my founder.");
             return;
         }
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a user.");
             return;
         }
 
-        HashSet<String> ownerLogins = SQLUtils.getOwnerLogins();
+        BidiMap<Integer, String> owners = SQLUtils.getOwners();
+        Collection<String> ownerLogins = owners.values();
 
         String ownerToDemote = getUserAsString(messageParts, 1);
 
         if (!ownerLogins.contains(ownerToDemote))
         {
-            chat.sendMessage(channelName, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
+            sendChatMessage(channelID, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
             return;
         }
 
-        int ownerID = SQLUtils.getOwnerIDByLogin(ownerToDemote);
+        int ownerID = owners.getKey(ownerToDemote);
         ServiceProvider.deleteOwner(ownerID);
 
         SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{ownerToDemote}'");
 
-        chat.sendMessage(channelName, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
+        sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
     }
 }

@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -29,19 +28,19 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class SayCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -50,19 +49,20 @@ public class SayCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsMan Please specify a message.");
             return;
         }
 
         String messageToSend = removeElements(messageParts, 1);
 
-        HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
+        Map<Integer, String> owners = SQLUtils.getOwners();
+        Set<Integer> ownerIDs = owners.keySet();
 
         if (messageToSend.startsWith("/"))
         {
             if (!ownerIDs.contains(eventUserIID))
             {
-                chat.sendMessage(channelName, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
+                sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
                 return;
             }
 
@@ -72,17 +72,24 @@ public class SayCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
                 return;
             }
 
             if (!selfModeratorPerms && !channelName.equalsIgnoreCase("ApuJar"))
             {
-                chat.sendMessage(channelName, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
                 return;
             }
         }
 
-        chat.sendMessage(channelName, messageToSend);
+        boolean isSendable = checkChatSettings(messageParts, channelName, channelID, channelID);
+
+        if (!isSendable)
+        {
+            return;
+        }
+
+        sendChatMessage(channelID, messageToSend);
     }
 }

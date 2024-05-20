@@ -18,7 +18,6 @@
 package dev.blocky.twitch.commands.spotify;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
@@ -26,6 +25,7 @@ import com.google.gson.JsonArray;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
+import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
@@ -41,23 +41,16 @@ import se.michaelthelin.spotify.requests.data.search.simplified.SearchTracksRequ
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import static dev.blocky.twitch.utils.TwitchUtils.getParameterAsString;
-import static dev.blocky.twitch.utils.TwitchUtils.getParameterValue;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class PlayCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -66,7 +59,7 @@ public class PlayCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a link or the id of the track.");
+            sendChatMessage(channelID, "FeelsMan Please specify the name of the track.");
             return;
         }
 
@@ -91,15 +84,15 @@ public class PlayCommand implements ICommand
 
         if (spotifyTrack == null)
         {
-            chat.sendMessage(channelName, "FeelsMan Please specify a link or the id of the track.");
+            sendChatMessage(channelID, "FeelsMan Please specify the name of the track.");
             return;
         }
 
-        HashSet<Integer> spotifyUserIDs = SQLUtils.getSpotifyUserIDs();
+        SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
 
-        if (!spotifyUserIDs.contains(eventUserIID))
+        if (spotifyUser == null)
         {
-            chat.sendMessage(channelName, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
+            sendChatMessage(channelID, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
             return;
         }
 
@@ -112,17 +105,21 @@ public class PlayCommand implements ICommand
 
         if (devices.length == 0 || !anyActiveDevice)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
             return;
         }
 
-        SearchTracksRequest searchTracksRequest = spotifyAPI.searchTracks(spotifyTrack).limit(5).includeExternal("audio").build();
+        SearchTracksRequest searchTracksRequest = spotifyAPI.searchTracks(spotifyTrack)
+                .includeExternal("audio")
+                .limit(5)
+                .build();
+
         Paging<Track> tracksRaw = searchTracksRequest.execute();
         Track[] tracks = tracksRaw.getItems();
 
         if (tracks.length == 0)
         {
-            chat.sendMessage(channelName, STR."AlienUnpleased \{eventUserName} your track wasn't found.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} your track wasn't found.");
             return;
         }
 
@@ -169,7 +166,7 @@ public class PlayCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                chat.sendMessage(channelName, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
                 return;
             }
 
@@ -185,6 +182,6 @@ public class PlayCommand implements ICommand
 
         String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{trackName}' by \{artists} from \{albumName} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
-        chat.sendMessage(channelName, messageToSend);
+        sendChatMessage(channelID, messageToSend);
     }
 }

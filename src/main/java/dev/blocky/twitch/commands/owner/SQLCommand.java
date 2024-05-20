@@ -18,11 +18,10 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang.StringUtils;
 
@@ -30,20 +29,19 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
 import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class SQLCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         if (messageParts.length == 1)
         {
-            chat.sendMessage(channelName, "FeelsMan Please send some sql.");
+            sendChatMessage(channelID, "FeelsMan Please send some sql.");
             return;
         }
 
@@ -53,7 +51,7 @@ public class SQLCommand implements ICommand
         {
             SQLite.onUpdate(sql);
 
-            chat.sendMessage(channelName, "o7 Successfully executed your sql code.");
+            sendChatMessage(channelID, "o7 Successfully executed your sql code.");
             return;
         }
 
@@ -85,7 +83,7 @@ public class SQLCommand implements ICommand
                     output.append(" - ");
                 }
 
-                chat.sendMessage(channelName, output.toString());
+                sendChatMessage(channelID, output.toString());
             }
         }
     }

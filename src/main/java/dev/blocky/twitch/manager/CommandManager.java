@@ -18,183 +18,49 @@
 package dev.blocky.twitch.manager;
 
 import com.github.philippheuer.events4j.simple.SimpleEventHandler;
-import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
-import dev.blocky.twitch.commands.*;
-import dev.blocky.twitch.commands.admin.*;
-import dev.blocky.twitch.commands.games.LeaveCommand;
-import dev.blocky.twitch.commands.games.TicCommand;
-import dev.blocky.twitch.commands.games.TicTacToeCommand;
-import dev.blocky.twitch.commands.github.ChatterinoCommand;
-import dev.blocky.twitch.commands.github.ChattyCommand;
-import dev.blocky.twitch.commands.ivr.*;
-import dev.blocky.twitch.commands.modscanner.*;
-import dev.blocky.twitch.commands.owner.*;
-import dev.blocky.twitch.commands.seventv.*;
-import dev.blocky.twitch.commands.spotify.*;
-import dev.blocky.twitch.commands.weather.UserWeatherCommand;
-import dev.blocky.twitch.commands.weather.WeatherCommand;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Command;
+import dev.blocky.twitch.utils.serialization.Keyword;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.commons.lang3.tuple.Triple;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static dev.blocky.twitch.Main.client;
+import static dev.blocky.twitch.utils.TwitchUtils.getFilteredParts;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class CommandManager
 {
-    private static ConcurrentHashMap<List<String>, ICommand> commands;
-    private final TwitchClient client;
+    private static final HashMap<Integer, Long> keywordRatelimits = new HashMap<>();
 
-    public CommandManager(@NonNull SimpleEventHandler eventHandler, @NonNull TwitchClient client)
+    public static final HashMap<Integer, Long> ratelimitedChats = new HashMap<>();
+
+    public CommandManager(@NonNull SimpleEventHandler eventHandler)
     {
-        this.client = client;
-
         eventHandler.onEvent(ChannelMessageEvent.class, this::onChannelMessage);
-
-        commands = new ConcurrentHashMap<>();
-
-        commands.put(List.of("commands", "help"), new CommandsCommand());
-        commands.put(List.of("ping"), new PingCommand());
-
-        commands.put(List.of("say"), new SayCommand());
-        commands.put(List.of("usersay", "usay"), new UserSayCommand());
-
-        commands.put(List.of("spam"), new SpamCommand());
-        commands.put(List.of("userspam", "uspam"), new UserSpamCommand());
-
-        commands.put(List.of("globalsay", "gsay"), new GlobalSayCommand());
-
-        commands.put(List.of("join"), new JoinCommand());
-        commands.put(List.of("part"), new PartCommand());
-
-        commands.put(List.of("exit"), new ExitCommand());
-
-        commands.put(List.of("addadmin"), new AddAdminCommand());
-        commands.put(List.of("deleteadmin", "deladmin"), new DeleteAdminCommand());
-
-        commands.put(List.of("addowner"), new AddOwnerCommand());
-        commands.put(List.of("deleteowner", "delowner"), new DeleteOwnerCommand());
-
-        commands.put(List.of("chatter"), new ChatterCommand());
-        commands.put(List.of("isinchat", "inchat"), new IsInChatCommand());
-        commands.put(List.of("user"), new UserCommand());
-        commands.put(List.of("follower"), new FollowerCommand());
-        commands.put(List.of("globalbadge", "badge"), new GlobalBadgeCommand());
-        commands.put(List.of("id"), new IDCommand());
-        commands.put(List.of("chatidentity", "ci", "badges", "7tvpaint"), new ChatIdentityCommand());
-        commands.put(List.of("chatcolor", "color"), new ChatColorCommand());
-        commands.put(List.of("createdat", "created"), new CreatedAtCommand());
-        commands.put(List.of("lastbroadcast", "laststream", "last"), new LastStreamCommand());
-
-        commands.put(List.of("isbanned"), new IsBannedCommand());
-        commands.put(List.of("isaffiliate"), new IsAffiliateCommand());
-        commands.put(List.of("ispartner"), new IsPartnerCommand());
-        commands.put(List.of("isstaff"), new IsStaffCommand());
-
-        commands.put(List.of("modscanner", "ms"), new ModScannerCommand());
-        commands.put(List.of("modlookup", "mods", "ml"), new ModLookupCommand());
-        commands.put(List.of("viplookup", "vips", "vl"), new VIPLookupCommand());
-        commands.put(List.of("founderlookup", "founder", "fl"), new FounderLookupCommand());
-
-        commands.put(List.of("modage", "modchannel", "ismod", "ma", "mc"), new ModageCommand());
-        commands.put(List.of("vipage", "vipchannel", "isvip", "va", "vc"), new VIPageCommand());
-        commands.put(List.of("founderage", "founderchannel", "isfounder", "fda", "fc"), new FounderageCommand());
-
-        commands.put(List.of("setprefix", "prefix"), new SetPrefixCommand());
-        commands.put(List.of("deleteprefix", "delprefix"), new DeletePrefixCommand());
-
-        commands.put(List.of("sql"), new SQLCommand());
-
-        commands.put(List.of("addglobalcommand", "addglobalcmd", "addgcmd"), new AddGlobalCommandCommand());
-        commands.put(List.of("editglobalcommand", "editglobalcmd", "editgcmd"), new EditGlobalCommandCommand());
-        commands.put(List.of("deleteglobalcommand", "deleteglobalcmd", "delglobalcommand", "delglobalcmd", "delgcmd"), new DeleteGlobalCommandCommand());
-
-        commands.put(List.of("addkeyword", "addkw"), new AddKeywordCommand());
-        commands.put(List.of("editkeyword", "editkw"), new EditKeywordCommand());
-        commands.put(List.of("editkeywordmatching", "editkwm"), new EditKeywordMatchingCommand());
-        commands.put(List.of("deletekeyword", "delkw"), new DeleteKeywordCommand());
-
-        commands.put(List.of("google"), new GoogleCommand());
-
-        commands.put(List.of("checkname", "cn"), new CheckNameCommand());
-
-        commands.put(List.of("followage", "fa"), new FollowageCommand());
-        commands.put(List.of("subage", "sa"), new SubageCommand());
-
-        commands.put(List.of("crossban", "cb"), new CrossbanCommand());
-        commands.put(List.of("crossunban", "cub"), new CrossunbanCommand());
-
-        commands.put(List.of("play"), new PlayCommand());
-        commands.put(List.of("playlink"), new PlayLinkCommand());
-        commands.put(List.of("song"), new SongCommand());
-        commands.put(List.of("volume"), new VolumeCommand());
-        commands.put(List.of("setvolume"), new SetVolumeCommand());
-        commands.put(List.of("resume"), new ResumeCommand());
-        commands.put(List.of("pause"), new PauseCommand());
-        commands.put(List.of("next"), new NextCommand());
-        commands.put(List.of("previous", "prev"), new PreviousCommand());
-        commands.put(List.of("setprogress", "seekposition"), new SetProgressCommand());
-        commands.put(List.of("queue"), new QueueCommand());
-        commands.put(List.of("repeat"), new RepeatCommand());
-        commands.put(List.of("shuffle"), new ShuffleCommand());
-        commands.put(List.of("yoink"), new YoinkCommand());
-        commands.put(List.of("songs"), new SongsCommand());
-        commands.put(List.of("artists"), new ArtistsCommand());
-
-        commands.put(List.of("7tvallow"), new SevenTVAllowCommand());
-        commands.put(List.of("7tvdeny"), new SevenTVDenyCommand());
-        commands.put(List.of("7tvemote"), new SevenTVEmoteCommand());
-        commands.put(List.of("7tvuseremote", "7tvuemote"), new SevenTVUserEmoteCommand());
-        commands.put(List.of("7tvuser"), new SevenTVUserCommand());
-        commands.put(List.of("7tvadd"), new SevenTVAddCommand());
-        commands.put(List.of("7tvaddlink"), new SevenTVAddLinkCommand());
-        commands.put(List.of("7tvyoink"), new SevenTVYoinkCommand());
-        commands.put(List.of("7tvrename", "7tvrn"), new SevenTVRenameCommand());
-        commands.put(List.of("7tvremove", "7tvrm"), new SevenTVRemoveCommand());
-
-        commands.put(List.of("receiveeventnotifications", "ren"), new ReceiveEventNotificationsCommand());
-
-        commands.put(List.of("chatterino"), new ChatterinoCommand());
-        commands.put(List.of("chatty"), new ChattyCommand());
-
-        commands.put(List.of("weather"), new WeatherCommand());
-        commands.put(List.of("userweather", "uweather"), new UserWeatherCommand());
-
-        commands.put(List.of("tictactoe", "ttt"), new TicTacToeCommand());
-        commands.put(List.of("leave"), new LeaveCommand());
-        commands.put(List.of("tic"), new TicCommand());
-
-        commands.put(List.of("wordle"), new WordleCommand());
-
-        commands.put(List.of("kok", "cock", "penis", "pp"), new KokCommand());
-        commands.put(List.of("sus", "susge", "suspicious"), new SusCommand());
-        commands.put(List.of("cool"), new CoolCommand());
-        commands.put(List.of("love"), new LoveCommand());
-
-        commands.put(List.of("filesay", "fs"), new FileSayCommand());
     }
 
     boolean onMessage(@NonNull String commandOrAlias, @NonNull ChannelMessageEvent event, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        for (List<String> commandKeys : commands.keySet())
+        Set<Command> commands = SQLUtils.getCommands();
+
+        for (Command cmd : commands)
         {
-            boolean commandExists = commandKeys.stream().anyMatch(commandOrAlias::equalsIgnoreCase);
+            Set<String> commandsAndAliases = cmd.getCommandAndAliases();
+            boolean commandExists = commandsAndAliases.stream().anyMatch(commandOrAlias::equalsIgnoreCase);
 
             if (commandExists)
             {
-                ICommand command = commands.get(commandKeys);
+                ICommand command = cmd.getCommandAsClass();
                 command.onCommand(event, client, prefixedMessageParts, messageParts);
                 return true;
             }
@@ -204,8 +70,6 @@ public class CommandManager
 
     public void onChannelMessage(@NonNull ChannelMessageEvent event)
     {
-        TwitchChat chat = client.getChat();
-
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
         String channelID = channel.getId();
@@ -218,23 +82,38 @@ public class CommandManager
 
         try
         {
+            if (ratelimitedChats.containsKey(channelIID))
+            {
+                long currentTimeMillis = System.currentTimeMillis();
+                long timeMillis = ratelimitedChats.get(channelIID);
+
+                long difference = currentTimeMillis - timeMillis;
+
+                if (difference < 3000)
+                {
+                    return;
+                }
+
+                ratelimitedChats.remove(channelIID);
+            }
+
             String message = event.getMessage();
 
             String actualPrefix = SQLUtils.getPrefix(channelIID);
             int prefixLength = actualPrefix.length();
 
-            Pattern PREFIX_PATTERN = Pattern.compile("(.*)?(prefix\\s+(of|von|from))?\\s+?@?apujar,?(prefix)?(.*)?", CASE_INSENSITIVE);
+            Pattern PREFIX_PATTERN = Pattern.compile("(.*)?@?apujar,?\\s+?prefix(.*)?", CASE_INSENSITIVE);
             Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
 
             SQLUtils.correctUserLogin(eventUserIID, eventUserName);
 
             if (PREFIX_MATCHER.matches())
             {
-                chat.sendMessage(channelName, STR."4Head My current prefix is '\{actualPrefix}'");
+                sendChatMessage(channelID, STR."4Head My current prefix is '\{actualPrefix}'");
                 return;
             }
 
-            HashMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
+            Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
             if (message.startsWith(actualPrefix))
             {
@@ -243,67 +122,79 @@ public class CommandManager
                 if (globalCommands.containsKey(globalCommand))
                 {
                     String commandMessage = globalCommands.get(globalCommand);
-                    chat.sendMessage(channelName, commandMessage);
+                    sendChatMessage(channelID, commandMessage);
                     return;
                 }
-            }
 
-            if (message.startsWith(actualPrefix))
-            {
                 String commandRaw = message.substring(prefixLength).strip();
 
                 String[] messagePartsRaw = commandRaw.split(" ");
-                String[] messageParts = Arrays.stream(messagePartsRaw)
-                        .filter(messagePart -> !messagePart.isBlank())
-                        .map(String::strip)
-                        .toArray(String[]::new);
+                String[] messageParts = getFilteredParts(messagePartsRaw);
 
                 if (messageParts.length > 0)
                 {
                     String command = messageParts[0];
 
-                    HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
-                    HashSet<String> adminCommands = SQLUtils.getAdminCommands();
+                    Map<Integer, String> admins = SQLUtils.getAdmins();
+                    Set<Integer> adminIDs = admins.keySet();
 
-                    HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
-                    HashSet<String> ownerCommands = SQLUtils.getOwnerCommands();
+                    Set<String> adminCommands = SQLUtils.getAdminCommands();
+
+                    Map<Integer, String> owners = SQLUtils.getOwners();
+                    Set<Integer> ownerIDs = owners.keySet();
+
+                    Set<String> ownerCommands = SQLUtils.getOwnerCommands();
 
                     if (!adminIDs.contains(eventUserIID) && adminCommands.contains(command))
                     {
-                        chat.sendMessage(channelName, "4Head You don't have any permission to use admin commands :P");
+                        sendChatMessage(channelID, "4Head You don't have any permission to use admin commands :P");
                         return;
                     }
 
                     if (!ownerIDs.contains(eventUserIID) && ownerCommands.contains(command))
                     {
-                        chat.sendMessage(channelName, "4Head You don't have any permission to use owner commands :P");
+                        sendChatMessage(channelID, "4Head You don't have any permission to use owner commands :P");
                         return;
                     }
 
                     String[] prefixedMessagePartsRaw = message.split(" ");
-                    String[] prefixedMessageParts = Arrays.stream(prefixedMessagePartsRaw)
-                            .filter(messagePart -> !messagePart.isBlank())
-                            .map(String::strip)
-                            .toArray(String[]::new);
+                    String[] prefixedMessageParts = getFilteredParts(prefixedMessagePartsRaw);
 
                     if (!command.isBlank() && !onMessage(command, event, prefixedMessageParts, messageParts))
                     {
-                        chat.sendMessage(channelName, STR."Sadeg '\{command}' command wasn't found.");
+                        sendChatMessage(channelID, STR."Sadeg '\{command}' command wasn't found.");
                     }
+
+                    return;
                 }
             }
 
-            List<Triple<String, String, Boolean>> keywords = SQLUtils.getKeywords(channelIID);
+            Set<Keyword> keywords = SQLUtils.getKeywords(channelIID);
 
-            for (Triple<String, String, Boolean> keyword : keywords)
+            for (Keyword keyword : keywords)
             {
-                String kw = keyword.getLeft();
-                String kwMessage = keyword.getMiddle();
-                boolean exactMatch = keyword.getRight();
+                String kw = keyword.getName();
+                String kwMessage = keyword.getMessage();
+                boolean exactMatch = keyword.isExactMatch();
 
                 if ((message.equals(kw) && exactMatch) || (message.contains(kw) && !exactMatch))
                 {
-                    chat.sendMessage(channelName, kwMessage);
+                    long currentTimeMillis = System.currentTimeMillis();
+
+                    if (keywordRatelimits.containsKey(channelIID))
+                    {
+                        long timeMillis = keywordRatelimits.get(channelIID);
+                        long difference = currentTimeMillis - timeMillis;
+
+                        if (difference < 3000)
+                        {
+                            return;
+                        }
+                    }
+
+                    keywordRatelimits.put(channelIID, currentTimeMillis);
+
+                    sendChatMessage(channelID, kwMessage);
                     return;
                 }
             }
@@ -312,36 +203,21 @@ public class CommandManager
         {
             String error = e.getMessage();
 
-            if (!channelName.equalsIgnoreCase("ApuJar"))
+            if (error != null && error.equals("Forbidden"))
             {
-                chat.sendMessage("ApuJar", STR."\{channelName} Weird Error while trying to execute an command FeelsGoodMan \{error}");
+                sendChatMessage(channelID, "FeelsOkayMan Spotify account E-Mail needed. Send the E-Mail to @BlockyDotJar, because i currently don't have quota-extension perms on Spotify. https://developer.spotify.com/documentation/web-api/concepts/quota-modes");
+                return;
             }
 
-            if (channelName.equalsIgnoreCase("ApuJar"))
+            if (error != null && error.equals("Player command failed: Restriction violated"))
             {
-                chat.sendMessage("ApuJar", STR."Weird Error while trying to execute an command FeelsGoodMan \{error}");
+                sendChatMessage(channelID, "FeelsDankMan Can't skip to previous song because of Spotify being weird.");
+                return;
             }
+
+            sendChatMessage("896181679", STR."Channel: \{channelName} Weird Error while trying to execute an command FeelsGoodMan \{error}");
 
             e.printStackTrace();
         }
-    }
-
-    @NonNull
-    public static ConcurrentHashMap<List<String>, ICommand> getCommandsAsMap()
-    {
-        return commands;
-    }
-
-    @NonNull
-    public static HashSet<String> getCommands()
-    {
-        HashSet<String> commandSet = new HashSet<>();
-
-        for (List<String> commandKeys : commands.keySet())
-        {
-            commandSet.addAll(commandKeys);
-        }
-
-        return commandSet;
     }
 }

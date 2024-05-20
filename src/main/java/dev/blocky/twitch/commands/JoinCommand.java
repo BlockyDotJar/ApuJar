@@ -26,13 +26,14 @@ import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.sql.SQLite;
+import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
@@ -44,7 +45,7 @@ public class JoinCommand implements ICommand
         TwitchChat chat = client.getChat();
 
         EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
+        String channelID = channel.getId();
 
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
@@ -53,30 +54,9 @@ public class JoinCommand implements ICommand
 
         String chatToJoin = getUserAsString(messageParts, eventUser);
 
-        if (!chatToJoin.equalsIgnoreCase(eventUserName))
-        {
-            IVR ivr = ServiceProvider.getIVRModVip(chatToJoin);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
-
-            HashSet<Integer> adminIDs = SQLUtils.getAdminIDs();
-            HashSet<Integer> ownerIDs = SQLUtils.getOwnerIDs();
-
-            if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
-            {
-                chat.sendMessage(channelName, "ManFeels Can't join channel, because you aren't broadcaster or mod at this channel.");
-                return;
-            }
-        }
-
-        if (chat.isChannelJoined(chatToJoin) || chatToJoin.equalsIgnoreCase("ApuJar"))
-        {
-            chat.sendMessage(channelName, STR."CoolStoryBob Already joined \{chatToJoin}'s chat.");
-            return;
-        }
-
         if (!isValidUsername(chatToJoin))
         {
-            chat.sendMessage(channelName, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
@@ -84,7 +64,31 @@ public class JoinCommand implements ICommand
 
         if (chatsToJoin.isEmpty())
         {
-            chat.sendMessage(channelName, STR.":| No user called '\{chatToJoin}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{chatToJoin}' found.");
+            return;
+        }
+
+        if (!chatToJoin.equalsIgnoreCase(eventUserName))
+        {
+            IVR ivr = ServiceProvider.getIVRModVip(chatToJoin);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
+
+            Map<Integer, String> admins = SQLUtils.getAdmins();
+            Set<Integer> adminIDs = admins.keySet();
+
+            Map<Integer, String> owners = SQLUtils.getOwners();
+            Set<Integer> ownerIDs = owners.keySet();
+
+            if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
+            {
+                sendChatMessage(channelID, "ManFeels Can't join channel, because you aren't broadcaster or mod at this channel.");
+                return;
+            }
+        }
+
+        if (chat.isChannelJoined(chatToJoin) || chatToJoin.equalsIgnoreCase("ApuJar"))
+        {
+            sendChatMessage(channelID, STR."CoolStoryBob Already joined \{chatToJoin}'s chat.");
             return;
         }
 
@@ -95,10 +99,9 @@ public class JoinCommand implements ICommand
         String userLogin = user.getLogin();
         String userID = user.getId();
 
-        SQLite.onUpdate(STR."INSERT INTO chats(userID, userLogin) VALUES(\{userID}, '\{userLogin}')");
-        SQLite.onUpdate(STR."INSERT INTO eventNotifications(userID, userLogin, enabled) VALUES(\{userID}, '\{userLogin}', TRUE)");
+        SQLite.onUpdate(STR."INSERT INTO chats(userID, userLogin, eventsEnabled) VALUES(\{userID}, '\{userLogin}', TRUE)");
 
-        chat.sendMessage(chatToJoin, "lebroJAM Hi, my name is, what? HUH My name is, who? eeeh My name is, APU APU ApuJar !");
-        chat.sendMessage(channelName, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood If you want to disable event notifications use #ren false FeelsOkayMan By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg If you disagree with them, then use '#part' to remove the bot from your chat FeelsGoodMan");
+        sendChatMessage(userID, "lebronJAM Hi, my name is, what? HUH My name is, who? eeeh My name is, ApuApustaja ApuApustaja ApuJar !");
+        sendChatMessage(channelID, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood If you want to disable event notifications use #ren false FeelsOkayMan By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg If you disagree with them, then use '#part' to remove the bot from your chat FeelsGoodMan");
     }
 }

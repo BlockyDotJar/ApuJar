@@ -21,24 +21,18 @@ import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class SevenTVUser
 {
     @SerializedName("id")
     String userID;
 
-    @SerializedName("username")
-    String userName;
-
-    @SerializedName("display_name")
-    String userDisplayName;
-
-    @SerializedName("connections")
-    ArrayList<SevenTVUserConnection> userConnections;
-
     @SerializedName("editors")
-    ArrayList<SevenTVUser> userEditors;
+    List<SevenTVUser> editors;
+
+    @SerializedName("cosmetics")
+    List<SevenTVCosmetic> cosmetics;
 
     @NonNull
     public String getUserID()
@@ -47,27 +41,15 @@ public class SevenTVUser
     }
 
     @Nullable
-    public String getUserName()
+    public List<SevenTVUser> getEditors()
     {
-        return userName;
+        return editors;
     }
 
     @Nullable
-    public String getUserDisplayName()
+    public List<SevenTVCosmetic> getCosmetics()
     {
-        return userDisplayName;
-    }
-
-    @Nullable
-    public ArrayList<SevenTVUserConnection> getUserConnections()
-    {
-        return userConnections;
-    }
-
-    @Nullable
-    public ArrayList<SevenTVUser> getUserEditors()
-    {
-        return userEditors;
+        return cosmetics;
     }
 
     SevenTVUser()

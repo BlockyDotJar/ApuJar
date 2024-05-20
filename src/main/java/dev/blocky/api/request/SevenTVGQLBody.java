@@ -18,15 +18,20 @@
 package dev.blocky.api.request;
 
 import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.Map;
 
 public class SevenTVGQLBody
 {
+    @SerializedName("variables")
     private final Map<String, Object> variables;
 
+    @SerializedName("operationName")
     private final String operationName;
+
+    @SerializedName("query")
     private final String query;
 
     public SevenTVGQLBody(@NonNull String operationName, @NonNull Map<String, Object> variables, @NonNull String query)
