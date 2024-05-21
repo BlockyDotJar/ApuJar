@@ -111,6 +111,12 @@ public class SevenTVYoinkCommand implements ICommand
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
 
+        if (sevenTVEmoteSet == null)
+        {
+            sendChatMessage(channelID, "FeelsGoodMan No emote active emote-set found.");
+            return;
+        }
+
         List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
         List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToYoink);
 

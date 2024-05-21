@@ -35,6 +35,24 @@ public class LiLBChatter
     List<String> viewers;
 
     @NonNull
+    public List<String> getModerators()
+    {
+        return moderators;
+    }
+
+    @NonNull
+    public List<String> getVIPs()
+    {
+        return vips;
+    }
+
+    @NonNull
+    public List<String> getViewers()
+    {
+        return viewers;
+    }
+
+    @NonNull
     public List<String> getChatters()
     {
         List<String> nonViewer = CollectionUtils.collate(moderators, vips);

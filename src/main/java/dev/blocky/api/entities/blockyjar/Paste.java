@@ -15,32 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.seventv;
+package dev.blocky.api.entities.blockyjar;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-public class SevenTVBadge
+public class Paste
 {
-    @SerializedName("id")
-    String badgeID;
-
-    @SerializedName("name")
-    String badgeName;
+    @SerializedName("key")
+    String key;
 
     @NonNull
-    public String getID()
+    public String getKey()
     {
-        return badgeID;
+        return key;
     }
 
-    @NonNull
-    public String getName()
-    {
-        return badgeName;
-    }
-
-    SevenTVBadge()
+    Paste()
     {
     }
 }

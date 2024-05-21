@@ -69,8 +69,6 @@ public class Main
 
     public static String sevenTVAccessToken;
 
-    public static OAuth2Credential oAuth2Credential;
-
     public static void main(String[] args) throws Exception
     {
         startedAt = System.currentTimeMillis();
@@ -194,8 +192,6 @@ public class Main
 
         client = clientBuilder.build();
         helix = client.getHelix();
-
-        oAuth2Credential = credential;
 
         TwitchConfigurator configurator = new TwitchConfigurator(client);
         configurator.configure();

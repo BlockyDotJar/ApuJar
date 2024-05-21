@@ -15,32 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.seventv;
+package dev.blocky.api.services;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import dev.blocky.api.entities.blockyjar.Paste;
+import retrofit2.Call;
+import retrofit2.http.Body;
+import retrofit2.http.Headers;
+import retrofit2.http.POST;
 
-public class SevenTVBadge
+public interface KokBinService
 {
-    @SerializedName("id")
-    String badgeID;
-
-    @SerializedName("name")
-    String badgeName;
-
-    @NonNull
-    public String getID()
-    {
-        return badgeID;
-    }
-
-    @NonNull
-    public String getName()
-    {
-        return badgeName;
-    }
-
-    SevenTVBadge()
-    {
-    }
+    @POST("documents")
+    @Headers("Content-Type: text/plain")
+    Call<Paste> postDocument(@Body String body);
 }

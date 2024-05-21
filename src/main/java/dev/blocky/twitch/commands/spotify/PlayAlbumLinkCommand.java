@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
-public class PlayListLinkCommand implements ICommand
+public class PlayAlbumLinkCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -61,27 +61,27 @@ public class PlayListLinkCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            sendChatMessage(channelID, "FeelsMan Please specify a link or the id of the playlist.");
+            sendChatMessage(channelID, "FeelsMan Please specify a link or the id of the album.");
             return;
         }
 
-        String spotifyPlaylist = messageParts[1];
+        String spotifyAlbum = messageParts[1];
 
-        if (!spotifyPlaylist.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?playlist/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
+        if (!spotifyAlbum.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?album/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
         {
-            sendChatMessage(channelID, "FeelsMan Invalid Spotify playlist link or id specified.");
+            sendChatMessage(channelID, "FeelsMan Invalid Spotify album link or id specified.");
             return;
         }
 
-        if (spotifyPlaylist.length() != 22)
+        if (spotifyAlbum.length() != 22)
         {
-            int lastSlashIndex = spotifyPlaylist.lastIndexOf('/');
-            spotifyPlaylist = spotifyPlaylist.substring(lastSlashIndex + 1);
+            int lastSlashIndex = spotifyAlbum.lastIndexOf('/');
+            spotifyAlbum = spotifyAlbum.substring(lastSlashIndex + 1);
 
-            if (spotifyPlaylist.contains("?"))
+            if (spotifyAlbum.contains("?"))
             {
-                int firstQuestionMarkIndex = spotifyPlaylist.indexOf('?');
-                spotifyPlaylist = spotifyPlaylist.substring(0, firstQuestionMarkIndex);
+                int firstQuestionMarkIndex = spotifyAlbum.indexOf('?');
+                spotifyAlbum = spotifyAlbum.substring(0, firstQuestionMarkIndex);
             }
         }
 
@@ -126,7 +126,7 @@ public class PlayListLinkCommand implements ICommand
         }
 
         StartResumeUsersPlaybackRequest startRequest = spotifyAPI.startResumeUsersPlayback()
-                .context_uri(STR."spotify:playlist:\{spotifyPlaylist}")
+                .context_uri(STR."spotify:album:\{spotifyAlbum}")
                 .build();
 
         startRequest.execute();

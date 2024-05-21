@@ -29,5 +29,5 @@ public interface LiLBService
     Call<LiLBChatter> getChatter(@Path("login") String login);
 
     @GET("7tvsa/{login}")
-    Call<SevenTVSubage> getSubage(@Path("login") String login);
+    Call<SevenTVSubage> getSevenTVSubage(@Path("login") String login);
 }

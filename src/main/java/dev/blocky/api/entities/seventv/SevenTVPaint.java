@@ -25,7 +25,7 @@ public class SevenTVPaint
     @SerializedName("id")
     String paintID;
 
-    @SerializedName("id")
+    @SerializedName("name")
     String paintName;
 
     @NonNull

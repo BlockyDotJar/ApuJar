@@ -88,6 +88,12 @@ public class PlayCommand implements ICommand
             return;
         }
 
+        if (spotifyTrack.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?track/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
+        {
+            sendChatMessage(channelID, "FeelsOkayMan Please use the 'playlink' command instead.");
+            return;
+        }
+
         SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
 
         if (spotifyUser == null)

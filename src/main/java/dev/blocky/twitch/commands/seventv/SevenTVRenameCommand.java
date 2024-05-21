@@ -85,6 +85,13 @@ public class SevenTVRenameCommand implements ICommand
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
+
+        if (sevenTVEmoteSet == null)
+        {
+            sendChatMessage(channelID, "FeelsGoodMan No emote active emote-set found.");
+            return;
+        }
+
         String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
 
         List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();

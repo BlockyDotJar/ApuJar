@@ -22,6 +22,7 @@ import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
+import dev.blocky.api.entities.blockyjar.Paste;
 import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.api.entities.lilb.LiLBChatter;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -67,22 +68,47 @@ public class ChatterCommand implements ICommand
         DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
 
         LiLBChatter lilbChatter = ServiceProvider.getChatter(userLogin);
-        int moderators = lilbChatter.getModeratorCount();
-        int vips = lilbChatter.getVIPCount();
-        int viewers = lilbChatter.getViewerCount();
+        int moderatorCount = lilbChatter.getModeratorCount();
+        int vipCount = lilbChatter.getVIPCount();
+        int viewerCount = lilbChatter.getViewerCount();
 
-        int chatters = moderators + vips + viewers;
+        int chatters = moderatorCount + vipCount + viewerCount;
 
         if (chatters != userChatterCount)
         {
-            viewers += (userChatterCount - chatters);
+            viewerCount += (userChatterCount - chatters);
         }
 
         String chatterCount = decimalFormat.format(userChatterCount);
-        String viewerCount = decimalFormat.format(viewers);
+        String viewerCountFormatted = decimalFormat.format(viewerCount);
+
+        List<String> moderators = lilbChatter.getModerators();
+        List<String> vips = lilbChatter.getVIPs();
+        List<String> viewers = lilbChatter.getViewers();
+
+        String moderatorsFormatted = String.join("\n", moderators);
+        String vipsFormatted = String.join("\n", vips);
+        String viewersFormatted = String.join("\n", viewers);
+
+        String chatter = STR."""
+                Moderator:
+
+                \{moderatorsFormatted}
+                
+                VIP:
+
+                \{vipsFormatted}
+                
+                Viewer:
+
+                \{viewersFormatted}
+                """;
+
+        Paste paste = ServiceProvider.paste(chatter);
+        String pasteKey = paste.getKey();
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Susge Their are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderators}, VIP: \{vips}, Viewer: \{viewerCount})");
+        sendChatMessage(channelID, STR."Susge Their are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderatorCount}, VIP: \{vipCount}, Viewer: \{viewerCountFormatted}) https://paste.blockyjar.dev/\{pasteKey}");
     }
 }

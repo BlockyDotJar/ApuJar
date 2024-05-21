@@ -20,20 +20,19 @@ package dev.blocky.twitch.commands.seventv;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.seventv.SevenTVEmote;
 import dev.blocky.api.entities.seventv.SevenTVEmoteSet;
 import dev.blocky.api.entities.seventv.SevenTVTwitchUser;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SevenTVUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class SevenTVUserEmoteCommand implements ICommand
+public class SevenTVCurrentEmoteSetCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -42,40 +41,28 @@ public class SevenTVUserEmoteCommand implements ICommand
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
-        if (messageParts.length == 1)
-        {
-            sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
-        }
+        EventUser eventUser = event.getUser();
 
-        String userToYoink = getUserAsString(messageParts, 1);
+        String userToGetEmoteSetFrom = getUserAsString(messageParts, eventUser);
 
-        if (messageParts.length == 2)
-        {
-            sendChatMessage(channelID, "FeelsMan Please specify a emote.");
-            return;
-        }
-
-        if (!isValidUsername(userToYoink))
+        if (!isValidUsername(userToGetEmoteSetFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<User> usersToYoink = retrieveUserList(client, userToYoink);
+        List<User> usersToGetURLFrom = retrieveUserList(client, userToGetEmoteSetFrom);
 
-        if (usersToYoink.isEmpty())
+        if (usersToGetURLFrom.isEmpty())
         {
-            sendChatMessage(channelID, STR.":| No user called '\{userToYoink}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToGetEmoteSetFrom}' found.");
             return;
         }
 
-        User user = usersToYoink.getFirst();
+        User user = usersToGetURLFrom.getFirst();
         String userDisplayName = user.getDisplayName();
         String userID = user.getId();
         int userIID = Integer.parseInt(userID);
-
-        String emoteToGetURLFrom = messageParts[2];
 
         SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, userIID);
 
@@ -92,22 +79,11 @@ public class SevenTVUserEmoteCommand implements ICommand
             return;
         }
 
-        List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
-        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToGetURLFrom);
+        String emoteSetName = sevenTVEmoteSet.getEmoteSetName();
+        String emoteSetID = sevenTVEmoteSet.getEmoteSetID();
+        int emoteCount = sevenTVEmoteSet.getEmoteCount();
+        int emoteSetCapacity = sevenTVEmoteSet.getCapacity();
 
-        if (sevenTVEmotesFiltered.isEmpty())
-        {
-            sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToGetURLFrom}' found.");
-            return;
-        }
-
-        SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
-        String sevenTVEmoteID = sevenTVEmote.getEmoteID();
-
-        boolean isAnimated = sevenTVEmote.isAnimated();
-        boolean isListed = sevenTVEmote.isListed();
-        boolean isPrivate = sevenTVEmote.getEmoteFlags() == 1;
-
-        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote link for the ' \{emoteToGetURLFrom} ' emote from \{userDisplayName} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed}) \uD83D\uDC49 https://7tv.app/emotes/\{sevenTVEmoteID}");
+        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote-set link for the '\{emoteSetName}' emote-set from \{userDisplayName} (Capacity: \{emoteCount}/\{emoteSetCapacity}) \uD83D\uDC49 https://7tv.app/emote-sets/\{emoteSetID}");
     }
 }

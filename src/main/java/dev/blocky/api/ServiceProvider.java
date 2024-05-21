@@ -17,6 +17,7 @@
  */
 package dev.blocky.api;
 
+import dev.blocky.api.entities.blockyjar.Paste;
 import dev.blocky.api.entities.github.GitHubRelease;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRSubage;
@@ -26,10 +27,7 @@ import dev.blocky.api.entities.maps.GeoCountryCode;
 import dev.blocky.api.entities.maps.MapSearch;
 import dev.blocky.api.entities.modscanner.ModScanner;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
-import dev.blocky.api.entities.seventv.SevenTV;
-import dev.blocky.api.entities.seventv.SevenTVEmote;
-import dev.blocky.api.entities.seventv.SevenTVEmoteSet;
-import dev.blocky.api.entities.seventv.SevenTVTwitchUser;
+import dev.blocky.api.entities.seventv.*;
 import dev.blocky.api.entities.wordle.Wordle;
 import dev.blocky.api.entities.yt.NoEmbed;
 import dev.blocky.api.entities.yt.YouTubeDislikes;
@@ -50,6 +48,7 @@ import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.converter.scalars.ScalarsConverterFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -98,7 +97,9 @@ public class ServiceProvider
 
         OkHttpClient client = builder.cache(null).build();
 
-        String baseURL = switch (clazz.getSimpleName())
+        String simpleClassName = clazz.getSimpleName();
+
+        String baseURL = switch (simpleClassName)
         {
             case "ModScannerService" -> "https://api.modscanner.com/twitch/";
             case "IVRService" -> STR."https://api.ivr.fi/v\{IVR_API_VERSION}/";
@@ -113,10 +114,12 @@ public class ServiceProvider
             case "NoEmbedService" -> "https://noembed.com/";
             case "YouTubeDislikesService" -> "https://returnyoutubedislikeapi.com/";
             case "TwitchGQLService" -> "https://gql.twitch.tv/";
+            case "KokBinService" -> "https://paste.blockyjar.dev/";
             default -> null;
         };
 
         Retrofit retrofit = new Retrofit.Builder()
+                .addConverterFactory(ScalarsConverterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create())
                 .baseUrl(baseURL)
                 .client(client)
@@ -218,6 +221,15 @@ public class ServiceProvider
         SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVGQLErrorInterceptor, sevenTVAuthInterceptor);
         Call<SevenTV> sevenTVCall = sevenTVService.postGQL(body);
         Response<SevenTV> response = sevenTVCall.execute();
+        return response.body();
+    }
+
+    @NonNull
+    public static SevenTVSubage postSevenTVGQL(@NonNull String userLogin) throws IOException
+    {
+        LiLBService lilbService = ServiceProvider.createService(LiLBService.class);
+        Call<SevenTVSubage> lilbCall = lilbService.getSevenTVSubage(userLogin);
+        Response<SevenTVSubage> response = lilbCall.execute();
         return response.body();
     }
 
@@ -350,6 +362,15 @@ public class ServiceProvider
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.patchUser(userID, body);
         blockyJarCall.execute();
+    }
+
+    @NonNull
+    public static Paste paste(@NonNull String text) throws IOException
+    {
+        KokBinService kokBinService = ServiceProvider.createService(KokBinService.class);
+        Call<Paste> kokBinCall = kokBinService.postDocument(text);
+        Response<Paste> response = kokBinCall.execute();
+        return response.body();
     }
 
     @Nullable

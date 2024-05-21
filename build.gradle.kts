@@ -7,7 +7,7 @@ plugins {
 
     id("com.github.ben-manes.versions") version ("0.51.0")
 
-    kotlin("jvm") version("1.9.24")
+    kotlin("jvm") version("2.0.0")
 }
 
 group = "dev.blocky.twitch"
@@ -28,6 +28,7 @@ dependencies {
 
     api("com.squareup.retrofit2:retrofit:2.11.0")
     api("com.squareup.retrofit2:converter-gson:2.11.0")
+    api("com.squareup.retrofit2:converter-scalars:2.11.0")
 
     api("com.squareup.okhttp3:okhttp:4.12.0")
     api("com.squareup.okio:okio-jvm:3.9.0")

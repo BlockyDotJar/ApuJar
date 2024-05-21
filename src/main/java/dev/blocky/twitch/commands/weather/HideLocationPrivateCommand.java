@@ -43,7 +43,7 @@ public class HideLocationPrivateCommand implements IPrivateCommand
             return;
         }
 
-        String hideValue = messageParts[2];
+        String hideValue = messageParts[1];
 
         if (!hideValue.matches("^true|false$"))
         {

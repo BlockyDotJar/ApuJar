@@ -89,6 +89,12 @@ public class PlayListCommand implements ICommand
             return;
         }
 
+        if (spotifyPlaylist.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?playlist/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
+        {
+            sendChatMessage(channelID, "FeelsOkayMan Please use the 'playlistlink' command instead.");
+            return;
+        }
+
         SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
 
         if (spotifyUser == null)
@@ -133,7 +139,7 @@ public class PlayListCommand implements ICommand
 
         startRequest.execute();
 
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.SECONDS.sleep(1);
 
         GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
         CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();

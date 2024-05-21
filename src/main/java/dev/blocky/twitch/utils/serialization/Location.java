@@ -38,7 +38,7 @@ public class Location
     @SerializedName("countryCode")
     String countryCode;
 
-    @SerializedName("hidesLocation")
+    @SerializedName("hideLocation")
     boolean hidesLocation;
 
     public double getLatitude()
