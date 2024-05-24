@@ -90,18 +90,22 @@ public class ChatterCommand implements ICommand
         String vipsFormatted = String.join("\n", vips);
         String viewersFormatted = String.join("\n", viewers);
 
+        String realModerators = moderatorsFormatted.isBlank() ? "- / -" : moderatorsFormatted;
+        String realVIPs = vipsFormatted.isBlank() ? "- / -" : vipsFormatted;
+        String realViewers = viewersFormatted.isBlank() ? "- / -" : viewersFormatted;
+
         String chatter = STR."""
                 Moderator:
 
-                \{moderatorsFormatted}
+                \{realModerators}
                 
                 VIP:
 
-                \{vipsFormatted}
+                \{realVIPs}
                 
                 Viewer:
 
-                \{viewersFormatted}
+                \{realViewers}
                 """;
 
         Paste paste = ServiceProvider.paste(chatter);

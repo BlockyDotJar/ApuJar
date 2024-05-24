@@ -70,6 +70,7 @@ public class SubageCommand implements ICommand
 
         User user = users.getFirst();
         String userDisplayName = user.getDisplayName();
+        String userLogin = user.getLogin();
 
         User secondUser = secondUsers.getFirst();
         String secondUserLogin = secondUser.getLogin();
@@ -82,7 +83,7 @@ public class SubageCommand implements ICommand
             return;
         }
 
-        IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userDisplayName, secondUserLogin);
+        IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userLogin, secondUserLogin);
         IVRSubageCumulative ivrCumulativeSubage = ivrSubage.getCumulativeSubage();
         IVRSubageMeta ivrSubageMeta = ivrSubage.getSubageMeta();
 

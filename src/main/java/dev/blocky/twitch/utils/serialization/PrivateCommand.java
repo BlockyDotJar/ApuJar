@@ -29,8 +29,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.lang.StringTemplate.STR;
-
 public class PrivateCommand
 {
     @SerializedName("command")

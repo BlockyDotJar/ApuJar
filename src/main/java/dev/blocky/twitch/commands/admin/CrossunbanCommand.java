@@ -89,10 +89,9 @@ public class CrossunbanCommand implements ICommand
 
             List<User> chatUsers = retrieveUserList(client, chatLogin);
             User chatUser = chatUsers.getFirst();
-            String chatUserDisplayName = chatUser.getDisplayName();
             String chatUserID = chatUser.getId();
 
-            IVR ivr = ServiceProvider.getIVRModVip(chatUserDisplayName);
+            IVR ivr = ServiceProvider.getIVRModVip(chatLogin);
             boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
 
             if (!selfModeratorPerms)

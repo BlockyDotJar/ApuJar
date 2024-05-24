@@ -83,12 +83,13 @@ public class FollowageCommand implements ICommand
 
         User user = users.getFirst();
         String userDisplayName = user.getDisplayName();
+        String userLogin = user.getLogin();
 
         User secondUser = secondUsers.getFirst();
         String secondUserDisplayName = secondUser.getDisplayName();
         String secondUserLogin = secondUser.getLogin();
 
-        IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userDisplayName, secondUserLogin);
+        IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userLogin, secondUserLogin);
         Date followedAt = ivrSubage.getFollowedAt();
 
         if (followedAt == null)

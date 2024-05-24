@@ -74,7 +74,7 @@ public class EditKeywordMatchingCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "ManFeels You can't edit a keyword, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "ManFeels You can't edit the keyword matching, because you aren't the broadcaster or a moderator.");
             return;
         }
 
@@ -95,7 +95,7 @@ public class EditKeywordMatchingCommand implements ICommand
 
                 if (kwdExactMatch == exactMatch)
                 {
-                    sendChatMessage(channelID, STR."4Head The new value for '\{kw}' does exactly match with the old one.");
+                    sendChatMessage(channelID, STR."4Head The new matching for '\{kw}' does exactly match with the old one.");
                     return;
                 }
 
@@ -111,6 +111,6 @@ public class EditKeywordMatchingCommand implements ICommand
 
         SQLite.onUpdate(STR."UPDATE customKeywords SET exactMatch = \{exactMatch} WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword exact matching to '\{exactMatch}'.");
+        sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword matching to '\{exactMatch}'.");
     }
 }

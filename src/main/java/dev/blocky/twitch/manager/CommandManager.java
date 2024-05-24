@@ -25,11 +25,11 @@ import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.serialization.Command;
 import dev.blocky.twitch.utils.serialization.Keyword;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -99,8 +99,11 @@ public class CommandManager
 
             String message = event.getMessage();
 
-            String actualPrefix = SQLUtils.getPrefix(channelIID);
+            Prefix prefix = SQLUtils.getPrefix(channelIID);
+            String actualPrefix = prefix.getPrefix();
             int prefixLength = actualPrefix.length();
+
+            boolean caseInsensitivePrefix = prefix.isCaseInsensitive();
 
             Pattern PREFIX_PATTERN = Pattern.compile("(.*)?@?apujar,?\\s+?prefix(.*)?", CASE_INSENSITIVE);
             Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
@@ -109,13 +112,14 @@ public class CommandManager
 
             if (PREFIX_MATCHER.matches())
             {
-                sendChatMessage(channelID, STR."4Head My current prefix is '\{actualPrefix}'");
+                sendChatMessage(channelID, STR."4Head My current prefix is '\{actualPrefix}'. (Case-Insensitive: \{caseInsensitivePrefix})");
                 return;
             }
 
-            Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
+            TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
-            if (message.startsWith(actualPrefix))
+            if ((message.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
+                    (StringUtils.startsWithIgnoreCase(message, actualPrefix) && caseInsensitivePrefix))
             {
                 String globalCommand = message.substring(prefixLength).strip();
 
@@ -133,7 +137,7 @@ public class CommandManager
 
                 if (messageParts.length > 0)
                 {
-                    String command = messageParts[0];
+                    String command = messageParts[0].toLowerCase();
 
                     Map<Integer, String> admins = SQLUtils.getAdmins();
                     Set<Integer> adminIDs = admins.keySet();
@@ -167,6 +171,7 @@ public class CommandManager
 
                     return;
                 }
+                return;
             }
 
             Set<Keyword> keywords = SQLUtils.getKeywords(channelIID);
@@ -176,8 +181,10 @@ public class CommandManager
                 String kw = keyword.getName();
                 String kwMessage = keyword.getMessage();
                 boolean exactMatch = keyword.isExactMatch();
+                boolean caseInsensitiveKeyword = keyword.isCaseInsensitive();
 
-                if ((message.equals(kw) && exactMatch) || (message.contains(kw) && !exactMatch))
+                if ((((message.equals(kw) && !caseInsensitiveKeyword) || (message.equalsIgnoreCase(kw) && caseInsensitiveKeyword)) && exactMatch) ||
+                        (((message.contains(kw) && !caseInsensitiveKeyword) || (StringUtils.containsIgnoreCase(message, kw) && caseInsensitiveKeyword)) && !exactMatch))
                 {
                     long currentTimeMillis = System.currentTimeMillis();
 
@@ -203,6 +210,9 @@ public class CommandManager
         {
             String error = e.getMessage();
 
+            Class<?> clazz = e.getClass();
+            String clazzName = clazz.getName();
+
             if (error != null && error.equals("Forbidden"))
             {
                 sendChatMessage(channelID, "FeelsOkayMan Spotify account E-Mail needed. Send the E-Mail to @BlockyDotJar, because i currently don't have quota-extension perms on Spotify. https://developer.spotify.com/documentation/web-api/concepts/quota-modes");
@@ -215,7 +225,7 @@ public class CommandManager
                 return;
             }
 
-            sendChatMessage("896181679", STR."Channel: \{channelName} Weird Error while trying to execute an command FeelsGoodMan \{error}");
+            sendChatMessage("896181679", STR."Channel: \{channelName} Weird Error while trying to execute an command FeelsGoodMan \{error} (\{clazzName})");
 
             e.printStackTrace();
         }

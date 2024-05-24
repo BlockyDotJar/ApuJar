@@ -124,7 +124,7 @@ public class UserSpamCommand implements ICommand
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
-                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or moderator.");
+                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
                 return;
             }
 

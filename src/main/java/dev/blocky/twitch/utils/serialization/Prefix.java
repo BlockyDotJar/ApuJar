@@ -15,26 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.services;
+package dev.blocky.twitch.utils.serialization;
 
-import dev.blocky.api.entities.seventv.SevenTV;
-import dev.blocky.api.entities.seventv.SevenTVEmote;
-import dev.blocky.api.entities.seventv.SevenTVTwitchUser;
-import dev.blocky.api.request.SevenTVGQLBody;
-import retrofit2.Call;
-import retrofit2.http.*;
+import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
-public interface SevenTVService
+public class Prefix
 {
-    @GET("emotes/{emoteID}")
-    @Headers("Cache-Control: no-cache")
-    Call<SevenTVEmote> getEmote(@Path("emoteID") String emoteID);
+    @SerializedName("prefix")
+    String prefix;
 
-    @GET("users/twitch/{userID}")
-    @Headers("Cache-Control: no-cache")
-    Call<SevenTVTwitchUser> getTwitchUser(@Path("userID") int userID);
+    @SerializedName("caseInsensitive")
+    boolean isCaseInsensitive;
 
-    @POST("gql")
-    @Headers({"Content-Type: application/json", "Cache-Control: no-cache"})
-    Call<SevenTV> postGQL(@Body SevenTVGQLBody body);
+    @NonNull
+    public String getPrefix()
+    {
+        return prefix == null ? "#" : prefix;
+    }
+
+    public boolean isCaseInsensitive()
+    {
+        return isCaseInsensitive;
+    }
+
+    Prefix()
+    {
+    }
 }

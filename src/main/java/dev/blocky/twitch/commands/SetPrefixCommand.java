@@ -27,10 +27,10 @@ import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import static dev.blocky.twitch.utils.TwitchUtils.removeIllegalCharacters;
-import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class SetPrefixCommand implements ICommand
 {
@@ -45,44 +45,48 @@ public class SetPrefixCommand implements ICommand
         EventUser eventUser = event.getUser();
         String eventUserName = eventUser.getName();
 
+        boolean hasCaseInsensitiveParameter = hasRegExParameter(messageParts, "-(cis|case-insensitive)");
+
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a prefix.");
             return;
         }
 
-        String prefixRaw = messageParts[1];
-        String prefix = removeIllegalCharacters(prefixRaw);
-        String actualPrefix = SQLUtils.getPrefix(channelIID);
+        String userPrefixRaw = getParameterAsString(messageParts, "-(cis|case-insensitive)");
+        String userPrefix = removeIllegalCharacters(userPrefixRaw);
+
+        Prefix prefix = SQLUtils.getPrefix(channelIID);
+        String actualPrefix = prefix.getPrefix();
 
         IVR ivr = ServiceProvider.getIVRModVip(channelName);
         boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or a moderator.");
             return;
         }
 
-        if (prefix.equals("/"))
+        if (userPrefix.equals("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The new prefix can't be / (slash) haha");
             return;
         }
 
-        if (actualPrefix.equals(prefix))
+        if (actualPrefix.equals(userPrefix))
         {
             sendChatMessage(channelID, "CoolStoryBob The new prefix matches exactly with the old one.");
             return;
         }
 
-        if (prefix.isBlank())
+        if (userPrefix.isBlank())
         {
             sendChatMessage(channelID, "monkaLaugh The new prefix can't contain the character ' haha");
             return;
         }
 
-        if (!actualPrefix.equals("#") && prefix.equals("#"))
+        if (!actualPrefix.equals("#") && userPrefix.equals("#"))
         {
             SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
@@ -92,14 +96,14 @@ public class SetPrefixCommand implements ICommand
 
         if (actualPrefix.equals("#"))
         {
-            SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix) VALUES(\{channelID}, '\{prefix}')");
+            SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix, caseInsensitive) VALUES(\{channelID}, '\{userPrefix}', \{hasCaseInsensitiveParameter})");
 
-            sendChatMessage(channelID, STR."8-) Successfully set prefix to \{prefix}");
+            sendChatMessage(channelID, STR."8-) Successfully set prefix to \{userPrefix}");
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{prefix}' WHERE userID = \{channelID}");
+        SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{userPrefix}' WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, STR."8-) Successfully set prefix to \{prefix}");
+        sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefix} '. (Case-Insensitive: \{hasCaseInsensitiveParameter})");
     }
 }

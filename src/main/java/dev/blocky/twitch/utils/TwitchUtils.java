@@ -67,9 +67,9 @@ public class TwitchUtils
     }
 
     @Nullable
-    public static String getParameterAsString(@NonNull String[] messageParts, @NonNull String regex)
+    public static String getParameterAsString(@NonNull String[] messageParts, @NonNull String regex, int index)
     {
-        String message = removeElements(messageParts, 1);
+        String message = removeElements(messageParts, index);
         String value = RegExUtils.removeAll(message, regex);
 
         if (value.isBlank())
@@ -78,6 +78,12 @@ public class TwitchUtils
         }
 
         return value.strip();
+    }
+
+    @Nullable
+    public static String getParameterAsString(@NonNull String[] messageParts, @NonNull String regex)
+    {
+        return getParameterAsString(messageParts, regex, 1);
     }
 
     @NonNull
@@ -274,7 +280,7 @@ public class TwitchUtils
         helix.sendWhisper(null, "896181679", userID, message).execute();
     }
 
-    public static boolean checkChatSettings(@NonNull String[] messageParts, @NonNull String userDisplayName, @NonNull String userID, @NonNull String channelID) throws IOException
+    public static boolean checkChatSettings(@NonNull String[] messageParts, @NonNull String userLogin, @NonNull String userID, @NonNull String channelID) throws IOException
     {
         ChatSettingsWrapper chatSettingsWrapper = helix.getChatSettings(null, userID, null).execute();
         ChatSettings chatSettings = chatSettingsWrapper.getChatSettings();
@@ -294,7 +300,7 @@ public class TwitchUtils
 
             if (!validMessage)
             {
-                sendChatMessage(channelID, STR."mhm Emote only mode detected in channel \{userDisplayName}, your message doesn't only contain global twitch emotes.");
+                sendChatMessage(channelID, STR."mhm Emote only mode detected in channel \{userLogin}, your message doesn't only contain global twitch emotes.");
                 return false;
             }
         }
@@ -309,25 +315,25 @@ public class TwitchUtils
                 int userIID = Integer.parseInt(userID);
                 followUser(userIID);
 
-                sendChatMessage(channelID, STR."mhm Followers only mode detected in channel \{userDisplayName}, no follow detected, automatically followed user.");
+                sendChatMessage(channelID, STR."mhm Followers only mode detected in channel \{userLogin}, no follow detected, automatically followed user.");
             }
         }
 
         if (chatSettings.isSubscribersOnlyMode())
         {
-            IVRSubage ivrSubage = ServiceProvider.getIVRSubage("ApuJar", userDisplayName);
+            IVRSubage ivrSubage = ServiceProvider.getIVRSubage("ApuJar", userLogin);
             IVRSubageMeta ivrSubageMeta = ivrSubage.getSubageMeta();
 
             if (ivrSubageMeta == null)
             {
-                sendChatMessage(channelID, STR."mhm Subscriber only mode detected in channel \{userDisplayName}, no sub detected, not able to deliver the message.");
+                sendChatMessage(channelID, STR."mhm Subscriber only mode detected in channel \{userLogin}, no sub detected, not able to deliver the message.");
                 return false;
             }
         }
 
         if (chatSettings.isSlowMode())
         {
-            sendChatMessage(channelID, STR."mhm Slow mode detected in channel \{userDisplayName}, message maybe not sendable.");
+            sendChatMessage(channelID, STR."mhm Slow mode detected in channel \{userLogin}, message maybe not sendable.");
         }
 
         return true;

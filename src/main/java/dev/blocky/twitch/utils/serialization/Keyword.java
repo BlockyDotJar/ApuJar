@@ -31,6 +31,9 @@ public class Keyword
     @SerializedName("exactMatch")
     boolean exactMatch;
 
+    @SerializedName("caseInsensitive")
+    boolean isCaseInsensitive;
+
     @NonNull
     public String getName()
     {
@@ -46,6 +49,11 @@ public class Keyword
     public boolean isExactMatch()
     {
         return exactMatch;
+    }
+
+    public boolean isCaseInsensitive()
+    {
+        return isCaseInsensitive;
     }
 
     Keyword()

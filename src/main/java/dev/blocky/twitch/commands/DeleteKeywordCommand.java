@@ -58,7 +58,7 @@ public class DeleteKeywordCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "ManFeels You can't delete a keyword, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "ManFeels You can't delete a keyword, because you aren't the broadcaster or a moderator.");
             return;
         }
 

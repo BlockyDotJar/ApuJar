@@ -32,7 +32,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 public class LocationPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull TwitchHelix helix, @NotNull String[] messageParts) throws Exception
+    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull TwitchHelix helix, @NotNull String[] messageParts)
     {
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();

@@ -30,12 +30,13 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
-import se.michaelthelin.spotify.model_objects.specification.*;
+import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
+import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
+import se.michaelthelin.spotify.model_objects.specification.Track;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.SeekToPositionInCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.StartResumeUsersPlaybackRequest;
-import se.michaelthelin.spotify.requests.data.search.simplified.SearchPlaylistsRequest;
 import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 
 import java.text.DecimalFormat;
@@ -43,9 +44,9 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import static dev.blocky.twitch.utils.TwitchUtils.*;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
-public class PlayListCommand implements ICommand
+public class PlayPlaylistLinkCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -60,8 +61,28 @@ public class PlayListCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            sendChatMessage(channelID, "FeelsMan Please specify the name of the playlist.");
+            sendChatMessage(channelID, "FeelsMan Please specify a link or the id of the playlist.");
             return;
+        }
+
+        String spotifyPlaylist = messageParts[1];
+
+        if (!spotifyPlaylist.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?playlist/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
+        {
+            sendChatMessage(channelID, "FeelsMan Invalid Spotify playlist link or id specified.");
+            return;
+        }
+
+        if (spotifyPlaylist.length() != 22)
+        {
+            int lastSlashIndex = spotifyPlaylist.lastIndexOf('/');
+            spotifyPlaylist = spotifyPlaylist.substring(lastSlashIndex + 1);
+
+            if (spotifyPlaylist.contains("?"))
+            {
+                int firstQuestionMarkIndex = spotifyPlaylist.indexOf('?');
+                spotifyPlaylist = spotifyPlaylist.substring(0, firstQuestionMarkIndex);
+            }
         }
 
         boolean skipToPosition = false;
@@ -69,30 +90,18 @@ public class PlayListCommand implements ICommand
         String progressMinutes = "00";
         String progressSeconds = "00";
 
-        String progressRaw = getParameterValue(messageParts, "-p(rogress)?=(\\d{2}):(\\d{2})");
-
-        if (progressRaw != null)
+        if (messageParts.length >= 3)
         {
-            String[] progressParts = progressRaw.split(":");
+            String progressValue = messageParts[2];
 
-            progressMinutes = progressParts[0];
-            progressSeconds = progressParts[1];
+            if (progressValue.matches("^\\d{1,2}:\\d{1,2}$"))
+            {
+                String[] progressParts = progressValue.split(":");
+                progressMinutes = progressParts[0];
+                progressSeconds = progressParts[1];
 
-            skipToPosition = true;
-        }
-
-        String spotifyPlaylist = getParameterAsString(messageParts, "-p(rogress)?=(\\d{2}):(\\d{2})");
-
-        if (spotifyPlaylist == null)
-        {
-            sendChatMessage(channelID, "FeelsMan Please specify the name of the playlist.");
-            return;
-        }
-
-        if (spotifyPlaylist.matches("^(https?://open.spotify.com/(intl-[a-z_-]+/)?playlist/)?[a-zA-Z\\d]{22}([\\w=?&-]+)?$"))
-        {
-            sendChatMessage(channelID, "FeelsOkayMan Please use the 'playlistlink' command instead.");
-            return;
+                skipToPosition = true;
+            }
         }
 
         SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
@@ -116,25 +125,8 @@ public class PlayListCommand implements ICommand
             return;
         }
 
-        SearchPlaylistsRequest searchPlaylistsRequest = spotifyAPI.searchPlaylists(spotifyPlaylist)
-                .includeExternal("audio")
-                .limit(5)
-                .build();
-
-        Paging<PlaylistSimplified> playlistsRaw = searchPlaylistsRequest.execute();
-        PlaylistSimplified[] playlists = playlistsRaw.getItems();
-
-        if (playlists.length == 0)
-        {
-            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} your playlist wasn't found.");
-            return;
-        }
-
-        PlaylistSimplified playlist = playlists[0];
-        String playlistID = playlist.getId();
-
         StartResumeUsersPlaybackRequest startRequest = spotifyAPI.startResumeUsersPlayback()
-                .context_uri(STR."spotify:playlist:\{playlistID}")
+                .context_uri(STR."spotify:playlist:\{spotifyPlaylist}")
                 .build();
 
         startRequest.execute();

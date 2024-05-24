@@ -64,7 +64,11 @@ public class TicTacToeJob implements Job
         catch (Exception e)
         {
             String error = e.getMessage();
-            sendChatMessage("896181679", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error}");
+
+            Class<?> clazz = e.getClass();
+            String clazzName = clazz.getName();
+
+            sendChatMessage("896181679", STR."Weird Error while trying to mass send a message FeelsGoodMan \{error} (\{clazzName})");
 
             e.printStackTrace();
         }

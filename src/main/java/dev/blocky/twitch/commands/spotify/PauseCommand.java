@@ -31,8 +31,6 @@ import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.PauseUsersPlaybackRequest;
 
-import java.util.HashSet;
-
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class PauseCommand implements ICommand

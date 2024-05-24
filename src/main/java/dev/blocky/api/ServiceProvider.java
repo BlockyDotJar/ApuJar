@@ -182,17 +182,6 @@ public class ServiceProvider
         return response.body();
     }
 
-    @NonNull
-    public static SevenTVEmoteSet getSevenTVEmoteSet(@NonNull int channelID, @NonNull String emoteSetID) throws IOException
-    {
-        SevenTVErrorInterceptor sevenTVErrorInterceptor = new SevenTVErrorInterceptor(channelID);
-
-        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVErrorInterceptor);
-        Call<SevenTVEmoteSet> sevenTVCall = sevenTVService.getEmoteSet(emoteSetID);
-        Response<SevenTVEmoteSet> response = sevenTVCall.execute();
-        return response.body();
-    }
-
     @Nullable
     public static SevenTVEmote getSevenTVEmote(@NonNull int channelID, @NonNull String emoteID) throws IOException
     {
@@ -225,7 +214,7 @@ public class ServiceProvider
     }
 
     @NonNull
-    public static SevenTVSubage postSevenTVGQL(@NonNull String userLogin) throws IOException
+    public static SevenTVSubage getSevenTVSubage(@NonNull String userLogin) throws IOException
     {
         LiLBService lilbService = ServiceProvider.createService(LiLBService.class);
         Call<SevenTVSubage> lilbCall = lilbService.getSevenTVSubage(userLogin);

@@ -27,6 +27,7 @@ import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
@@ -49,11 +50,12 @@ public class DeletePrefixCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "ManFeels You can't delete a prefix, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "ManFeels You can't delete a prefix, because you aren't the broadcaster or a moderator.");
             return;
         }
 
-        String actualPrefix = SQLUtils.getPrefix(channelIID);
+        Prefix prefix = SQLUtils.getPrefix(channelIID);
+        String actualPrefix = prefix.getPrefix();
 
         if (actualPrefix.equals("#"))
         {

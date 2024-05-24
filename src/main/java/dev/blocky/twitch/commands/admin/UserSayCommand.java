@@ -28,11 +28,14 @@ import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import dev.blocky.twitch.utils.serialization.Command;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
@@ -82,6 +85,7 @@ public class UserSayCommand implements ICommand
 
         User user = usersToSay.getFirst();
         String userDisplayName = user.getDisplayName();
+        String userLogin = user.getLogin();
         String userID = user.getId();
         int userIID = Integer.parseInt(userID);
 
@@ -117,21 +121,25 @@ public class UserSayCommand implements ICommand
 
         Set<Command> commands = SQLUtils.getCommands();
 
-        String actualPrefix = SQLUtils.getPrefix(userIID);
+        Prefix prefix = SQLUtils.getPrefix(userIID);
+        String actualPrefix = prefix.getPrefix();
         int prefixLength = actualPrefix.length();
+
+        boolean caseInsensitivePrefix = prefix.isCaseInsensitive();
 
         String command = messageParts[2];
 
-        boolean isSendable = checkChatSettings(messageParts, userDisplayName, userID, channelID);
+        boolean isSendable = checkChatSettings(messageParts, userLogin, userID, channelID);
 
         if (!isSendable)
         {
             return;
         }
 
-        if (command.startsWith(actualPrefix) && command.length() > prefixLength)
+        if ((command.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
+                (StringUtils.startsWithIgnoreCase(command, actualPrefix) && caseInsensitivePrefix) && command.length() > prefixLength)
         {
-            command = command.substring(prefixLength);
+            command = command.substring(prefixLength).toLowerCase();
 
             for (Command cmd : commands)
             {
@@ -167,7 +175,7 @@ public class UserSayCommand implements ICommand
             }
         }
 
-        Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
+        TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
         if (globalCommands.containsKey(command))
         {

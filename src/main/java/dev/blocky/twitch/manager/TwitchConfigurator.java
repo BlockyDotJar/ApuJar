@@ -23,7 +23,6 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.sql.SQLException;
 import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
@@ -33,7 +32,7 @@ public class TwitchConfigurator
     private final Set<Chat> chats;
     private final TwitchClient client;
 
-    public TwitchConfigurator(@NonNull TwitchClient client) throws SQLException
+    public TwitchConfigurator(@NonNull TwitchClient client)
     {
         this.chats = SQLUtils.getChats();
         this.client = client;
@@ -61,12 +60,15 @@ public class TwitchConfigurator
             {
                 String error = e.getMessage();
 
+                Class<?> clazz = e.getClass();
+                String clazzName = clazz.getName();
+
                 if (chatCount >= 100)
                 {
                     sendChatMessage(chatID, "heyy Because i'm in over 100 channels, it is possible, that i am not able to look into your chat anymore due to some Twitch API changes https://links.blockyjar.dev/m8mrybgQKR1 You might need to give moderator permission to me to work properly FeelsOkayMan");
                 }
 
-                sendChatMessage("896181679", STR."Weird Error while trying to connect to \{chatLogin}'s chat FeelsGoodMan \{error}");
+                sendChatMessage("896181679", STR."Weird Error while trying to connect to \{chatLogin}'s chat FeelsGoodMan \{error} (\{clazzName})");
 
                 e.printStackTrace();
             }

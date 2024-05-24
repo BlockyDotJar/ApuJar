@@ -37,7 +37,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class PingCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
         TwitchChat chat = client.getChat();
         

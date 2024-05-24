@@ -22,6 +22,7 @@ import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import dev.blocky.twitch.utils.serialization.PrivateCommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -71,7 +72,9 @@ public class PrivateCommandManager
         {
             String message = event.getMessage();
 
-            String actualPrefix = SQLUtils.getPrefix(eventUserIID);
+            Prefix prefix = SQLUtils.getPrefix(eventUserIID);
+            String actualPrefix = prefix.getPrefix();
+            boolean caseInsensitivePrefix = prefix.isCaseInsensitive();
 
             Pattern PREFIX_PATTERN = Pattern.compile("(.*)?prefix(.*)?", CASE_INSENSITIVE);
             Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
@@ -80,7 +83,7 @@ public class PrivateCommandManager
 
             if (PREFIX_MATCHER.matches())
             {
-                sendWhisper(eventUserID, STR."4Head The prefix for your chat is is '\{actualPrefix}'");
+                sendWhisper(eventUserID, STR."4Head The prefix for your chat is '\{actualPrefix}'. (Case-Insensitive: \{caseInsensitivePrefix})");
                 return;
             }
 
@@ -102,7 +105,11 @@ public class PrivateCommandManager
         catch (Exception e)
         {
             String error = e.getMessage();
-            sendWhisper(eventUserID, STR."SirMad Error while trying to execute an command PogChamp \{error}");
+
+            Class<?> clazz = e.getClass();
+            String clazzName = clazz.getName();
+
+            sendWhisper(eventUserID, STR."SirMad Error while trying to execute an command PogChamp \{error} (\{clazzName})");
 
             e.printStackTrace();
         }

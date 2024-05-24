@@ -27,14 +27,12 @@ import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
-import dev.blocky.twitch.utils.serialization.Keyword;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class AddKeywordCommand implements ICommand
+public class EditPrefixCaseSensitivityCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -49,61 +47,40 @@ public class AddKeywordCommand implements ICommand
 
         if (messageParts.length == 1)
         {
-            sendChatMessage(channelID, "FeelsMan Please specify a keyword.");
+            sendChatMessage(channelID, "FeelsMan Please specify a boolean. (Either true or false)");
             return;
         }
 
-        if (messageParts.length == 2)
+        String caseSensitivityValue = messageParts[1];
+
+        if (!caseSensitivityValue.matches("^true|false$"))
         {
-            sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between true or false)");
             return;
         }
 
-        boolean hasExactMatchParameter = hasRegExParameter(messageParts, "-(em|exact-match)");
-        boolean hasCaseInsensitiveParameter = hasRegExParameter(messageParts, "-(cis|case-insensitive)");
+        boolean caseInsensitive = Boolean.parseBoolean(caseSensitivityValue);
+
+        Prefix prefix = SQLUtils.getPrefix(channelIID);
+        String actualPrefix = prefix.getPrefix();
 
         IVR ivr = ServiceProvider.getIVRModVip(channelName);
         boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "ManFeels You can't add a keyword, because you aren't the broadcaster or a moderator.");
+            sendChatMessage(channelID, "NOIDONTTHINKSO You can't set the prefix case-sensitivity, because you aren't the broadcaster or a moderator.");
             return;
         }
 
-        String kwRaw = messageParts[1];
-        String kwMessageRaw = getParameterAsString(messageParts, "-(em|exact-match|cis|case-insensitive)", 2);
-
-        String kw = removeIllegalCharacters(kwRaw);
-        String kwMessage = removeIllegalCharacters(kwMessageRaw);
-
-        if (kw.isBlank() || kwMessage.isBlank())
+        if (actualPrefix.equals("#"))
         {
-            sendChatMessage(channelID, "monkaLaugh The keyword/message can't contain the ' character haha");
+            sendChatMessage(channelID, "NOIDONTTHINKSO You don't even have a custom prefix for this chat.");
             return;
         }
 
-        if (kw.startsWith("/") || kwMessage.startsWith("/"))
-        {
-            sendChatMessage(channelID, "monkaLaugh The keyword/message can't start with a / (slash) haha");
-            return;
-        }
+        SQLite.onUpdate(STR."UPDATE customPrefixes SET caseInsensitive = '\{caseInsensitive}' WHERE userID = \{channelID}");
 
-        Set<Keyword> keywords = SQLUtils.getKeywords(channelIID);
-
-        for (Keyword keyword : keywords)
-        {
-            String kwd = keyword.getName();
-
-            if (kwd.equals(kw))
-            {
-                sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kw} ' does already exist.");
-                return;
-            }
-        }
-
-        SQLite.onUpdate(STR."INSERT INTO customKeywords(userID, name, message, exactMatch, caseInsensitive) VALUES(\{channelID}, '\{kw}', '\{kwMessage}', \{hasExactMatchParameter}, \{hasCaseInsensitiveParameter})");
-
-        sendChatMessage(channelID, STR."SeemsGood Successfully created keyword ' \{kw} '. (Exact match: \{hasExactMatchParameter}, Case-Insensitive: \{hasCaseInsensitiveParameter})");
+        sendChatMessage(channelID, STR."8-) Successfully edited prefix case-sensitivity to '\{caseInsensitive}'.");
     }
 }

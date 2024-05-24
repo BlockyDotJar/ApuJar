@@ -32,7 +32,6 @@ import se.michaelthelin.spotify.model_objects.specification.Artist;
 import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.requests.data.personalization.simplified.GetUsersTopArtistsRequest;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 

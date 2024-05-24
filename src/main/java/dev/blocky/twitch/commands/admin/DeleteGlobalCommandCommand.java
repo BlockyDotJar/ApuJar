@@ -23,9 +23,11 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.Map;
+import java.util.TreeMap;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
@@ -44,16 +46,20 @@ public class DeleteGlobalCommandCommand implements ICommand
             return;
         }
 
-        String actualPrefix = SQLUtils.getPrefix(channelIID);
+        Prefix prefix = SQLUtils.getPrefix(channelIID);
+        String actualPrefix = prefix.getPrefix();
+        int prefixLength = actualPrefix.length();
+
+        boolean caseInsensitivePrefix = prefix.isCaseInsensitive();
 
         String gcName = messageParts[1];
 
-        if (gcName.startsWith(actualPrefix))
+        if ((gcName.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcName, actualPrefix) && caseInsensitivePrefix))
         {
-            gcName = gcName.substring(actualPrefix.length());
+            gcName = gcName.substring(prefixLength);
         }
 
-        Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
+        TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
         if (!globalCommands.containsKey(gcName))
         {

@@ -25,8 +25,10 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
@@ -171,7 +173,7 @@ public class SevenTVUtils
                 .toList();
     }
 
-    private static boolean isAllowedEditorLocal(int channelID, int userID) throws SQLException
+    private static boolean isAllowedEditorLocal(int channelID, int userID)
     {
         Set<String> allowedUserIDsRaw = SQLUtils.getSevenTVAllowedUserIDs(channelID);
 
@@ -188,7 +190,7 @@ public class SevenTVUtils
         return false;
     }
 
-    public static boolean isAllowedEditor(int channelIID, int userID) throws SQLException, IOException
+    public static boolean isAllowedEditor(int channelIID, int userID) throws IOException
     {
         boolean isAllowedEditor = isAllowedEditorLocal(channelIID, userID);
 

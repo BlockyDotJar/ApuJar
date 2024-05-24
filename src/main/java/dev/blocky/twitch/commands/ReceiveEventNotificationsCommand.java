@@ -66,7 +66,7 @@ public class ReceiveEventNotificationsCommand implements ICommand
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "ManFeels You can't edit event notifcations, because you aren't the broadcaster or moderator.");
+            sendChatMessage(channelID, "ManFeels You can't edit event notifcations, because you aren't the broadcaster or a moderator.");
             return;
         }
 

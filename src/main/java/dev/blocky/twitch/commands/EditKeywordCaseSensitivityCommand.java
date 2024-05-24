@@ -32,9 +32,9 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.Set;
 
-import static dev.blocky.twitch.utils.TwitchUtils.*;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
-public class EditKeywordCommand implements ICommand
+public class EditKeywordCaseSensitivityCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -55,36 +55,30 @@ public class EditKeywordCommand implements ICommand
 
         if (messageParts.length == 2)
         {
-            sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
+            sendChatMessage(channelID, "FeelsMan Please specify a boolean. (Either true or false)");
             return;
         }
+
+        String caseSensitivityValue = messageParts[2];
+
+        if (!caseSensitivityValue.matches("^true|false$"))
+        {
+            sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between true or false)");
+            return;
+        }
+
+        boolean caseInsensitive = Boolean.parseBoolean(caseSensitivityValue);
 
         IVR ivr = ServiceProvider.getIVRModVip(channelName);
         boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
-            sendChatMessage(channelID, "ManFeels You can't edit a keyword, because you aren't the broadcaster or a moderator.");
+            sendChatMessage(channelID, "ManFeels You can't edit the keyword case-sensitivity, because you aren't the broadcaster or a moderator.");
             return;
         }
 
-        String kwRaw = messageParts[1];
-        String kwMessageRaw = removeElements(messageParts, 2);
-
-        String kw = removeIllegalCharacters(kwRaw);
-        String kwMessage = removeIllegalCharacters(kwMessageRaw);
-
-        if (kw.isBlank() || kwMessage.isBlank())
-        {
-            sendChatMessage(channelID, "monkaLaugh The keyword/message can't contain only the ' character haha");
-            return;
-        }
-
-        if (kw.startsWith("/") || kwMessage.startsWith("/"))
-        {
-            sendChatMessage(channelID, "monkaLaugh The keyword/message can't start with a / (slash) haha");
-            return;
-        }
+        String kw = messageParts[1];
 
         Set<Keyword> keywords = SQLUtils.getKeywords(channelIID);
 
@@ -93,15 +87,15 @@ public class EditKeywordCommand implements ICommand
         for (Keyword keyword : keywords)
         {
             String kwd = keyword.getName();
-            String kwdMessage = keyword.getMessage();
+            boolean kwdCaseInsensitive = keyword.isCaseInsensitive();
 
             if (kwd.equals(kw))
             {
                 keywordExists = true;
 
-                if (kwdMessage.equals(kwMessage))
+                if (kwdCaseInsensitive == caseInsensitive)
                 {
-                    sendChatMessage(channelID, STR."4Head The new value for '\{kw}' does exactly match with the old one.");
+                    sendChatMessage(channelID, STR."4Head The new case-sensitivity for '\{kw}' does exactly match with the old one.");
                     return;
                 }
 
@@ -115,8 +109,8 @@ public class EditKeywordCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE customKeywords SET message = '\{kwMessage}' WHERE userID = \{channelIID} AND name = '\{kw}'");
+        SQLite.onUpdate(STR."UPDATE customKeywords SET caseInsensitive = \{caseInsensitive} WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword ' \{kw} '.");
+        sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword case-sensitivity to '\{caseInsensitive}'.");
     }
 }

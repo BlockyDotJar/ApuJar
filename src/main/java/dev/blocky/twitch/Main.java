@@ -261,7 +261,7 @@ public class Main
 
                         chat.reconnect();
 
-                        sendChatMessage("896181679", "GigaSignal Successfully reconncted to Twitch websocket...");
+                        sendChatMessage("896181679", "GigaSignal Successfully reconnected to Twitch websocket...");
                     }
                 }
             }

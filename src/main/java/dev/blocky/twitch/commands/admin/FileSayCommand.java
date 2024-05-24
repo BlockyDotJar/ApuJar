@@ -23,15 +23,17 @@ import com.github.twitch4j.common.events.domain.EventChannel;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.serialization.Command;
+import dev.blocky.twitch.utils.serialization.Prefix;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.UnknownHostException;
-import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import static dev.blocky.twitch.utils.TwitchUtils.getFilteredParts;
@@ -100,17 +102,21 @@ public class FileSayCommand implements ICommand
             {
                 Set<Command> commands = SQLUtils.getCommands();
 
-                String actualPrefix = SQLUtils.getPrefix(channelIID);
+                Prefix prefix = SQLUtils.getPrefix(channelIID);
+                String actualPrefix = prefix.getPrefix();
                 int prefixLength = actualPrefix.length();
+
+                boolean caseInsensitivePrefix = prefix.isCaseInsensitive();
 
                 String[] linePartsRaw = line.split(" ");
                 String[] lineParts = getFilteredParts(linePartsRaw);
 
                 String command = lineParts[0];
 
-                if (command.startsWith(actualPrefix) && command.length() > prefixLength)
+                if ((command.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
+                        (StringUtils.startsWithIgnoreCase(command, actualPrefix) && caseInsensitivePrefix) && command.length() > prefixLength)
                 {
-                    command = command.substring(prefixLength);
+                    command = command.substring(prefixLength).toLowerCase();
 
                     for (Command cmd : commands)
                     {
@@ -141,7 +147,7 @@ public class FileSayCommand implements ICommand
                     }
                 }
 
-                Map<String, String> globalCommands = SQLUtils.getGlobalCommands();
+                TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
                 if (globalCommands.containsKey(command))
                 {
@@ -152,7 +158,8 @@ public class FileSayCommand implements ICommand
                     continue;
                 }
 
-                if (!line.startsWith(actualPrefix))
+                if ((!line.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
+                        (!StringUtils.startsWithIgnoreCase(line, actualPrefix) && caseInsensitivePrefix))
                 {
                     sendChatMessage(channelID, line);
                 }
@@ -166,7 +173,7 @@ public class FileSayCommand implements ICommand
         }
         catch (UnknownHostException _)
         {
-            sendChatMessage(channelID, "FeelsMan Invalid link specified.");
+            sendChatMessage(channelID, "FeelsMan Host of the website is unknown.");
         }
     }
 }

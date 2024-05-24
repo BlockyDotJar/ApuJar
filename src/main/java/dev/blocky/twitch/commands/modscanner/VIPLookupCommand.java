@@ -29,7 +29,6 @@ import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;

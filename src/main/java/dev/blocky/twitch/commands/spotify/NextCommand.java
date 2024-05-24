@@ -42,7 +42,6 @@ import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 import java.text.DecimalFormat;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
