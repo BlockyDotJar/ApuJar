@@ -68,6 +68,11 @@ public class PrivateCommandManager
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
+        if (eventUserIID == 896181679)
+        {
+            return;
+        }
+
         try
         {
             String message = event.getMessage();

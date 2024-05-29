@@ -17,6 +17,37 @@
  */
 package dev.blocky.api.request;
 
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
 public class BlockyJarBibleBody
 {
+    @SerializedName("user_id")
+    private final int userID;
+
+    @SerializedName("entry")
+    private final String entry;
+
+    @SerializedName("added_at")
+    private final String addedAt;
+
+    @SerializedName("updated_at")
+    private final String updatedAt;
+
+    public BlockyJarBibleBody(int userID, @NonNull String entry, @NonNull String addedAt, @NonNull String updatedAt)
+    {
+        this.userID = userID;
+        this.entry = entry;
+        this.addedAt = addedAt;
+        this.updatedAt = updatedAt;
+    }
+
+    @NonNull
+    @Override
+    public String toString()
+    {
+        Gson gson = new Gson();
+        return gson.toJson(this);
+    }
 }

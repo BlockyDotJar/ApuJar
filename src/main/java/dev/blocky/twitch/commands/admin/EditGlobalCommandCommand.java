@@ -61,37 +61,31 @@ public class EditGlobalCommandCommand implements ICommand
         String gcNameRaw = messageParts[1];
         String gcMessageRaw = removeElements(messageParts, 2);
 
-        String gcName = removeIllegalCharacters(gcNameRaw);
-        String gcMessage = removeIllegalCharacters(gcMessageRaw);
-
-        if (gcMessage.isBlank())
-        {
-            sendChatMessage(channelID, "monkaLaugh The global command name/message can't only contain the character ' haha");
-            return;
-        }
-
-        if (gcName.startsWith("/") || gcMessage.startsWith("/"))
+        if (gcNameRaw.startsWith("/") || gcMessageRaw.startsWith("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The global command name/message can't start with a / (slash) haha");
             return;
         }
 
-        if ((gcName.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcName, actualPrefix) && caseInsensitivePrefix))
+        if ((gcNameRaw.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcNameRaw, actualPrefix) && caseInsensitivePrefix))
         {
-            gcName = gcName.substring(prefixLength);
+            gcNameRaw = gcNameRaw.substring(prefixLength);
         }
+
+        String gcName = handleIllegalCharacters(gcNameRaw);
+        String gcMessage = handleIllegalCharacters(gcMessageRaw);
 
         TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
-        if (!globalCommands.containsKey(gcName))
+        if (!globalCommands.containsKey(gcNameRaw))
         {
-            sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
+            sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcNameRaw}' doesn't exist.");
             return;
         }
 
-        if (globalCommands.containsKey(gcName) && globalCommands.get(gcName).equals(gcMessage))
+        if (globalCommands.containsKey(gcNameRaw) && globalCommands.get(gcNameRaw).equals(gcMessageRaw))
         {
-            sendChatMessage(channelID, STR."4Head The new value for '\{gcName}' does exactly match with the old one.");
+            sendChatMessage(channelID, STR."4Head The new value for '\{gcNameRaw}' does exactly match with the old one.");
             return;
         }
 

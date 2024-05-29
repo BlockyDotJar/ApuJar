@@ -15,66 +15,60 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.utils.serialization;
+package dev.blocky.api.entities.blockyjar;
 
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
-public class Location
+import java.util.Date;
+
+public class BlockyJarBibleEntry
 {
-    @SerializedName("latitude")
-    double latitude;
+    @SerializedName("page")
+    int page;
 
-    @SerializedName("longitude")
-    double longitude;
+    @SerializedName("entry")
+    String entry;
 
-    @SerializedName("locationName")
-    String locationName;
+    @SerializedName("user")
+    BlockyJarUser user;
 
-    @SerializedName("cityName")
-    String cityName;
+    @SerializedName("added_at")
+    Date addedAt;
 
-    @SerializedName("countryCode")
-    String countryCode;
+    @SerializedName("updated_at")
+    Date updatedAt;
 
-    @SerializedName("hideLocation")
-    boolean hidesLocation;
-
-    public double getLatitude()
+    public int getPage()
     {
-        return latitude;
-    }
-
-    public double getLongitude()
-    {
-        return longitude;
+        return page;
     }
 
     @NonNull
-    public String getLocationName()
+    public String getEntry()
     {
-        return locationName;
-    }
-
-    @Nullable
-    public String getCityName()
-    {
-        return cityName;
+        return entry;
     }
 
     @NonNull
-    public String getCountryCode()
+    public BlockyJarUser getUser()
     {
-        return countryCode;
+        return user;
     }
 
-    public boolean hidesLocation()
+    @NonNull
+    public Date getAddedAt()
     {
-        return hidesLocation;
+        return addedAt;
     }
 
-    Location()
+    @NonNull
+    public Date getUpdatedAt()
+    {
+        return updatedAt;
+    }
+
+    BlockyJarBibleEntry()
     {
     }
 }

@@ -105,7 +105,6 @@ public class SevenTVAddCommand implements ICommand
         String sevenTVEmoteID = sevenTVEmote.getEmoteID();
 
         boolean isAnimated = sevenTVEmote.isAnimated();
-        boolean isListed = sevenTVEmote.isListed();
         boolean isPrivate = sevenTVEmote.getEmoteFlags() == 1;
 
         SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, channelIID);
@@ -134,6 +133,6 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed})");
+        sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated})");
     }
 }

@@ -35,7 +35,7 @@ dependencies {
 
     api("org.json:json:20240303")
 
-    api("org.xerial:sqlite-jdbc:3.45.3.0")
+    api("org.xerial:sqlite-jdbc:3.46.0.0")
 
     api("io.github.cdimascio:dotenv-java:3.0.0")
 

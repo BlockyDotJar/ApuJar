@@ -15,17 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.services;
+package dev.blocky.api.entities.blockyjar;
 
-import dev.blocky.api.entities.blockyjar.KokbinPaste;
-import retrofit2.Call;
-import retrofit2.http.Body;
-import retrofit2.http.Headers;
-import retrofit2.http.POST;
+import com.google.gson.annotations.SerializedName;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-public interface KokBinService
+public class KokbinPaste
 {
-    @POST("documents")
-    @Headers("Content-Type: text/plain")
-    Call<KokbinPaste> postDocument(@Body String body);
+    @SerializedName("key")
+    String key;
+
+    @NonNull
+    public String getKey()
+    {
+        return key;
+    }
+
+    KokbinPaste()
+    {
+    }
 }

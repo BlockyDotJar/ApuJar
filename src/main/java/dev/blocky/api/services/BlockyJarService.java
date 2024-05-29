@@ -17,6 +17,8 @@
  */
 package dev.blocky.api.services;
 
+import dev.blocky.api.entities.blockyjar.BlockyJarBible;
+import dev.blocky.api.entities.blockyjar.BlockyJarBibleEntry;
 import dev.blocky.api.request.BlockyJarBibleBody;
 import dev.blocky.api.request.BlockyJarUserBody;
 import retrofit2.Call;
@@ -36,14 +38,20 @@ public interface BlockyJarService
     @DELETE("apujar/owners/{ownerID}")
     Call<Void> deleteOwner(@Path("ownerID") int ownerID);
 
+    @GET("apujar/bible")
+    Call<BlockyJarBible> getBible(@Query("random") boolean random, @Query("limit") int limit);
+
+    @GET("apujar/bible/{biblePage}")
+    Call<BlockyJarBibleEntry> getBibleEntry(@Path("biblePage") int biblePage);
+
     @POST("apujar/bible")
-    Call<Void> postBibleEntry(@Body BlockyJarBibleBody body);
+    Call<BlockyJarBibleEntry> postBibleEntry(@Body BlockyJarBibleBody body);
 
     @DELETE("apujar/bible/{biblePage}")
-    Call<Void> deleteBibleEntry(@Path("biblePage") int biblePage);
+    Call<BlockyJarBibleEntry> deleteBibleEntry(@Path("biblePage") int biblePage);
 
     @PATCH("apujar/bible/{biblePage}")
-    Call<Void> patchBibleEntry(@Path("biblePage") int biblePage, @Body BlockyJarBibleBody body);
+    Call<BlockyJarBibleEntry> patchBibleEntry(@Path("biblePage") int biblePage, @Body BlockyJarBibleBody body);
 
     @PATCH("apujar/internal/user/{userID}")
     Call<Void> patchUser(@Path("userID") int userID, @Body BlockyJarUserBody body);

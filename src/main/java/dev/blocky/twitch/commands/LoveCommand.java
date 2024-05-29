@@ -48,7 +48,7 @@ public class LoveCommand implements ICommand
             secondUserToLookup = "himself/herself";
         }
 
-        if (!userToLookup.equalsIgnoreCase(eventUserName) && secondUserToLookup.equalsIgnoreCase(eventUserName))
+        if (!userToLookup.equalsIgnoreCase(eventUserName) && messageParts.length == 2)
         {
             String tempUserToLookup = secondUserToLookup;
 

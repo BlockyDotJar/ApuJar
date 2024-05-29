@@ -17,7 +17,9 @@
  */
 package dev.blocky.api;
 
-import dev.blocky.api.entities.blockyjar.Paste;
+import dev.blocky.api.entities.blockyjar.BlockyJarBible;
+import dev.blocky.api.entities.blockyjar.BlockyJarBibleEntry;
+import dev.blocky.api.entities.blockyjar.KokbinPaste;
 import dev.blocky.api.entities.github.GitHubRelease;
 import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRSubage;
@@ -67,8 +69,6 @@ public class ServiceProvider
     private static final ModScannerErrorInterceptor modScannerErrorInterceptor = new ModScannerErrorInterceptor();
     private static final GeonameErrorInterceptor geonameErrorInterceptor = new GeonameErrorInterceptor();
     private static final GitHubErrorInterceptor gitHubErrorInterceptor = new GitHubErrorInterceptor();
-
-    private static final BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor();
 
     private static final int IVR_API_VERSION = 2;
     private static final int SEVENTV_API_VERSION = 3;
@@ -297,68 +297,112 @@ public class ServiceProvider
         twitchGQLCall.execute();
     }
 
-    public static void postAdmin(@NonNull BlockyJarUserBody body) throws IOException
+    public static void postAdmin(int channelID, @NonNull BlockyJarUserBody body) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.postAdmin(body);
         blockyJarCall.execute();
     }
 
-    public static void deleteAdmin(int adminID) throws IOException
+    public static void deleteAdmin(int channelID, int adminID) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.deleteAdmin(adminID);
         blockyJarCall.execute();
     }
 
-    public static void postOwner(@NonNull BlockyJarUserBody body) throws IOException
+    public static void postOwner(int channelID, @NonNull BlockyJarUserBody body) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.postOwner(body);
         blockyJarCall.execute();
     }
 
-    public static void deleteOwner(int adminID) throws IOException
+    public static void deleteOwner(int channelID, int adminID) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.deleteOwner(adminID);
         blockyJarCall.execute();
     }
 
-    public static void postBibleEntry(@NonNull BlockyJarBibleBody body) throws IOException
+    @NonNull
+    public static BlockyJarBible getBible(int channelID, boolean random, int limit) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
-        Call<Void> blockyJarCall = blockyJarService.postBibleEntry(body);
-        blockyJarCall.execute();
+        Call<BlockyJarBible> blockyJarCall = blockyJarService.getBible(random, limit);
+        Response<BlockyJarBible> response = blockyJarCall.execute();
+        return response.body();
     }
 
-    public static void deleteBibleEntry(int biblePage) throws IOException
+    @Nullable
+    public static BlockyJarBibleEntry getBibleEntry(int channelID, int biblePage) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
-        Call<Void> blockyJarCall = blockyJarService.deleteBibleEntry(biblePage);
-        blockyJarCall.execute();
+        Call<BlockyJarBibleEntry> blockyJarCall = blockyJarService.getBibleEntry(biblePage);
+        Response<BlockyJarBibleEntry> response = blockyJarCall.execute();
+        return response.body();
     }
 
-    public static void patchBibleEntry(int biblePage, @NonNull BlockyJarBibleBody body) throws IOException
+    @Nullable
+    public static BlockyJarBibleEntry postBibleEntry(int channelID, @NonNull BlockyJarBibleBody body) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
-        Call<Void> blockyJarCall = blockyJarService.patchBibleEntry(biblePage, body);
-        blockyJarCall.execute();
+        Call<BlockyJarBibleEntry> blockyJarCall = blockyJarService.postBibleEntry(body);
+        Response<BlockyJarBibleEntry> response = blockyJarCall.execute();
+        return response.body();
     }
 
-    public static void patchUser(int userID, @NonNull BlockyJarUserBody body) throws IOException
+    @Nullable
+    public static BlockyJarBibleEntry deleteBibleEntry(int channelID, int biblePage) throws IOException
     {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
+        Call<BlockyJarBibleEntry> blockyJarCall = blockyJarService.deleteBibleEntry(biblePage);
+        Response<BlockyJarBibleEntry> response = blockyJarCall.execute();
+        return response.body();
+    }
+
+    @Nullable
+    public static BlockyJarBibleEntry patchBibleEntry(int channelID, int biblePage, @NonNull BlockyJarBibleBody body) throws IOException
+    {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
+        BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
+        Call<BlockyJarBibleEntry> blockyJarCall = blockyJarService.patchBibleEntry(biblePage, body);
+        Response<BlockyJarBibleEntry> response = blockyJarCall.execute();
+        return response.body();
+    }
+
+    public static void patchUser(int channelID, int userID, @NonNull BlockyJarUserBody body) throws IOException
+    {
+        BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
+
         BlockyJarService blockyJarService = ServiceProvider.createService(BlockyJarService.class, blockyJarErrorInterceptor, blockyjarAuthInterceptor);
         Call<Void> blockyJarCall = blockyJarService.patchUser(userID, body);
         blockyJarCall.execute();
     }
 
     @NonNull
-    public static Paste paste(@NonNull String text) throws IOException
+    public static KokbinPaste paste(@NonNull String text) throws IOException
     {
         KokBinService kokBinService = ServiceProvider.createService(KokBinService.class);
-        Call<Paste> kokBinCall = kokBinService.postDocument(text);
-        Response<Paste> response = kokBinCall.execute();
+        Call<KokbinPaste> kokBinCall = kokBinService.postDocument(text);
+        Response<KokbinPaste> response = kokBinCall.execute();
         return response.body();
     }
 

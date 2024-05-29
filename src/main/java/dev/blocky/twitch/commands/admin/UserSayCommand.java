@@ -167,6 +167,14 @@ public class UserSayCommand implements ICommand
                     String[] prefixedMessagePartsRaw = messageToSend.split(" ");
                     prefixedMessageParts = getFilteredParts(prefixedMessagePartsRaw);
 
+                    boolean isSayable = cmd.isSayable();
+
+                    if (!isSayable)
+                    {
+                        sendChatMessage(channelID, "4Head Specified command isn't sayable :P");
+                        return;
+                    }
+
                     commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
 
                     channelToSend = null;

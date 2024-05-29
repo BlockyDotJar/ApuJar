@@ -15,66 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.utils.serialization;
+package dev.blocky.api.entities.blockyjar;
 
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
-public class Location
+public class BlockyJarUser
 {
-    @SerializedName("latitude")
-    double latitude;
+    @SerializedName("id")
+    int userID;
 
-    @SerializedName("longitude")
-    double longitude;
+    @SerializedName("login")
+    String userLogin;
 
-    @SerializedName("locationName")
-    String locationName;
-
-    @SerializedName("cityName")
-    String cityName;
-
-    @SerializedName("countryCode")
-    String countryCode;
-
-    @SerializedName("hideLocation")
-    boolean hidesLocation;
-
-    public double getLatitude()
+    public int getUserID()
     {
-        return latitude;
-    }
-
-    public double getLongitude()
-    {
-        return longitude;
+        return userID;
     }
 
     @NonNull
-    public String getLocationName()
+    public String getUserLogin()
     {
-        return locationName;
+        return userLogin;
     }
 
-    @Nullable
-    public String getCityName()
-    {
-        return cityName;
-    }
-
-    @NonNull
-    public String getCountryCode()
-    {
-        return countryCode;
-    }
-
-    public boolean hidesLocation()
-    {
-        return hidesLocation;
-    }
-
-    Location()
+    BlockyJarUser()
     {
     }
 }

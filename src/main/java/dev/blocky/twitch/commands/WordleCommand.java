@@ -25,8 +25,8 @@ import dev.blocky.api.entities.wordle.Wordle;
 import dev.blocky.twitch.interfaces.ICommand;
 import org.jetbrains.annotations.NotNull;
 
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
@@ -39,10 +39,10 @@ public class WordleCommand implements ICommand
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         LocalDate now = LocalDate.now();
 
-        String wordleDay = now.format(formatter);
+        String wordleDay = formatter.format(now);
 
         if (messageParts.length > 1)
         {

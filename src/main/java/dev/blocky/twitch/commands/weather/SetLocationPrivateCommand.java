@@ -34,8 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
-import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class SetLocationPrivateCommand implements IPrivateCommand
 {
@@ -69,8 +68,12 @@ public class SetLocationPrivateCommand implements IPrivateCommand
         double latitude = mapProperty.getLatitude();
         double longitude = mapProperty.getLongitude();
 
-        String locationName = mapProperty.getFormatted();
-        String cityName = mapProperty.getCity();
+        String locationNameRaw = mapProperty.getFormatted();
+        String cityNameRaw = mapProperty.getCity();
+
+        String locationName = handleIllegalCharacters(locationNameRaw);
+        String cityName = handleIllegalCharacters(cityNameRaw);
+
         String countryCode = mapProperty.getCountryCode();
 
         if (countryCode == null)
@@ -97,7 +100,7 @@ public class SetLocationPrivateCommand implements IPrivateCommand
 
         if (lat == latitude && lon == longitude)
         {
-            sendWhisper(eventUserID, STR."4Head The new location '\{locationName}' does exactly match with the old one.");
+            sendWhisper(eventUserID, STR."4Head The new location '\{locationNameRaw}' does exactly match with the old one.");
             return;
         }
 
@@ -105,12 +108,12 @@ public class SetLocationPrivateCommand implements IPrivateCommand
         {
             SQLite.onUpdate(STR."INSERT INTO weatherLocations(userID, latitude, longitude, locationName, cityName, countryCode, hideLocation) VALUES(\{eventUserIID}, \{latitude}, \{longitude}, '\{locationName}', '\{cityName}', '\{countryCode}', TRUE)");
 
-            sendWhisper(eventUserID, STR.":) Successfully added '\{locationName}' \{emoji} as your location.");
+            sendWhisper(eventUserID, STR.":) Successfully added '\{locationNameRaw}' \{emoji} as your location.");
             return;
         }
 
         SQLite.onUpdate(STR."UPDATE weatherLocations SET latitude = \{latitude}, longitude = \{longitude}, locationName = '\{locationName}', cityName = '\{cityName}', countryCode = '\{countryCode}' WHERE userID = \{eventUserIID}");
 
-        sendWhisper(eventUserID, STR.":O Successfully updated your location to '\{locationName}' \{emoji} . You can change the visibility of your location with 'hidelocation'. (Your location doesn't get revealed for other users, as long as you don't change the visibility with this command)");
+        sendWhisper(eventUserID, STR.":O Successfully updated your location to '\{locationNameRaw}' \{emoji} . You can change the visibility of your location with 'hidelocation'. (Your location doesn't get revealed for other users, as long as you don't change the visibility with this command)");
     }
 }

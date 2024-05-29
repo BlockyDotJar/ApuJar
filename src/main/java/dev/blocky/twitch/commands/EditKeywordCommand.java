@@ -68,17 +68,10 @@ public class EditKeywordCommand implements ICommand
             return;
         }
 
-        String kwRaw = messageParts[1];
+        String kw = messageParts[1];
+
         String kwMessageRaw = removeElements(messageParts, 2);
-
-        String kw = removeIllegalCharacters(kwRaw);
-        String kwMessage = removeIllegalCharacters(kwMessageRaw);
-
-        if (kw.isBlank() || kwMessage.isBlank())
-        {
-            sendChatMessage(channelID, "monkaLaugh The keyword/message can't contain only the ' character haha");
-            return;
-        }
+        String kwMessage = handleIllegalCharacters(kwMessageRaw);
 
         if (kw.startsWith("/") || kwMessage.startsWith("/"))
         {
@@ -99,7 +92,7 @@ public class EditKeywordCommand implements ICommand
             {
                 keywordExists = true;
 
-                if (kwdMessage.equals(kwMessage))
+                if (kwdMessage.equals(kwMessageRaw))
                 {
                     sendChatMessage(channelID, STR."4Head The new value for '\{kw}' does exactly match with the old one.");
                     return;

@@ -22,7 +22,7 @@ import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.blockyjar.Paste;
+import dev.blocky.api.entities.blockyjar.KokbinPaste;
 import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.api.entities.lilb.LiLBChatter;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -108,8 +108,8 @@ public class ChatterCommand implements ICommand
                 \{realViewers}
                 """;
 
-        Paste paste = ServiceProvider.paste(chatter);
-        String pasteKey = paste.getKey();
+        KokbinPaste kokbinPaste = ServiceProvider.paste(chatter);
+        String pasteKey = kokbinPaste.getKey();
 
         channelID = getActualChannelID(channelToSend, channelID);
 

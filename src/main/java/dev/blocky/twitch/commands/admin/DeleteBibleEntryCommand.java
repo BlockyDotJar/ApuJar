@@ -15,65 +15,66 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.owner;
+package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import dev.blocky.api.ServiceProvider;
+import dev.blocky.api.entities.blockyjar.BlockyJarBibleEntry;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
-import dev.blocky.twitch.utils.SQLUtils;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import org.apache.commons.collections4.BidiMap;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
+import java.io.IOException;
+import java.sql.SQLException;
 
-import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
-public class DeleteOwnerCommand implements ICommand
+public class DeleteBibleEntryCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws IOException, SQLException
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
         EventUser eventUser = event.getUser();
-        String eventUserID = eventUser.getId();
-        int eventUserIID = Integer.parseInt(eventUserID);
-
-        if (eventUserIID != 755628467)
-        {
-            sendChatMessage(channelID, "oop You are not my founder.");
-            return;
-        }
+        String eventUserName = eventUser.getName();
 
         if (messageParts.length == 1)
         {
-            sendChatMessage(channelID, "FeelsMan Please specify a user.");
+            sendChatMessage(channelID, "FeelsMan Please specify a bible page.");
             return;
         }
 
-        BidiMap<Integer, String> owners = SQLUtils.getOwners();
-        Collection<String> ownerLogins = owners.values();
+        String pageRaw = messageParts[1];
 
-        String ownerToDemote = getUserAsString(messageParts, 1);
-
-        if (!ownerLogins.contains(ownerToDemote))
+        if (!pageRaw.matches("^\\d+$"))
         {
-            sendChatMessage(channelID, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
+            sendChatMessage(channelID, "oop Specified value isn't a number.");
             return;
         }
 
-        int ownerID = owners.getKey(ownerToDemote);
-        ServiceProvider.deleteOwner(channelIID, ownerID);
+        int page = Integer.parseInt(pageRaw);
 
-        SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{ownerToDemote}'");
+        if (page <= 0)
+        {
+            sendChatMessage(channelID, "oop Number can't be equal to 0 or negative.");
+            return;
+        }
 
-        sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
+        BlockyJarBibleEntry bibleEntry = ServiceProvider.deleteBibleEntry(channelIID, page);
+
+        if (bibleEntry == null)
+        {
+            return;
+        }
+
+        SQLite.onUpdate(STR."DELETE FROM bible WHERE page = \{page}");
+
+        sendChatMessage(channelID, STR."\{eventUserName} Successfully deleted entry #\{page} from our bible!");
     }
 }

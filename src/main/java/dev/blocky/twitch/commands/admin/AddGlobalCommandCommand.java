@@ -63,31 +63,25 @@ public class AddGlobalCommandCommand implements ICommand
         String gcNameRaw = messageParts[1];
         String gcMessageRaw = removeElements(messageParts, 2);
 
-        String gcName = removeIllegalCharacters(gcNameRaw);
-        String gcMessage = removeIllegalCharacters(gcMessageRaw);
-
-        if (gcName.isBlank() || gcMessage.isBlank())
-        {
-            sendChatMessage(channelID, "monkaLaugh The global command name/message can't only contain the character ' haha");
-            return;
-        }
-
-        if (gcName.startsWith("/") || gcMessage.startsWith("/"))
+        if (gcNameRaw.startsWith("/") || gcMessageRaw.startsWith("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The global command name/message can't start with a / (slash) haha");
             return;
         }
 
-        if ((gcName.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcName, actualPrefix) && caseInsensitivePrefix))
+        if ((gcNameRaw.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcNameRaw, actualPrefix) && caseInsensitivePrefix))
         {
-            gcName = gcName.substring(prefixLength);
+            gcNameRaw = gcNameRaw.substring(prefixLength);
         }
+
+        String gcName = handleIllegalCharacters(gcNameRaw);
+        String gcMessage = handleIllegalCharacters(gcMessageRaw);
 
         TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
-        if (globalCommands.containsKey(gcName))
+        if (globalCommands.containsKey(gcNameRaw))
         {
-            sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcName}' does already exist.");
+            sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcNameRaw}' does already exist.");
             return;
         }
 
@@ -97,9 +91,9 @@ public class AddGlobalCommandCommand implements ICommand
         {
             Set<String> commandAndAliases = command.getCommandAndAliases();
 
-            if (commandAndAliases.contains(gcName))
+            if (commandAndAliases.contains(gcNameRaw))
             {
-                sendChatMessage(channelID, STR."FeelsDankMan A native bot command '\{gcName}' does already exist.");
+                sendChatMessage(channelID, STR."FeelsDankMan A native bot command '\{gcNameRaw}' does already exist.");
                 return;
             }
         }

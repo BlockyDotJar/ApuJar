@@ -18,20 +18,22 @@
 package dev.blocky.api.entities.blockyjar;
 
 import com.google.gson.annotations.SerializedName;
-import org.checkerframework.checker.nullness.qual.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
-public class Paste
+import java.util.List;
+
+public class BlockyJarBible
 {
-    @SerializedName("key")
-    String key;
+    @SerializedName("entries")
+    List<BlockyJarBibleEntry> bibleEntries;
 
-    @NonNull
-    public String getKey()
+    @Nullable
+    public List<BlockyJarBibleEntry> getBibleEntries()
     {
-        return key;
+        return bibleEntries;
     }
 
-    Paste()
+    BlockyJarBible()
     {
     }
 }

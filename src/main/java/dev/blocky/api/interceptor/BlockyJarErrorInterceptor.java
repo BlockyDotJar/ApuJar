@@ -17,7 +17,6 @@
  */
 package dev.blocky.api.interceptor;
 
-import dev.blocky.api.exceptions.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import okhttp3.Interceptor;
 import okhttp3.Request;
@@ -26,8 +25,17 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
+
 public class BlockyJarErrorInterceptor implements Interceptor
 {
+    private final int channelID;
+
+    public BlockyJarErrorInterceptor(@NonNull int channelID)
+    {
+        this.channelID = channelID;
+    }
+
     @Override
     public Response intercept(@NonNull Chain chain) throws IOException
     {
@@ -45,16 +53,13 @@ public class BlockyJarErrorInterceptor implements Interceptor
             int status = json.getInt("status");
             String message = json.getString("message");
 
-            switch (response.code())
+            if (status != 200 && status != 404)
             {
-                case 400 -> throw new BadRequest(message);
-                case 401 -> throw new Unauthorized(message);
-                case 403 -> throw new Forbidden(message);
-                case 409 -> throw new Conflict(message);
-                case 422 -> throw new UnprocessableEntity(message);
-                case 500 -> throw new InternalServerException(STR."Internal Server Error: \{status}, \{message}");
-                default -> throw new HTTPException(STR."\{status}, \{message}");
+                sendChatMessage(channelID, STR."oop BlockyJar API error (\{status}) undefined \ud83d\udc4d \{message}");
+                return response;
             }
+
+            sendChatMessage(channelID, STR."Buggin \{message}");
         }
         return response;
     }

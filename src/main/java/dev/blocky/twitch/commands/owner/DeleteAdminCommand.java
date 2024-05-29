@@ -40,6 +40,7 @@ public class DeleteAdminCommand implements ICommand
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
@@ -68,7 +69,7 @@ public class DeleteAdminCommand implements ICommand
         }
 
         int adminID = admins.getKey(adminToDemote);
-        ServiceProvider.deleteAdmin(adminID);
+        ServiceProvider.deleteAdmin(channelIID, adminID);
 
         SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{adminToDemote}'");
 

@@ -30,7 +30,6 @@ import dev.blocky.api.request.TwitchGQLBody;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.RegExUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ContextedRuntimeException;
 
 import java.io.IOException;
@@ -219,10 +218,24 @@ public class TwitchUtils
         return false;
     }
 
-    @NonNull
-    public static String removeIllegalCharacters(@NonNull String prefix)
+    public static boolean hasVIPPerms(@NonNull IVR ivr, @NonNull String userName)
     {
-        return StringUtils.remove(prefix, "'");
+        for (IVRModVIP ivrModVIP : ivr.getVIPs())
+        {
+            String userLogin = ivrModVIP.getUserLogin();
+
+            if (userLogin.equalsIgnoreCase(userName))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @NonNull
+    public static String handleIllegalCharacters(@NonNull String prefix)
+    {
+        return RegExUtils.replaceAll(prefix, "'", "''");
     }
 
     public static void sendChatMessage(@NonNull String channelID, @NonNull String message)
@@ -284,6 +297,15 @@ public class TwitchUtils
     {
         ChatSettingsWrapper chatSettingsWrapper = helix.getChatSettings(null, userID, null).execute();
         ChatSettings chatSettings = chatSettingsWrapper.getChatSettings();
+
+        IVR ivr = ServiceProvider.getIVRModVip(userLogin);
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
+        boolean hasVIPPerms = TwitchUtils.hasVIPPerms(ivr, "ApuJar");
+
+        if (hasModeratorPerms || hasVIPPerms || channelID.equals("896181679"))
+        {
+            return true;
+        }
 
         if (chatSettings.isEmoteOnlyMode())
         {

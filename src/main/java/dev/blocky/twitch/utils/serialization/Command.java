@@ -19,11 +19,14 @@ package dev.blocky.twitch.utils.serialization;
 
 import com.google.gson.annotations.SerializedName;
 import dev.blocky.twitch.interfaces.ICommand;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Command
@@ -39,6 +42,9 @@ public class Command
 
     @SerializedName("requiresOwner")
     boolean requiresOwner;
+
+    @SerializedName("sayable")
+    boolean isSayable;
 
     @SerializedName("class")
     String clazz;
@@ -86,6 +92,11 @@ public class Command
     public boolean requiresOwner()
     {
         return requiresOwner;
+    }
+
+    public boolean isSayable()
+    {
+        return isSayable;
     }
 
     @NonNull

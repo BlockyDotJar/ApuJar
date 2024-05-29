@@ -41,6 +41,7 @@ public class AddAdminCommand implements ICommand
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
         {
@@ -85,7 +86,7 @@ public class AddAdminCommand implements ICommand
         SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', FALSE)");
 
         BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
-        ServiceProvider.postAdmin(body);
+        ServiceProvider.postAdmin(channelIID, body);
 
         sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
     }

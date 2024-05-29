@@ -54,7 +54,7 @@ public class SetPrefixCommand implements ICommand
         }
 
         String userPrefixRaw = getParameterAsString(messageParts, "-(cis|case-insensitive)");
-        String userPrefix = removeIllegalCharacters(userPrefixRaw);
+        String userPrefix = handleIllegalCharacters(userPrefixRaw);
 
         Prefix prefix = SQLUtils.getPrefix(channelIID);
         String actualPrefix = prefix.getPrefix();
@@ -74,15 +74,9 @@ public class SetPrefixCommand implements ICommand
             return;
         }
 
-        if (actualPrefix.equals(userPrefix))
+        if (actualPrefix.equals(userPrefixRaw))
         {
             sendChatMessage(channelID, "CoolStoryBob The new prefix matches exactly with the old one.");
-            return;
-        }
-
-        if (userPrefix.isBlank())
-        {
-            sendChatMessage(channelID, "monkaLaugh The new prefix can't contain the character ' haha");
             return;
         }
 
@@ -98,12 +92,12 @@ public class SetPrefixCommand implements ICommand
         {
             SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix, caseInsensitive) VALUES(\{channelID}, '\{userPrefix}', \{hasCaseInsensitiveParameter})");
 
-            sendChatMessage(channelID, STR."8-) Successfully set prefix to \{userPrefix}");
+            sendChatMessage(channelID, STR."8-) Successfully set prefix to \{userPrefixRaw}");
             return;
         }
 
         SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{userPrefix}' WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefix} '. (Case-Insensitive: \{hasCaseInsensitiveParameter})");
+        sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefixRaw} '. (Case-Insensitive: \{hasCaseInsensitiveParameter})");
     }
 }

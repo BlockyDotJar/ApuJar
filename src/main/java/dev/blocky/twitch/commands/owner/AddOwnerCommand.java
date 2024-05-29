@@ -42,6 +42,7 @@ public class AddOwnerCommand implements ICommand
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -104,7 +105,7 @@ public class AddOwnerCommand implements ICommand
         SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', TRUE)");
 
         BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
-        ServiceProvider.postOwner(body);
+        ServiceProvider.postOwner(channelIID, body);
 
         sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
     }

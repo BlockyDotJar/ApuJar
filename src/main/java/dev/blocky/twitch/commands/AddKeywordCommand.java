@@ -74,14 +74,8 @@ public class AddKeywordCommand implements ICommand
         String kwRaw = messageParts[1];
         String kwMessageRaw = getParameterAsString(messageParts, "-(em|exact-match|cis|case-insensitive)", 2);
 
-        String kw = removeIllegalCharacters(kwRaw);
-        String kwMessage = removeIllegalCharacters(kwMessageRaw);
-
-        if (kw.isBlank() || kwMessage.isBlank())
-        {
-            sendChatMessage(channelID, "monkaLaugh The keyword/message can't contain the ' character haha");
-            return;
-        }
+        String kw = handleIllegalCharacters(kwRaw);
+        String kwMessage = handleIllegalCharacters(kwMessageRaw);
 
         if (kw.startsWith("/") || kwMessage.startsWith("/"))
         {
@@ -95,15 +89,15 @@ public class AddKeywordCommand implements ICommand
         {
             String kwd = keyword.getName();
 
-            if (kwd.equals(kw))
+            if (kwd.equals(kwRaw))
             {
-                sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kw} ' does already exist.");
+                sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kwRaw} ' does already exist.");
                 return;
             }
         }
 
         SQLite.onUpdate(STR."INSERT INTO customKeywords(userID, name, message, exactMatch, caseInsensitive) VALUES(\{channelID}, '\{kw}', '\{kwMessage}', \{hasExactMatchParameter}, \{hasCaseInsensitiveParameter})");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully created keyword ' \{kw} '. (Exact match: \{hasExactMatchParameter}, Case-Insensitive: \{hasCaseInsensitiveParameter})");
+        sendChatMessage(channelID, STR."SeemsGood Successfully created keyword ' \{kwRaw} '. (Exact match: \{hasExactMatchParameter}, Case-Insensitive: \{hasCaseInsensitiveParameter})");
     }
 }

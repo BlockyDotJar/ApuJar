@@ -545,7 +545,7 @@ public class SQLUtils
                 SQLite.onUpdate(STR."UPDATE \{table} SET userLogin = '\{newUserLogin}' WHERE userID = \{userID}");
 
                 BlockyJarUserBody body = new BlockyJarUserBody(userID, newUserLogin);
-                ServiceProvider.patchUser(userID, body);
+                ServiceProvider.patchUser(896181679, userID, body);
             }
         }
     }

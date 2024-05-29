@@ -80,6 +80,11 @@ public class CommandManager
         String eventUserID = eventUser.getId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
+        if (eventUserIID == 896181679)
+        {
+            return;
+        }
+
         try
         {
             if (ratelimitedChats.containsKey(channelIID))
