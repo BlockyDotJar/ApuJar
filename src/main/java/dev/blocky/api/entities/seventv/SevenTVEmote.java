@@ -19,6 +19,7 @@ package dev.blocky.api.entities.seventv;
 
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 public class SevenTVEmote
 {
@@ -36,6 +37,9 @@ public class SevenTVEmote
 
     @SerializedName("animated")
     boolean isAnimated;
+
+    @SerializedName("data")
+    SevenTVEmote data;
 
     @NonNull
     public String getEmoteID()
@@ -62,6 +66,12 @@ public class SevenTVEmote
     public boolean isAnimated()
     {
         return isAnimated;
+    }
+
+    @Nullable
+    public SevenTVEmote getData()
+    {
+        return data;
     }
 
     SevenTVEmote()

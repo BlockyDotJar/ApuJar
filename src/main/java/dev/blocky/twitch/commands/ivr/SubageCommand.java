@@ -87,8 +87,6 @@ public class SubageCommand implements ICommand
         IVRSubageCumulative ivrCumulativeSubage = ivrSubage.getCumulativeSubage();
         IVRSubageMeta ivrSubageMeta = ivrSubage.getSubageMeta();
 
-        int cumulativeSubMonths = ivrCumulativeSubage.getSubMonths();
-
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
         if (ivrSubageMeta == null)
@@ -97,6 +95,8 @@ public class SubageCommand implements ICommand
 
             if (ivrCumulativeSubage != null)
             {
+                int cumulativeSubMonths = ivrCumulativeSubage.getSubMonths();
+
                 Date subEnd = ivrCumulativeSubage.getSubEnd();
                 String readableEnd = formatter.format(subEnd);
 
@@ -126,6 +126,8 @@ public class SubageCommand implements ICommand
         {
             messageToSend = STR."\{messageToSend} with a tier \{subTier} sub";
         }
+
+        int cumulativeSubMonths = ivrCumulativeSubage.getSubMonths();
 
         messageToSend = STR."\{messageToSend} since \{cumulativeSubMonths} month";
 

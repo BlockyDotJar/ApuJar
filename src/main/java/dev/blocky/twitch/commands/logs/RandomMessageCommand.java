@@ -15,24 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.admin;
+package dev.blocky.twitch.commands.logs;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.helix.domain.OutboundFollow;
-import com.github.twitch4j.helix.domain.OutboundFollowing;
 import com.github.twitch4j.helix.domain.User;
+import dev.blocky.api.ServiceProvider;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.TwitchUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static dev.blocky.twitch.Main.helix;
+import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class FollowCommand implements ICommand
+public class RandomMessageCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
@@ -41,50 +39,50 @@ public class FollowCommand implements ICommand
         String channelID = channel.getId();
         int channelIID = Integer.parseInt(channelID);
 
-        String userToFollow = getUserAsString(messageParts, 1);
+        String userToCheck = getChannelAsString(messageParts, channel);
 
-        if (messageParts.length == 1)
-        {
-            sendChatMessage(channelID, "FeelsMan please specify a user.");
-            return;
-        }
-
-        if (!isValidUsername(userToFollow))
+        if (!isValidUsername(userToCheck))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<User> usersToFollow = retrieveUserList(client, userToFollow);
+        List<User> usersToCheck = retrieveUserList(client, userToCheck);
 
-        if (usersToFollow.isEmpty())
+        if (usersToCheck.isEmpty())
         {
-            sendChatMessage(channelID, STR.":| No user called '\{userToFollow}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
             return;
         }
 
-        User user = usersToFollow.getFirst();
-        String userDisplayName = user.getDisplayName();
-        String userID = user.getId();
-        int userIID = Integer.parseInt(userID);
+        User user = usersToCheck.getFirst();
+        String userLogin = user.getLogin();
 
-        if (userDisplayName.equalsIgnoreCase("ApuJar"))
+        String randomMessage = ServiceProvider.getRandomMessage(channelIID, userLogin);
+
+        if (randomMessage == null)
         {
-            sendChatMessage(channelID, "4Head I can't follow myself.");
             return;
         }
 
-        OutboundFollowing outboundFollowing = helix.getFollowedChannels(null, "896181679", userID, 100, null).execute();
-        List<OutboundFollow> follows = outboundFollowing.getFollows();
+        String[] randomMessageParts = randomMessage.split(" ");
 
-        if (!follows.isEmpty())
-        {
-            sendChatMessage(channelID, STR."WHAT I am already following \{userDisplayName}.");
-            return;
-        }
+        String sendedAt = randomMessage.substring(1, 20);
+        String datePart = sendedAt.substring(0, 10);
+        String timePart = sendedAt.substring(11);
 
-        TwitchUtils.followUser(channelIID, userIID);
+        String[] dateParts = datePart.split("-");
+        String year = dateParts[0];
+        String month = dateParts[1];
+        String day = dateParts[2];
 
-        sendChatMessage(channelID, STR."Happi Successfully followed \{userDisplayName}.");
+        String sendedAtReadable = STR."\{day}.\{month}.\{year} \{timePart}";
+
+        String sender = randomMessageParts[3];
+        String message = removeElements(randomMessageParts, 4);
+
+        channelID = getActualChannelID(channelToSend, channelID);
+
+        sendChatMessage(channelID, STR."FeelsOkayMan \uD83D\uDC49 Sended on \{sendedAtReadable} from \{sender} \{message}");
     }
 }

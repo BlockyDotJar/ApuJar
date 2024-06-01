@@ -18,6 +18,7 @@
 package dev.blocky.twitch.utils;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.common.events.domain.EventChannel;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.*;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
@@ -33,10 +34,7 @@ import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.exception.ContextedRuntimeException;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,6 +61,12 @@ public class TwitchUtils
     public static String getSecondUserAsString(@NonNull String[] messageParts, @NonNull EventUser eventUser)
     {
         return messageParts.length == 3 ? getUserAsString(messageParts, 2) : eventUser.getName();
+    }
+
+    @NonNull
+    public static String getChannelAsString(@NonNull String[] messageParts, @NonNull EventChannel channel)
+    {
+        return messageParts.length == 1 ? channel.getName() : getUserAsString(messageParts, 1);
     }
 
     @Nullable
@@ -309,9 +313,9 @@ public class TwitchUtils
 
         if (chatSettings.isEmoteOnlyMode())
         {
-            EmoteList emoteList = helix.getGlobalEmotes(null).execute();
+            EmoteList userEmotes = helix.getUserEmotes(null, "896181679", userID, null).execute();
 
-            List<Emote> emotes = emoteList.getEmotes();
+            List<Emote> emotes = userEmotes.getEmotes();
             List<String> emoteNames = emotes.stream()
                     .map(Emote::getName)
                     .toList();
@@ -334,8 +338,10 @@ public class TwitchUtils
 
             if (follows.isEmpty())
             {
+                int channelIID = Integer.parseInt(channelID);
                 int userIID = Integer.parseInt(userID);
-                followUser(userIID);
+
+                followUser(channelIID, userIID);
 
                 sendChatMessage(channelID, STR."mhm Followers only mode detected in channel \{userLogin}, no follow detected, automatically followed user.");
             }
@@ -361,7 +367,7 @@ public class TwitchUtils
         return true;
     }
 
-    public static void followUser(int userID) throws IOException
+    public static void followUser(int channelID, int userID) throws IOException
     {
         Map<String, Object> input = Map.of
                 (
@@ -380,10 +386,10 @@ public class TwitchUtils
         Map<String, Object> extensions = Map.of("persistedQuery", persistedQuery);
 
         TwitchGQLBody body = new TwitchGQLBody("FollowButton_FollowUser", variables, extensions);
-        ServiceProvider.postTwitchGQL(body);
+        ServiceProvider.postTwitchGQL(channelID, body);
     }
 
-    public static void unfollowUser(int userID) throws IOException
+    public static void unfollowUser(int channelID, int userID) throws IOException
     {
         Map<String, Object> input = Map.of("targetID", userID);
         Map<String, Object> variables = Map.of("input", input);
@@ -397,6 +403,23 @@ public class TwitchUtils
         Map<String, Object> extensions = Map.of("persistedQuery", persistedQuery);
 
         TwitchGQLBody body = new TwitchGQLBody("FollowButton_UnfollowUser", variables, extensions);
-        ServiceProvider.postTwitchGQL(body);
+        ServiceProvider.postTwitchGQL(channelID, body);
+    }
+
+    @Nullable
+    public static NamedUserChatColor getChatColor(@NonNull String chatColorName)
+    {
+        NamedUserChatColor[] namedUserChatColorsRaw = NamedUserChatColor.values();
+
+        Optional<NamedUserChatColor> namedUserChatColors = Arrays.stream(namedUserChatColorsRaw)
+                .filter(nucc -> {
+                    String nuccNameRaw = nucc.name();
+                    String nuccName = nuccNameRaw.replace("_", " ");
+
+                    return chatColorName.equalsIgnoreCase(nuccName);
+                })
+                .findFirst();
+
+        return namedUserChatColors.orElse(null);
     }
 }

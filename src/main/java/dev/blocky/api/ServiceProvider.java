@@ -42,8 +42,6 @@ import dev.blocky.api.services.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import io.github.cdimascio.dotenv.Dotenv;
-import okhttp3.ConnectionPool;
-import okhttp3.Dispatcher;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import retrofit2.Call;
@@ -56,7 +54,6 @@ import java.io.IOException;
 import java.util.List;
 
 import static dev.blocky.twitch.Main.*;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class ServiceProvider
 {
@@ -80,22 +77,16 @@ public class ServiceProvider
     @NonNull
     public static <T> T createService(@NonNull Class<T> clazz, @Nullable Interceptor... interceptors)
     {
-        Dispatcher dispatcher = new Dispatcher();
-        dispatcher.setMaxRequestsPerHost(100);
-
-        ConnectionPool connectionPool = new ConnectionPool(5, 5, SECONDS);
-
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                .connectionPool(connectionPool)
                 .retryOnConnectionFailure(true)
-                .dispatcher(dispatcher);
+                .cache(null);
 
         for (Interceptor interceptor : interceptors)
         {
             builder.addInterceptor(interceptor);
         }
 
-        OkHttpClient client = builder.cache(null).build();
+        OkHttpClient client = builder.build();
 
         String simpleClassName = clazz.getSimpleName();
 
@@ -115,6 +106,7 @@ public class ServiceProvider
             case "YouTubeDislikesService" -> "https://returnyoutubedislikeapi.com/";
             case "TwitchGQLService" -> "https://gql.twitch.tv/";
             case "KokBinService" -> "https://paste.blockyjar.dev/";
+            case "SusgeLogsService" -> "https://logsback.susgee.dev/";
             default -> null;
         };
 
@@ -204,6 +196,17 @@ public class ServiceProvider
         return response.body();
     }
 
+    @Nullable
+    public static SevenTVEmoteSet getSevenTVEmoteSet(@NonNull int channelID, @NonNull String emoteSetID) throws IOException
+    {
+        SevenTVErrorInterceptor sevenTVErrorInterceptor = new SevenTVErrorInterceptor(channelID);
+
+        SevenTVService sevenTVService = ServiceProvider.createService(SevenTVService.class, sevenTVErrorInterceptor);
+        Call<SevenTVEmoteSet> sevenTVCall = sevenTVService.getEmoteSet(emoteSetID);
+        Response<SevenTVEmoteSet> response = sevenTVCall.execute();
+        return response.body();
+    }
+
     @NonNull
     public static SevenTV postSevenTVGQL(@NonNull SevenTVGQLBody body) throws IOException
     {
@@ -290,9 +293,11 @@ public class ServiceProvider
         return response.body();
     }
 
-    public static void postTwitchGQL(@NonNull TwitchGQLBody body) throws IOException
+    public static void postTwitchGQL(int channelID, @NonNull TwitchGQLBody body) throws IOException
     {
-        TwitchGQLService twitchGQLService = ServiceProvider.createService(TwitchGQLService.class, twitchGQLAuthInterceptor);
+        TwitchGQLErrorInterceptor twitchGQLErrorInterceptor = new TwitchGQLErrorInterceptor(channelID);
+
+        TwitchGQLService twitchGQLService = ServiceProvider.createService(TwitchGQLService.class, twitchGQLErrorInterceptor, twitchGQLAuthInterceptor);
         Call<Void> twitchGQLCall = twitchGQLService.postGQL(body);
         twitchGQLCall.execute();
     }
@@ -421,6 +426,28 @@ public class ServiceProvider
         YouTubeDislikesService youTubeDislikesService = ServiceProvider.createService(YouTubeDislikesService.class);
         Call<YouTubeDislikes> youTubeDislikesCall = youTubeDislikesService.getVotes(videoID);
         Response<YouTubeDislikes> response = youTubeDislikesCall.execute();
+        return response.body();
+    }
+
+    @Nullable
+    public static String getRandomMessage(@NonNull int channelID, @NonNull String userLogin) throws IOException
+    {
+        SusgeLogsErrorInterceptor susgeLogsErrorInterceptor = new SusgeLogsErrorInterceptor(channelID);
+
+        SusgeLogsService susgeLogsService = ServiceProvider.createService(SusgeLogsService.class, susgeLogsErrorInterceptor);
+        Call<String> susgeLogsCall = susgeLogsService.getRandomMessage(userLogin);
+        Response<String> response = susgeLogsCall.execute();
+        return response.body();
+    }
+
+    @Nullable
+    public static String getRandomMessage(@NonNull int channelID, @NonNull String channelName, @NonNull String userLogin) throws IOException
+    {
+        SusgeLogsErrorInterceptor susgeLogsErrorInterceptor = new SusgeLogsErrorInterceptor(channelID);
+
+        SusgeLogsService susgeLogsService = ServiceProvider.createService(SusgeLogsService.class, susgeLogsErrorInterceptor);
+        Call<String> susgeLogsCall = susgeLogsService.getRandomMessage(channelName, userLogin);
+        Response<String> response = susgeLogsCall.execute();
         return response.body();
     }
 }

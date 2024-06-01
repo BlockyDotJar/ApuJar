@@ -24,9 +24,6 @@ import java.util.Date;
 
 public class SevenTVSubage
 {
-    @SerializedName("active")
-    boolean isActive;
-
     @SerializedName("age")
     int age;
 
@@ -47,11 +44,6 @@ public class SevenTVSubage
 
     @SerializedName("gifted_by")
     String giftedBy;
-
-    public boolean isActive()
-    {
-        return isActive;
-    }
 
     public int getAge()
     {

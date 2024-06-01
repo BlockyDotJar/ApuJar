@@ -39,6 +39,7 @@ public class UnfollowCommand implements ICommand
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         String userToUnfollow = getUserAsString(messageParts, 1);
 
@@ -82,7 +83,7 @@ public class UnfollowCommand implements ICommand
             return;
         }
 
-        TwitchUtils.unfollowUser(userIID);
+        TwitchUtils.unfollowUser(channelIID, userIID);
 
         sendChatMessage(channelID, STR."Happi Successfully unfollowed \{userDisplayName}.");
     }

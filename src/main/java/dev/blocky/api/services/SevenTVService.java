@@ -19,6 +19,7 @@ package dev.blocky.api.services;
 
 import dev.blocky.api.entities.seventv.SevenTV;
 import dev.blocky.api.entities.seventv.SevenTVEmote;
+import dev.blocky.api.entities.seventv.SevenTVEmoteSet;
 import dev.blocky.api.entities.seventv.SevenTVTwitchUser;
 import dev.blocky.api.request.SevenTVGQLBody;
 import retrofit2.Call;
@@ -27,14 +28,18 @@ import retrofit2.http.*;
 public interface SevenTVService
 {
     @GET("emotes/{emoteID}")
-    @Headers("Cache-Control: no-cache")
+    @Headers({"Cache-Control: no-cache", "Pragma: no-cache"})
     Call<SevenTVEmote> getEmote(@Path("emoteID") String emoteID);
 
     @GET("users/twitch/{userID}")
-    @Headers("Cache-Control: no-cache")
+    @Headers({"Cache-Control: no-cache", "Pragma: no-cache"})
     Call<SevenTVTwitchUser> getTwitchUser(@Path("userID") int userID);
 
+    @GET("emote-sets/{emoteSetID}")
+    @Headers({"Cache-Control: no-cache", "Pragma: no-cache"})
+    Call<SevenTVEmoteSet> getEmoteSet(@Path("emoteSetID") String emoteSetID);
+
     @POST("gql")
-    @Headers({"Content-Type: application/json", "Cache-Control: no-cache"})
+    @Headers({"Content-Type: application/json", "Cache-Control: no-cache", "Pragma: no-cache"})
     Call<SevenTV> postGQL(@Body SevenTVGQLBody body);
 }

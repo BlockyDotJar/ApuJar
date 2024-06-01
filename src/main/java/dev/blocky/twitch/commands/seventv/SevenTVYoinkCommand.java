@@ -117,6 +117,10 @@ public class SevenTVYoinkCommand implements ICommand
             return;
         }
 
+        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
+
+        sevenTVEmoteSet = ServiceProvider.getSevenTVEmoteSet(channelIID, sevenTVEmoteSetID);
+
         List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
         List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToYoink);
 
@@ -127,11 +131,13 @@ public class SevenTVYoinkCommand implements ICommand
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
-        String sevenTVEmoteID = sevenTVEmote.getEmoteID();
+        SevenTVEmote realEmote = sevenTVEmote.getData();
 
-        boolean isAnimated = sevenTVEmote.isAnimated();
-        boolean isListed = sevenTVEmote.isListed();
-        boolean isPrivate = sevenTVEmote.getEmoteFlags() == 1;
+        String sevenTVEmoteID = realEmote.getEmoteID();
+
+        boolean isAnimated = realEmote.isAnimated();
+        boolean isListed = realEmote.isListed();
+        boolean isPrivate = realEmote.getEmoteFlags() == 1;
 
         sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, channelIID);
 
@@ -141,7 +147,7 @@ public class SevenTVYoinkCommand implements ICommand
         }
 
         sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
-        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
+        sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
 
         SevenTV emoteAddition = SevenTVUtils.changeEmote(SevenTVEmoteChangeAction.ADD, sevenTVEmoteSetID, sevenTVEmoteID, emoteAlias);
 

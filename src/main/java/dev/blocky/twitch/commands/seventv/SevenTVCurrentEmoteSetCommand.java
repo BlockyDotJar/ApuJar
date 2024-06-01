@@ -79,11 +79,15 @@ public class SevenTVCurrentEmoteSetCommand implements ICommand
             return;
         }
 
+        String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
+
+        sevenTVEmoteSet = ServiceProvider.getSevenTVEmoteSet(channelIID, sevenTVEmoteSetID);
+
         String emoteSetName = sevenTVEmoteSet.getEmoteSetName();
-        String emoteSetID = sevenTVEmoteSet.getEmoteSetID();
+
         int emoteCount = sevenTVEmoteSet.getEmoteCount();
         int emoteSetCapacity = sevenTVEmoteSet.getCapacity();
 
-        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote-set link for the '\{emoteSetName}' emote-set from \{userDisplayName} (Capacity: \{emoteCount}/\{emoteSetCapacity}) \uD83D\uDC49 https://7tv.app/emote-sets/\{emoteSetID}");
+        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote-set link for the '\{emoteSetName}' emote-set from \{userDisplayName} (Capacity: \{emoteCount}/\{emoteSetCapacity}) \uD83D\uDC49 https://7tv.app/emote-sets/\{sevenTVEmoteSetID}");
     }
 }
