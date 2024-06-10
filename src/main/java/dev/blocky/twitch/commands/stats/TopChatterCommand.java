@@ -15,76 +15,67 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.admin;
+package dev.blocky.twitch.commands.stats;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.helix.domain.OutboundFollow;
-import com.github.twitch4j.helix.domain.OutboundFollowing;
+import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.User;
+import dev.blocky.api.ServiceProvider;
+import dev.blocky.api.entities.stats.StreamElementsChatStats;
+import dev.blocky.api.entities.stats.StreamElementsChatter;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.TwitchUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static dev.blocky.twitch.Main.helix;
+import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class FollowCommand implements ICommand
+public class TopChatterCommand implements ICommand
 {
     @Override
     public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
-        int channelIID = Integer.parseInt(channelID);
 
-        String userToFollow = getUserAsString(messageParts, 1);
+        EventUser eventUser = event.getUser();
 
-        if (messageParts.length == 1)
-        {
-            sendChatMessage(channelID, "FeelsMan please specify a user.");
-            return;
-        }
+        String userToGetTopChatterFrom = getUserAsString(messageParts, eventUser);
 
-        if (!isValidUsername(userToFollow))
+        if (!isValidUsername(userToGetTopChatterFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
             return;
         }
 
-        List<User> usersToFollow = retrieveUserList(client, userToFollow);
+        List<User> usersToGetTopChatterFrom = retrieveUserList(client, userToGetTopChatterFrom);
 
-        if (usersToFollow.isEmpty())
+        if (usersToGetTopChatterFrom.isEmpty())
         {
-            sendChatMessage(channelID, STR.":| No user called '\{userToFollow}' found.");
+            sendChatMessage(channelID, STR.":| No user called '\{userToGetTopChatterFrom}' found.");
             return;
         }
 
-        User user = usersToFollow.getFirst();
+        User user = usersToGetTopChatterFrom.getFirst();
         String userDisplayName = user.getDisplayName();
-        String userID = user.getId();
-        int userIID = Integer.parseInt(userID);
+        String userLogin = user.getLogin();
 
-        if (userDisplayName.equalsIgnoreCase("ApuJar"))
+        StreamElementsChatStats streamElementsChatStats = ServiceProvider.getChatStats(userLogin, 5);
+
+        if (streamElementsChatStats == null)
         {
-            sendChatMessage(channelID, "4Head I can't follow myself.");
+            sendChatMessage(channelID, "UNLUCKY No streamelements chatstats for user found.");
             return;
         }
 
-        OutboundFollowing outboundFollowing = helix.getFollowedChannels(null, "896181679", userID, 100, null).execute();
-        List<OutboundFollow> follows = outboundFollowing.getFollows();
+        List<StreamElementsChatter> chatters = streamElementsChatStats.getChatters();
+        String topChatter = getChatterFormatted(chatters);
 
-        if (!follows.isEmpty())
-        {
-            sendChatMessage(channelID, STR."WHAT I am already following \{userDisplayName}.");
-            return;
-        }
+        channelID = getActualChannelID(channelToSend, channelID);
 
-        TwitchUtils.followUser(channelIID, userIID);
-
-        sendChatMessage(channelID, STR."Happi Successfully followed \{userDisplayName}.");
+        sendChatMessage(channelID, STR."peepoChat Here are the top chatter for \{userDisplayName} \uD83D\uDC49 \{topChatter}");
     }
 }

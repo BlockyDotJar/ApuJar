@@ -15,40 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.interceptor;
+package dev.blocky.api.entities.stats;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import okhttp3.Interceptor;
-import okhttp3.Request;
-import okhttp3.Response;
 
-import java.io.IOException;
-
-public class AuthInterceptor implements Interceptor
+public class StreamElementsChatter
 {
-    private final String accessToken, clientID;
+    @SerializedName("name")
+    String userLogin;
 
-    public AuthInterceptor(@NonNull String accessToken, @Nullable String clientID)
+    @SerializedName("amount")
+    int messageCount;
+
+    @Nullable
+    public String getUserLogin()
     {
-        this.accessToken = accessToken;
-        this.clientID = clientID;
+        return userLogin;
     }
 
-    @Override
-    public Response intercept(@NonNull Chain chain) throws IOException
+    public int getMessageCount()
     {
-        Request.Builder builder = chain.request()
-                .newBuilder()
-                .addHeader("Authorization", accessToken);
+        return messageCount;
+    }
 
-        if (clientID != null)
-        {
-            builder.addHeader("Client-Id", clientID);
-        }
-
-        Request request = builder.build();
-
-        return chain.proceed(request);
+    StreamElementsChatter()
+    {
     }
 }

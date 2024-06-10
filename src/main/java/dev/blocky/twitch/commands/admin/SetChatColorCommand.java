@@ -30,22 +30,13 @@ import java.util.List;
 import static dev.blocky.twitch.Main.helix;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class UpdateChatColorCommand implements ICommand
+public class SetChatColorCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         EventChannel channel = event.getChannel();
         String channelID = channel.getId();
-
-        if (messageParts.length == 1)
-        {
-            sendChatMessage(channelID, "FeelsMan Please specify a color.");
-            return;
-        }
-
-        String chatColorName = removeElements(messageParts, 1);
-        NamedUserChatColor namedUserChatColor = getChatColor(chatColorName);
 
         NamedUserChatColor[] namedUserChatColorsRaw = NamedUserChatColor.values();
         List<String> namedUserChatColors = Arrays.stream(namedUserChatColorsRaw)
@@ -58,6 +49,15 @@ public class UpdateChatColorCommand implements ICommand
                 .toList();
 
         String namedUserChatColorsReadable = String.join(", ", namedUserChatColors);
+
+        if (messageParts.length == 1)
+        {
+            sendChatMessage(channelID, STR."FeelsMan Please specify a color. (Choose between: \{namedUserChatColorsReadable})");
+            return;
+        }
+
+        String chatColorName = removeElements(messageParts, 1);
+        NamedUserChatColor namedUserChatColor = getChatColor(chatColorName);
 
         if (namedUserChatColor == null)
         {

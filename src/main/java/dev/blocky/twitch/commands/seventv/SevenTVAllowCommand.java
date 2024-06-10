@@ -105,7 +105,8 @@ public class SevenTVAllowCommand implements ICommand
             return;
         }
 
-        String newAllowedUserIDs = STR."\{sevenTVAllowedUserIDs},\{userIID}";
+        String sevenTVAllowedUserIDsFormatted = String.join(",", sevenTVAllowedUserIDs);
+        String newAllowedUserIDs = STR."\{sevenTVAllowedUserIDsFormatted},\{userIID}";
 
         SQLite.onUpdate(STR."UPDATE sevenTVUsers SET allowedUserIDs = '\{newAllowedUserIDs}' WHERE userID = \{channelIID}");
 

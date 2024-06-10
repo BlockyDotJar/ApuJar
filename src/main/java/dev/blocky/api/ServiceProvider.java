@@ -30,6 +30,7 @@ import dev.blocky.api.entities.maps.MapSearch;
 import dev.blocky.api.entities.modscanner.ModScanner;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.seventv.*;
+import dev.blocky.api.entities.stats.StreamElementsChatStats;
 import dev.blocky.api.entities.wordle.Wordle;
 import dev.blocky.api.entities.yt.NoEmbed;
 import dev.blocky.api.entities.yt.YouTubeDislikes;
@@ -37,7 +38,6 @@ import dev.blocky.api.interceptor.*;
 import dev.blocky.api.request.BlockyJarBibleBody;
 import dev.blocky.api.request.BlockyJarUserBody;
 import dev.blocky.api.request.SevenTVGQLBody;
-import dev.blocky.api.request.TwitchGQLBody;
 import dev.blocky.api.services.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -57,9 +57,9 @@ import static dev.blocky.twitch.Main.*;
 
 public class ServiceProvider
 {
-    private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(STR."Bearer \{sevenTVAccessToken}", null, null, null);
-    private static final AuthInterceptor blockyjarAuthInterceptor = new AuthInterceptor(STR."Bearer \{accessToken}", clientID, null, null);
-    private static final AuthInterceptor twitchGQLAuthInterceptor = new AuthInterceptor(STR."OAuth \{oAuthToken}", "kimne78kx3ncx6brgo4mv6wki5h1ko", clientIntegrity, deviceID);
+    private static final AuthInterceptor sevenTVAuthInterceptor = new AuthInterceptor(STR."Bearer \{sevenTVAccessToken}", null);
+    private static final AuthInterceptor blockyjarAuthInterceptor = new AuthInterceptor(STR."Bearer \{accessToken}", clientID);
+    private static final AuthInterceptor streamElementsAuthInterceptor = new AuthInterceptor(STR."Bearer \{streamElementsJWTToken}", null);
 
     private static final SevenTVGQLErrorInterceptor sevenTVGQLErrorInterceptor = new SevenTVGQLErrorInterceptor();
 
@@ -73,6 +73,7 @@ public class ServiceProvider
     private static final int OPEN_METEO_API_VERSION = 1;
     private static final int WORDLE_API_VERSION = 2;
     private static final int BLOCKYJAR_API_VERSION = 1;
+    private static final int STREAMELEMENTS_API_VERSION = 2;
 
     @NonNull
     public static <T> T createService(@NonNull Class<T> clazz, @Nullable Interceptor... interceptors)
@@ -107,6 +108,7 @@ public class ServiceProvider
             case "TwitchGQLService" -> "https://gql.twitch.tv/";
             case "KokBinService" -> "https://paste.blockyjar.dev/";
             case "SusgeLogsService" -> "https://logsback.susgee.dev/";
+            case "StreamElementsService" -> STR."https://api.streamelements.com/kappa/v\{STREAMELEMENTS_API_VERSION}/";
             default -> null;
         };
 
@@ -293,15 +295,6 @@ public class ServiceProvider
         return response.body();
     }
 
-    public static void postTwitchGQL(int channelID, @NonNull TwitchGQLBody body) throws IOException
-    {
-        TwitchGQLErrorInterceptor twitchGQLErrorInterceptor = new TwitchGQLErrorInterceptor(channelID);
-
-        TwitchGQLService twitchGQLService = ServiceProvider.createService(TwitchGQLService.class, twitchGQLErrorInterceptor, twitchGQLAuthInterceptor);
-        Call<Void> twitchGQLCall = twitchGQLService.postGQL(body);
-        twitchGQLCall.execute();
-    }
-
     public static void postAdmin(int channelID, @NonNull BlockyJarUserBody body) throws IOException
     {
         BlockyJarErrorInterceptor blockyJarErrorInterceptor = new BlockyJarErrorInterceptor(channelID);
@@ -448,6 +441,15 @@ public class ServiceProvider
         SusgeLogsService susgeLogsService = ServiceProvider.createService(SusgeLogsService.class, susgeLogsErrorInterceptor);
         Call<String> susgeLogsCall = susgeLogsService.getRandomMessage(channelName, userLogin);
         Response<String> response = susgeLogsCall.execute();
+        return response.body();
+    }
+
+    @Nullable
+    public static StreamElementsChatStats getChatStats(@NonNull String userLogin, int limit) throws IOException
+    {
+        StreamElementsService streamElementsService = ServiceProvider.createService(StreamElementsService.class, streamElementsAuthInterceptor);
+        Call<StreamElementsChatStats> streamElementsCall = streamElementsService.getChatStats(userLogin, limit);
+        Response<StreamElementsChatStats> response = streamElementsCall.execute();
         return response.body();
     }
 }

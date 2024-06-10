@@ -27,16 +27,22 @@ import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRModVIP;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRSubageMeta;
-import dev.blocky.api.request.TwitchGQLBody;
+import dev.blocky.api.entities.stats.StreamElementsChatter;
+import dev.blocky.api.entities.stats.StreamElementsEmote;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.exception.ContextedRuntimeException;
 
 import java.io.IOException;
-import java.util.*;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import static dev.blocky.twitch.Main.helix;
 import static dev.blocky.twitch.manager.CommandManager.ratelimitedChats;
@@ -338,12 +344,8 @@ public class TwitchUtils
 
             if (follows.isEmpty())
             {
-                int channelIID = Integer.parseInt(channelID);
-                int userIID = Integer.parseInt(userID);
-
-                followUser(channelIID, userIID);
-
-                sendChatMessage(channelID, STR."mhm Followers only mode detected in channel \{userLogin}, no follow detected, automatically followed user.");
+                sendChatMessage(channelID, STR."mhm Followers only mode detected in channel \{userLogin}, no follow detected. Please message @BlockyDotJar to follow the user.");
+                return false;
             }
         }
 
@@ -367,52 +369,14 @@ public class TwitchUtils
         return true;
     }
 
-    public static void followUser(int channelID, int userID) throws IOException
-    {
-        Map<String, Object> input = Map.of
-                (
-                        "disableNotifications", true,
-                        "targetID", userID
-                );
-
-        Map<String, Object> variables = Map.of("input", input);
-
-        Map<String, Object> persistedQuery = Map.of
-                (
-                        "version", 1,
-                        "sha256Hash", "800e7346bdf7e5278a3c1d3f21b2b56e2639928f86815677a7126b093b2fdd08"
-                );
-
-        Map<String, Object> extensions = Map.of("persistedQuery", persistedQuery);
-
-        TwitchGQLBody body = new TwitchGQLBody("FollowButton_FollowUser", variables, extensions);
-        ServiceProvider.postTwitchGQL(channelID, body);
-    }
-
-    public static void unfollowUser(int channelID, int userID) throws IOException
-    {
-        Map<String, Object> input = Map.of("targetID", userID);
-        Map<String, Object> variables = Map.of("input", input);
-
-        Map<String, Object> persistedQuery = Map.of
-                (
-                        "version", 1,
-                        "sha256Hash", "f7dae976ebf41c755ae2d758546bfd176b4eeb856656098bb40e0a672ca0d880"
-                );
-
-        Map<String, Object> extensions = Map.of("persistedQuery", persistedQuery);
-
-        TwitchGQLBody body = new TwitchGQLBody("FollowButton_UnfollowUser", variables, extensions);
-        ServiceProvider.postTwitchGQL(channelID, body);
-    }
-
     @Nullable
     public static NamedUserChatColor getChatColor(@NonNull String chatColorName)
     {
         NamedUserChatColor[] namedUserChatColorsRaw = NamedUserChatColor.values();
 
         Optional<NamedUserChatColor> namedUserChatColors = Arrays.stream(namedUserChatColorsRaw)
-                .filter(nucc -> {
+                .filter(nucc ->
+                {
                     String nuccNameRaw = nucc.name();
                     String nuccName = nuccNameRaw.replace("_", " ");
 
@@ -421,5 +385,61 @@ public class TwitchUtils
                 .findFirst();
 
         return namedUserChatColors.orElse(null);
+    }
+
+    @Nullable
+    public static String getEmotesFormatted(@NonNull List<StreamElementsEmote> emotes, int maxRange)
+    {
+        if (emotes.isEmpty())
+        {
+            return null;
+        }
+
+        int emoteCount = emotes.size();
+        int range = Math.min(emoteCount, maxRange);
+
+        List<String> topTwitchEmotes = IntStream.range(0, range).mapToObj(i ->
+        {
+            int emoteNumber = i + 1;
+
+            StreamElementsEmote emote = emotes.get(i);
+            String emoteName = emote.getEmoteName();
+            int amountSent  = emote.getAmountSent();
+
+            DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
+            String formattedAmountSent = decimalFormat.format(amountSent);
+
+            return STR."\{emoteNumber}. \{emoteName} - \{formattedAmountSent}";
+        }).toList();
+
+        return String.join(" | ", topTwitchEmotes);
+    }
+
+    @Nullable
+    public static String getChatterFormatted(@NonNull List<StreamElementsChatter> chatters)
+    {
+        if (chatters.isEmpty())
+        {
+            return null;
+        }
+
+        int chatterCount = chatters.size();
+        int range = Math.min(chatterCount, 5);
+
+        List<String> topTwitchChatter = IntStream.range(0, range).mapToObj(i ->
+        {
+            int chatterNumber = i + 1;
+
+            StreamElementsChatter chatter = chatters.get(i);
+            String userLogin = chatter.getUserLogin();
+            int messageCount  = chatter.getMessageCount();
+
+            DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
+            String formattedMessageCount = decimalFormat.format(messageCount);
+
+            return STR."\{chatterNumber}. \{userLogin} - \{formattedMessageCount}";
+        }).toList();
+
+        return String.join(" | ", topTwitchChatter);
     }
 }

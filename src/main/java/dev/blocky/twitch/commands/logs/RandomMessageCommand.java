@@ -67,22 +67,22 @@ public class RandomMessageCommand implements ICommand
 
         String[] randomMessageParts = randomMessage.split(" ");
 
-        String sendedAt = randomMessage.substring(1, 20);
-        String datePart = sendedAt.substring(0, 10);
-        String timePart = sendedAt.substring(11);
+        String sentAt = randomMessage.substring(1, 20);
+        String datePart = sentAt.substring(0, 10);
+        String timePart = sentAt.substring(11);
 
         String[] dateParts = datePart.split("-");
         String year = dateParts[0];
         String month = dateParts[1];
         String day = dateParts[2];
 
-        String sendedAtReadable = STR."\{day}.\{month}.\{year} \{timePart}";
+        String sentAtReadable = STR."\{day}.\{month}.\{year} \{timePart}";
 
         String sender = randomMessageParts[3];
         String message = removeElements(randomMessageParts, 4);
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."FeelsOkayMan \uD83D\uDC49 Sended on \{sendedAtReadable} from \{sender} \{message}");
+        sendChatMessage(channelID, STR."FeelsOkayMan \uD83D\uDC49 Sent on \{sentAtReadable} from \{sender} \{message}");
     }
 }

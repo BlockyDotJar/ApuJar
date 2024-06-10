@@ -70,13 +70,7 @@ idea {
 
 tasks.withType<JavaCompile> {
     doFirst {
-        options.compilerArgs.addAll(
-                arrayOf
-                (
-                        "--module-path", classpath.asPath,
-                        "--enable-preview"
-                )
-        )
+        options.compilerArgs.addAll(arrayOf("--module-path", classpath.asPath, "--enable-preview"))
     }
 }
 

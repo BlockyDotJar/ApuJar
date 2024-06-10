@@ -97,7 +97,7 @@ public class SevenTVRenameCommand implements ICommand
         sevenTVEmoteSet = ServiceProvider.getSevenTVEmoteSet(channelIID, sevenTVEmoteSetID);
 
         List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
-        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToRename);
+        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToRename, false);
 
         if (sevenTVEmotesFiltered.isEmpty())
         {

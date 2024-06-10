@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class SevenTVAddCommand implements ICommand
 {
@@ -56,7 +56,9 @@ public class SevenTVAddCommand implements ICommand
             return;
         }
 
-        String emoteToAdd = messageParts[1];
+        boolean hasCaseInsensitiveParameter = hasRegExParameter(messageParts, "-(cis|case-insensitive)");
+
+        String emoteToAdd = getParameterAsString(messageParts, "-(cis|case-insensitive)");
 
         if (emoteToAdd.matches("https?://7tv.app/emotes/[a-z\\d]{24}"))
         {
@@ -68,7 +70,7 @@ public class SevenTVAddCommand implements ICommand
 
         if (messageParts.length >= 3)
         {
-            emoteAlias = messageParts[2];
+            emoteAlias = getParameterAsString(messageParts, "-(cis|case-insensitive)", 2);
         }
 
         Map<Integer, String> owners = SQLUtils.getOwners();
@@ -93,7 +95,7 @@ public class SevenTVAddCommand implements ICommand
         }
 
         List<SevenTVEmote> sevenTVEmotes = seventTVEmoteSearch.getItems();
-        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToAdd);
+        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToAdd, hasCaseInsensitiveParameter);
 
         if (sevenTVEmotesFiltered.isEmpty())
         {

@@ -95,20 +95,21 @@ public class SetLocationPrivateCommand implements IPrivateCommand
         }
 
         Location location = SQLUtils.getLocation(eventUserIID);
+
+        if (location == null)
+        {
+            SQLite.onUpdate(STR."INSERT INTO weatherLocations(userID, latitude, longitude, locationName, cityName, countryCode, hideLocation) VALUES(\{eventUserIID}, \{latitude}, \{longitude}, '\{locationName}', '\{cityName}', '\{countryCode}', TRUE)");
+
+            sendWhisper(eventUserID, STR.":) Successfully added '\{locationNameRaw}' \{emoji} as your location.");
+            return;
+        }
+
         double lat = location.getLatitude();
         double lon = location.getLongitude();
 
         if (lat == latitude && lon == longitude)
         {
             sendWhisper(eventUserID, STR."4Head The new location '\{locationNameRaw}' does exactly match with the old one.");
-            return;
-        }
-
-        if (lat == -1.0 && lon == -1.0)
-        {
-            SQLite.onUpdate(STR."INSERT INTO weatherLocations(userID, latitude, longitude, locationName, cityName, countryCode, hideLocation) VALUES(\{eventUserIID}, \{latitude}, \{longitude}, '\{locationName}', '\{cityName}', '\{countryCode}', TRUE)");
-
-            sendWhisper(eventUserID, STR.":) Successfully added '\{locationNameRaw}' \{emoji} as your location.");
             return;
         }
 

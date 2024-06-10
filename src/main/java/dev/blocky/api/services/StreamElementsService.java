@@ -15,32 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.yt;
+package dev.blocky.api.services;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import dev.blocky.api.entities.stats.StreamElementsChatStats;
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Headers;
+import retrofit2.http.Path;
+import retrofit2.http.Query;
 
-public class NoEmbed
+public interface StreamElementsService
 {
-    @SerializedName("title")
-    String title;
-
-    @SerializedName("author_name")
-    String authorName;
-
-    @Nullable
-    public String getTitle()
-    {
-        return title;
-    }
-
-    @Nullable
-    public String getAuthorName()
-    {
-        return authorName;
-    }
-
-    NoEmbed()
-    {
-    }
+    @GET("chatstats/{login}/stats")
+    @Headers("Accept: application/json")
+    Call<StreamElementsChatStats> getChatStats(@Path("login") String login, @Query("limit") int limit);
 }

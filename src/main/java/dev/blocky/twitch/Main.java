@@ -64,10 +64,11 @@ public class Main
 
     public static long startedAt;
 
-    public static String accessToken, oAuthToken, clientID;
-    public static String clientIntegrity, deviceID;
+    public static String accessToken, clientID;
 
     public static String sevenTVAccessToken;
+
+    public static String streamElementsJWTToken;
 
     public static void main(String[] args) throws Exception
     {
@@ -88,13 +89,12 @@ public class Main
                 .load();
 
         accessToken = env.get("ACCESS_TOKEN");
-        oAuthToken = env.get("OAUTH_TOKEN");
         String refreshToken = env.get("REFRESH_TOKEN");
         clientID = env.get("CLIENT_ID");
-        deviceID = env.get("X_DEVICE_ID");
-        clientIntegrity = env.get("CLIENT_INTEGRITY");
 
         sevenTVAccessToken = env.get("SEVENTV_ACCESS_TOKEN");
+
+        streamElementsJWTToken = env.get("STREAMELEMENTS_JWT_TOKEN");
 
         TwitchIdentityProvider tip = new TwitchIdentityProvider(clientID, null, null);
 
@@ -120,12 +120,10 @@ public class Main
                 String newEnvContent = STR.
                         """
                                 ACCESS_TOKEN=\{refrehedAccessToken}
-                                OAUTH_TOKEN=\{oAuthToken}
                                 REFRESH_TOKEN=\{refreshedRefreshToken}
                                 CLIENT_ID=\{clientID}
-                                X_DEVICE_ID=\{deviceID}
-                                CLIENT_INTEGRITY=\{clientIntegrity}
                                 SEVENTV_ACCESS_TOKEN=\{sevenTVAccessToken}
+                                STREAMELEMENTS_JWT_TOKEN=\{streamElementsJWTToken}
                                 """;
 
                 Files.writeString(envPath, newEnvContent);

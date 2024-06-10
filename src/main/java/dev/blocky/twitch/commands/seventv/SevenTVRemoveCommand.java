@@ -89,7 +89,7 @@ public class SevenTVRemoveCommand implements ICommand
         sevenTVEmoteSet = ServiceProvider.getSevenTVEmoteSet(channelIID, sevenTVEmoteSetID);
 
         List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
-        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToRemove);
+        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToRemove, false);
 
         if (sevenTVEmotesFiltered.isEmpty())
         {

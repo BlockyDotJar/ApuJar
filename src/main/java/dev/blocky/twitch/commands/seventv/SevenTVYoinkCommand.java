@@ -122,7 +122,7 @@ public class SevenTVYoinkCommand implements ICommand
         sevenTVEmoteSet = ServiceProvider.getSevenTVEmoteSet(channelIID, sevenTVEmoteSetID);
 
         List<SevenTVEmote> sevenTVEmotes = sevenTVEmoteSet.getEmotes();
-        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToYoink);
+        List<SevenTVEmote> sevenTVEmotesFiltered = SevenTVUtils.getFilteredEmotes(sevenTVEmotes, emoteToYoink, false);
 
         if (sevenTVEmotesFiltered.isEmpty())
         {

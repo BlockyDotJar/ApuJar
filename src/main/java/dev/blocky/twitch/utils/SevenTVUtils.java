@@ -25,7 +25,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -110,56 +109,46 @@ public class SevenTVUtils
     }
 
     @NonNull
-    public static SevenTV getUserCosmentics(@NonNull String sevenTVUserID) throws IOException
+    public static SevenTV updateUserEditors(@NonNull String userID, @NonNull String editorID, int permissions) throws IOException
     {
         String query = """
-                    query GetUserCosmetics($id: ObjectID!) {
-                        user(id: $id) {
-                            cosmetics {
+                mutation UpdateUserEditors($id: ObjectID!, $editor_id: ObjectID!, $d: UserEditorUpdate!) {
+                    user(id: $id) {
+                        editors(editor_id: $editor_id, data: $d) {
+                            id
+                            visible
+                            user {
                                 id
-                                kind
-                                selected
+                                username
+                                display_name
+                                roles
                             }
-                        }
-                    }
-                """;
-
-        Map<String, Object> variables = Map.of("id", sevenTVUserID);
-
-        SevenTVGQLBody gql = new SevenTVGQLBody("GetUserCosmetics", variables, query);
-
-        return ServiceProvider.postSevenTVGQL(gql);
-    }
-
-    @NonNull
-    public static SevenTV getCosmentics(@NonNull String cosmeticID) throws IOException
-    {
-        String query = """
-                query GetCosmestics($list: [ObjectID!]) {
-                    cosmetics(list: $list) {
-                        paints {
-                            id
-                            name
-                        }
-                        badges {
-                            id
-                            name
+                            added_at
+                            permissions
                         }
                     }
                 }
                 """;
 
+        Map<String, Object> d = Map.of
+                (
+                        "permissions", permissions
+                );
 
-        List<String> list = Collections.singletonList(cosmeticID);
-        Map<String, Object> variables = Map.of("list", list);
+        Map<String, Object> variables = Map.of
+                (
+                        "id", userID,
+                        "editor_id", editorID,
+                        "d", d
+                );
 
-        SevenTVGQLBody gql = new SevenTVGQLBody("GetCosmestics", variables, query);
+        SevenTVGQLBody gql = new SevenTVGQLBody("UpdateUserEditors", variables, query);
 
         return ServiceProvider.postSevenTVGQL(gql);
     }
 
     @NonNull
-    public static List<SevenTVEmote> getFilteredEmotes(@NonNull List<SevenTVEmote> sevenTVEmotes, @NonNull String emoteName)
+    public static List<SevenTVEmote> getFilteredEmotes(@NonNull List<SevenTVEmote> sevenTVEmotes, @NonNull String emoteName, boolean ignoreCase)
     {
         SevenTVEmoteComparator emoteComparator = new SevenTVEmoteComparator(emoteName);
 
@@ -167,7 +156,7 @@ public class SevenTVUtils
                 .filter(sevenTVEmote ->
                 {
                     String sevenTVEmoteName = sevenTVEmote.getEmoteName();
-                    return sevenTVEmoteName.equalsIgnoreCase(emoteName);
+                    return ignoreCase ? sevenTVEmoteName.equalsIgnoreCase(emoteName) : sevenTVEmoteName.equals(emoteName);
                 })
                 .sorted(emoteComparator)
                 .toList();
