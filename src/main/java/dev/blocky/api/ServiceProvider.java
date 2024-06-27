@@ -105,7 +105,7 @@ public class ServiceProvider
             case "YouTubeDislikesService" -> "https://returnyoutubedislikeapi.com/";
             case "TwitchGQLService" -> "https://gql.twitch.tv/";
             case "KokBinService" -> "https://paste.blockyjar.dev/";
-            case "SusgeLogsService" -> "https://logsback.susgee.dev/";
+            case "SusgeLogsService" -> "https://logs.susgee.dev/";
             case "StreamElementsService" -> STR."https://api.streamelements.com/kappa/v\{STREAMELEMENTS_API_VERSION}/";
             case "ToolsService" -> "https://tools.2807.eu/api/";
             default -> null;

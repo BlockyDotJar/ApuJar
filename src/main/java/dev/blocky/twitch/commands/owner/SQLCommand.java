@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
 import static dev.blocky.twitch.utils.TwitchUtils.removeElements;
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
@@ -53,36 +54,44 @@ public class SQLCommand implements ICommand
             return;
         }
 
-        if (StringUtils.startsWithIgnoreCase(sql, "SELECT"))
+        try
         {
-            try (ResultSet set = SQLite.onQuery(sql))
+            if (StringUtils.startsWithIgnoreCase(sql, "SELECT"))
             {
-                ResultSetMetaData resultMetaData = set.getMetaData();
-                int columnCount = resultMetaData.getColumnCount();
-
-                StringBuilder output = new StringBuilder();
-
-                for (int col = 1; col <= columnCount; col++)
+                try (ResultSet set = SQLite.onQuery(sql))
                 {
-                    String columnLabel = resultMetaData.getColumnLabel(col);
-                    output.append(columnLabel).append(" ");
-                }
+                    ResultSetMetaData resultMetaData = set.getMetaData();
+                    int columnCount = resultMetaData.getColumnCount();
 
-                output.append(" - ");
+                    StringBuilder output = new StringBuilder();
 
-                while (set.next())
-                {
                     for (int col = 1; col <= columnCount; col++)
                     {
-                        String object = set.getObject(col).toString();
-                        output.append(object).append(" ");
+                        String columnLabel = resultMetaData.getColumnLabel(col);
+                        output.append(columnLabel).append(" ");
                     }
 
                     output.append(" - ");
-                }
 
-                sendChatMessage(channelID, output.toString());
+                    while (set.next())
+                    {
+                        for (int col = 1; col <= columnCount; col++)
+                        {
+                            String object = set.getObject(col).toString();
+                            output.append(object).append(" ");
+                        }
+
+                        output.append(" - ");
+                    }
+
+                    sendChatMessage(channelID, output.toString());
+                }
             }
+        }
+        catch (SQLException e)
+        {
+            String errorMessage = e.getMessage();
+            sendChatMessage(channelID, STR."ApuApustaja \{errorMessage}");
         }
     }
 }
