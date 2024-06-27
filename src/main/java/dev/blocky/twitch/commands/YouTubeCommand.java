@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.yt.NoEmbed;
 import dev.blocky.api.entities.yt.YouTubeDislikes;
@@ -38,13 +36,11 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class YouTubeCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
         if (messageParts.length == 1)
         {

@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -33,14 +31,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class CommandsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-
-        String chatToSend = getUserAsString(messageParts, eventUser);
+        String chatToSend = getUserAsString(messageParts, eventUserName);
         List<User> chatsToSend = retrieveUserList(client, chatToSend);
 
         if (chatsToSend.isEmpty())

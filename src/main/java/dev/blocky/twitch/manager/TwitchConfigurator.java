@@ -17,10 +17,11 @@
  */
 package dev.blocky.twitch.manager;
 
-import com.github.twitch4j.TwitchClient;
+import com.github.philippheuer.events4j.core.EventManager;
 import com.github.twitch4j.chat.TwitchChat;
+import com.github.twitch4j.eventsub.socket.IEventSubSocket;
+import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.Set;
@@ -30,21 +31,25 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class TwitchConfigurator
 {
     private final Set<Chat> chats;
-    private final TwitchClient client;
+    private final IEventSubSocket eventSocket;
+    private final EventManager eventManager;
+    private final TwitchChat chat;
 
-    public TwitchConfigurator(@NonNull TwitchClient client)
+    public TwitchConfigurator(@NonNull IEventSubSocket eventSocket, @NonNull EventManager eventManager, @NonNull TwitchChat chat)
     {
         this.chats = SQLUtils.getChats();
-        this.client = client;
+        this.eventSocket = eventSocket;
+        this.eventManager = eventManager;
+        this.chat = chat;
     }
 
     public void configure()
     {
-        TwitchChat chat = client.getChat();
-
         sendChatMessage("896181679", "ppCircle Trying to connect to Twitch websocket...");
 
-        int chatCount = 1;
+        int chatCount = 0;
+
+        ChannelJoinManager joinManager = new ChannelJoinManager(eventSocket, eventManager);
 
         for (Chat ch : chats)
         {
@@ -53,7 +58,13 @@ public class TwitchConfigurator
 
             try
             {
-                chat.joinChannel(chatLogin);
+                if (!chatLogin.equalsIgnoreCase("ApuJar"))
+                {
+                    chat.joinChannel(chatLogin);
+                }
+
+                joinManager.joinChannel(chatID);
+
                 chatCount++;
             }
             catch (Exception e)
@@ -65,7 +76,7 @@ public class TwitchConfigurator
 
                 if (chatCount >= 100)
                 {
-                    sendChatMessage(chatID, "heyy Because i'm in over 100 channels, it is possible, that i am not able to look into your chat anymore due to some Twitch API changes https://links.blockyjar.dev/m8mrybgQKR1 You might need to give moderator permission to me to work properly FeelsOkayMan");
+                    sendChatMessage(chatID, "heyy Because i'm in over 100 channels, it is possible, that i am not able to look into your chat anymore due to some Twitch API changes https://discuss.dev.twitch.com/t/54997 You might need to give moderator permission to me to work properly FeelsOkayMan");
                 }
 
                 sendChatMessage("896181679", STR."Weird Error while trying to connect to \{chatLogin}'s chat FeelsGoodMan \{error} (\{clazzName})");

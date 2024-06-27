@@ -18,7 +18,7 @@
 package dev.blocky.twitch.utils;
 
 import dev.blocky.twitch.manager.SQLite;
-import dev.blocky.twitch.utils.serialization.SpotifyUser;
+import dev.blocky.twitch.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.joda.time.LocalDateTime;

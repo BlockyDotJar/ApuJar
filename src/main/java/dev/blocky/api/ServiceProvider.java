@@ -21,16 +21,16 @@ import dev.blocky.api.entities.blockyjar.BlockyJarBible;
 import dev.blocky.api.entities.blockyjar.BlockyJarBibleEntry;
 import dev.blocky.api.entities.blockyjar.KokbinPaste;
 import dev.blocky.api.entities.github.GitHubRelease;
-import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.api.entities.lilb.LiLBChatter;
 import dev.blocky.api.entities.maps.GeoCountryCode;
 import dev.blocky.api.entities.maps.MapSearch;
-import dev.blocky.api.entities.modscanner.ModScanner;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.seventv.*;
 import dev.blocky.api.entities.stats.StreamElementsChatStats;
+import dev.blocky.api.entities.tools.ToolsFounder;
+import dev.blocky.api.entities.tools.ToolsModVIP;
 import dev.blocky.api.entities.wordle.Wordle;
 import dev.blocky.api.entities.yt.NoEmbed;
 import dev.blocky.api.entities.yt.YouTubeDislikes;
@@ -63,7 +63,6 @@ public class ServiceProvider
 
     private static final SevenTVGQLErrorInterceptor sevenTVGQLErrorInterceptor = new SevenTVGQLErrorInterceptor();
 
-    private static final ModScannerErrorInterceptor modScannerErrorInterceptor = new ModScannerErrorInterceptor();
     private static final GeonameErrorInterceptor geonameErrorInterceptor = new GeonameErrorInterceptor();
     private static final GitHubErrorInterceptor gitHubErrorInterceptor = new GitHubErrorInterceptor();
 
@@ -93,7 +92,6 @@ public class ServiceProvider
 
         String baseURL = switch (simpleClassName)
         {
-            case "ModScannerService" -> "https://api.modscanner.com/twitch/";
             case "IVRService" -> STR."https://api.ivr.fi/v\{IVR_API_VERSION}/";
             case "SevenTVService" -> STR."https://7tv.io/v\{SEVENTV_API_VERSION}/";
             case "GitHubService" -> "https://api.github.com/";
@@ -109,6 +107,7 @@ public class ServiceProvider
             case "KokBinService" -> "https://paste.blockyjar.dev/";
             case "SusgeLogsService" -> "https://logsback.susgee.dev/";
             case "StreamElementsService" -> STR."https://api.streamelements.com/kappa/v\{STREAMELEMENTS_API_VERSION}/";
+            case "ToolsService" -> "https://tools.2807.eu/api/";
             default -> null;
         };
 
@@ -120,24 +119,6 @@ public class ServiceProvider
                 .build();
 
         return retrofit.create(clazz);
-    }
-
-    @NonNull
-    public static ModScanner getModScannerUser(@NonNull String userName) throws IOException
-    {
-        ModScannerService msService = ServiceProvider.createService(ModScannerService.class, modScannerErrorInterceptor);
-        Call<ModScanner> msCall = msService.getUser(userName);
-        Response<ModScanner> response = msCall.execute();
-        return response.body();
-    }
-
-    @NonNull
-    public static ModScanner getModScannerChannel(@NonNull String channelName) throws IOException
-    {
-        ModScannerService msService = ServiceProvider.createService(ModScannerService.class, modScannerErrorInterceptor);
-        Call<ModScanner> msCall = msService.getChannel(channelName);
-        Response<ModScanner> response = msCall.execute();
-        return response.body();
     }
 
     @NonNull
@@ -158,22 +139,52 @@ public class ServiceProvider
         return response.body();
     }
 
-    @NonNull
-    public static IVR getIVRModVip(@NonNull String channelName) throws IOException
+    @Nullable
+    public static List<ToolsModVIP> getToolsMods(@NonNull String channelName) throws IOException
     {
-        IVRService ivrService = ServiceProvider.createService(IVRService.class);
-        Call<IVR> ivrCall = ivrService.getModVip(channelName);
-        Response<IVR> response = ivrCall.execute();
-        return response.body();
+        ToolsService toolsService = ServiceProvider.createService(ToolsService.class);
+        Call<List<ToolsModVIP>> toolsCall = toolsService.getMods(channelName);
+        Response<List<ToolsModVIP>> response = toolsCall.execute();
+        List<ToolsModVIP> toolsMods = response.body();
+
+        if (toolsMods == null)
+        {
+            return null;
+        }
+
+        return toolsMods.stream().filter(toolsMod -> !toolsMod.isBanned()).toList();
     }
 
     @Nullable
-    public static IVR getIVRFounders(@NonNull String login) throws IOException
+    public static List<ToolsModVIP> getToolsVIPs(@NonNull String channelName) throws IOException
     {
-        IVRService ivrService = ServiceProvider.createService(IVRService.class);
-        Call<IVR> ivrCall = ivrService.getFounders(login);
-        Response<IVR> response = ivrCall.execute();
-        return response.body();
+        ToolsService toolsService = ServiceProvider.createService(ToolsService.class);
+        Call<List<ToolsModVIP>> toolsCall = toolsService.getVIPs(channelName);
+        Response<List<ToolsModVIP>> response = toolsCall.execute();
+        List<ToolsModVIP> toolsVIPs = response.body();
+
+        if (toolsVIPs == null)
+        {
+            return null;
+        }
+
+        return toolsVIPs.stream().filter(toolsMod -> !toolsMod.isBanned()).toList();
+    }
+
+    @Nullable
+    public static List<ToolsFounder> getToolsFounders(@NonNull String userName) throws IOException
+    {
+        ToolsService toolsService = ServiceProvider.createService(ToolsService.class);
+        Call<List<ToolsFounder>> toolsCall = toolsService.getFounders(userName);
+        Response<List<ToolsFounder>> response = toolsCall.execute();
+        List<ToolsFounder> toolsFounders = response.body();
+
+        if (toolsFounders == null)
+        {
+            return null;
+        }
+
+        return toolsFounders.stream().filter(toolsMod -> !toolsMod.isBanned()).toList();
     }
 
     @Nullable

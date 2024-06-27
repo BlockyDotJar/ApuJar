@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.seventv;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.*;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -38,16 +36,14 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVAddCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
-        String channelID = channel.getId();
+        String channelName = event.getBroadcasterUserName();
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
@@ -58,7 +54,7 @@ public class SevenTVAddCommand implements ICommand
 
         boolean hasCaseInsensitiveParameter = hasRegExParameter(messageParts, "-(cis|case-insensitive)");
 
-        String emoteToAdd = getParameterAsString(messageParts, "-(cis|case-insensitive)");
+        String emoteToAdd = getParameterAsString(messageParts, "-(cis|case-insensitive)", 1);
 
         if (emoteToAdd.matches("https?://7tv.app/emotes/[a-z\\d]{24}"))
         {

@@ -20,19 +20,21 @@ package dev.blocky.twitch;
 import com.github.philippheuer.credentialmanager.CredentialManager;
 import com.github.philippheuer.credentialmanager.CredentialManagerBuilder;
 import com.github.philippheuer.credentialmanager.domain.OAuth2Credential;
+import com.github.philippheuer.events4j.api.IEventManager;
 import com.github.philippheuer.events4j.core.EventManager;
-import com.github.philippheuer.events4j.simple.SimpleEventHandler;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.auth.providers.TwitchIdentityProvider;
 import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.common.util.ThreadUtils;
+import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.api.exceptions.Unauthorized;
 import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.manager.PrivateCommandManager;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.manager.TwitchConfigurator;
+import dev.blocky.twitch.scheduler.HolidayScheduler;
 import dev.blocky.twitch.scheduler.InformationMessageScheduler;
 import dev.blocky.twitch.scheduler.TicTacToeScheduler;
 import dev.blocky.twitch.utils.OSUtils;
@@ -46,7 +48,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -186,22 +187,28 @@ public class Main
                 .withDefaultAuthToken(credential)
                 .withChatAccount(credential)
                 .withEnableHelix(true)
+                .withEnableEventSocket(true)
                 .withEnableChat(true);
 
         client = clientBuilder.build();
         helix = client.getHelix();
 
-        TwitchConfigurator configurator = new TwitchConfigurator(client);
+        IEventSubSocket eventSocket = client.getEventSocket();
+        EventManager clientEventManger = client.getEventManager();
+        TwitchChat chat = client.getChat();
+
+        TwitchConfigurator configurator = new TwitchConfigurator(eventSocket, clientEventManger, chat);
         configurator.configure();
 
-        EventManager eventManager = client.getEventManager();
-        SimpleEventHandler eventHandler = eventManager.getEventHandler(SimpleEventHandler.class);
+        IEventManager eventManager = eventSocket.getEventManager();
 
-        new CommandManager(eventHandler);
-        new PrivateCommandManager(eventHandler);
+        new CommandManager(eventManager);
+        new PrivateCommandManager(eventManager);
 
         new InformationMessageScheduler();
         new TicTacToeScheduler();
+
+        new HolidayScheduler();
 
         /*
          *  new StreamAwardsScheduler();
@@ -263,7 +270,7 @@ public class Main
                     }
                 }
             }
-            catch (IOException | InterruptedException | SQLException e)
+            catch (Exception e)
             {
                 e.printStackTrace();
             }

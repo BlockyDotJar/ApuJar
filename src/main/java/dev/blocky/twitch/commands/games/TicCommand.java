@@ -18,15 +18,13 @@
 package dev.blocky.twitch.commands.games;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
+import dev.blocky.twitch.serialization.TicTacToe;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TTTMinimaxAI;
-import dev.blocky.twitch.utils.serialization.TicTacToe;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
@@ -42,15 +40,13 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class TicCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         TicTacToe ticTacToe = SQLUtils.getTicTacToeGame(channelIID);

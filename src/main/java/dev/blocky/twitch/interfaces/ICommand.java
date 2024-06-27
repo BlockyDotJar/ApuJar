@@ -18,10 +18,10 @@
 package dev.blocky.twitch.interfaces;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 public interface ICommand
 {
-    void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception;
+    void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception;
 }

@@ -22,7 +22,7 @@ import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Location;
+import dev.blocky.twitch.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.stream.Collectors;

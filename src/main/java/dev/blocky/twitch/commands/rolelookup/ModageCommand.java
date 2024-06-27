@@ -15,24 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.modscanner;
+package dev.blocky.twitch.commands.rolelookup;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
-import dev.blocky.api.entities.ivr.IVRModVIP;
-import dev.blocky.api.entities.modscanner.ModScanner;
-import dev.blocky.api.entities.modscanner.ModScannerUser;
+import dev.blocky.api.entities.tools.ToolsModVIP;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
@@ -40,13 +36,11 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ModageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
         if (messageParts.length == 1)
         {
@@ -55,7 +49,7 @@ public class ModageCommand implements ICommand
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
-        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUserName);
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
@@ -92,59 +86,34 @@ public class ModageCommand implements ICommand
         String secondUserLogin = secondUser.getLogin();
         String secondUserDisplayName = secondUser.getDisplayName();
 
-        IVR ivr = ServiceProvider.getIVRModVip(secondUserLogin);
-        boolean hasModeratorPerms = false;
+        List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(secondUserLogin);
 
-        Date grantedAt = null;
-
-        for (IVRModVIP ivrModVIP : ivr.getMods())
+        if (toolsMods == null)
         {
-            String modLogin = ivrModVIP.getUserLogin();
-
-            if (!modLogin.equals(userLogin))
-            {
-                continue;
-            }
-
-            hasModeratorPerms = true;
-            grantedAt = ivrModVIP.getGrantedAt();
-            break;
+            sendChatMessage(channelID, STR."Sadeg There are no mods in \{secondUserDisplayName}'s chat at the moment.");
+            return;
         }
 
-        ModScanner modScanner = ServiceProvider.getModScannerChannel(secondUserLogin);
-
-        for (ModScannerUser msUser : modScanner.getChannelModerators())
+        Optional<ToolsModVIP> optionalToolsMods = toolsMods.stream().filter(tm ->
         {
-            String modLogin = msUser.getUserLogin();
+            String modLogin = tm.getUserLogin();
+            return modLogin.equals(userLogin);
+        }).findFirst();
 
-            if (!modLogin.equals(userLogin))
-            {
-                continue;
-            }
+        ToolsModVIP toolsMod = optionalToolsMods.orElse(null);
 
-            if (grantedAt == null)
-            {
-                grantedAt = msUser.getGrantedAt();
-            }
-            break;
-        }
-
-        if (!hasModeratorPerms)
+        if (toolsMod == null)
         {
             sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't mod in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
-        String readableGrantDate = "(UNKNOWN_GRANT_DATE)";
+        Date grantedAt = toolsMod.getGrantedAt();
 
-        if (grantedAt != null)
-        {
-            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-            String formattedGrantDate = formatter.format(grantedAt);
-            readableGrantDate = STR."since \{formattedGrantDate}";
-        }
+        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        String formattedGrantDate = formatter.format(grantedAt);
 
-        String messageToSend = STR."NOWAYING \{userDisplayName} mods \{secondUserDisplayName}'s chat \{readableGrantDate} PogU";
+        String messageToSend = STR."NOWAYING \{userDisplayName} mods \{secondUserDisplayName}'s chat since \{formattedGrantDate} PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

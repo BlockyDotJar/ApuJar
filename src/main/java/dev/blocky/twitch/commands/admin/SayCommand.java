@@ -18,33 +18,22 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
-import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
-
-import java.util.Map;
-import java.util.Set;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class SayCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
-        String channelID = channel.getId();
+        String channelName = event.getBroadcasterUserName();
+        String channelID = event.getBroadcasterUserId();
+        int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
@@ -55,32 +44,10 @@ public class SayCommand implements ICommand
 
         String messageToSend = removeElements(messageParts, 1);
 
-        Map<Integer, String> owners = SQLUtils.getOwners();
-        Set<Integer> ownerIDs = owners.keySet();
-
-        if (messageToSend.startsWith("/"))
+        if (messageToSend.startsWith("/") && !messageToSend.equals("/"))
         {
-            if (!ownerIDs.contains(eventUserIID))
-            {
-                sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
-                return;
-            }
-
-            IVR ivr = ServiceProvider.getIVRModVip(channelName);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
-            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
-
-            if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
-            {
-                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
-                return;
-            }
-
-            if (!selfModeratorPerms && !channelName.equalsIgnoreCase("ApuJar"))
-            {
-                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
-                return;
-            }
+            handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, 1);
+            return;
         }
 
         boolean isSendable = checkChatSettings(messageParts, channelName, channelID, channelID);

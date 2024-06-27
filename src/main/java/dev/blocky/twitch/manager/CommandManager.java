@@ -17,19 +17,21 @@
  */
 package dev.blocky.twitch.manager;
 
-import com.github.philippheuer.events4j.simple.SimpleEventHandler;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.philippheuer.events4j.api.IEventManager;
+import com.github.twitch4j.eventsub.domain.chat.Message;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.Command;
+import dev.blocky.twitch.serialization.Keyword;
+import dev.blocky.twitch.serialization.Prefix;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Command;
-import dev.blocky.twitch.utils.serialization.Keyword;
-import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,12 +46,12 @@ public class CommandManager
 
     public static final HashMap<Integer, Long> ratelimitedChats = new HashMap<>();
 
-    public CommandManager(@NonNull SimpleEventHandler eventHandler)
+    public CommandManager(@NonNull IEventManager eventManager)
     {
-        eventHandler.onEvent(ChannelMessageEvent.class, this::onChannelMessage);
+        eventManager.onEvent(ChannelChatMessageEvent.class, this::onChannelChatMessage);
     }
 
-    boolean onMessage(@NonNull String commandOrAlias, @NonNull ChannelMessageEvent event, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    boolean onChatMessage(@NonNull String commandOrAlias, @NonNull ChannelChatMessageEvent event, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         Set<Command> commands = SQLUtils.getCommands();
 
@@ -68,16 +70,14 @@ public class CommandManager
         return false;
     }
 
-    public void onChannelMessage(@NonNull ChannelMessageEvent event)
+    public void onChannelChatMessage(@NonNull ChannelChatMessageEvent event)
     {
-        EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
-        String channelID = channel.getId();
+        String channelName = event.getBroadcasterUserName();
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         if (eventUserIID == 896181679)
@@ -102,7 +102,8 @@ public class CommandManager
                 ratelimitedChats.remove(channelIID);
             }
 
-            String message = event.getMessage();
+            Message message = event.getMessage();
+            String cleanedMessage = message.getCleanedText();
 
             Prefix prefix = SQLUtils.getPrefix(channelIID);
             String actualPrefix = prefix.getPrefix();
@@ -111,7 +112,7 @@ public class CommandManager
             boolean caseInsensitivePrefix = prefix.isCaseInsensitive();
 
             Pattern PREFIX_PATTERN = Pattern.compile("(.*)?@?apujar,?\\s+?prefix(.*)?", CASE_INSENSITIVE);
-            Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(message);
+            Matcher PREFIX_MATCHER = PREFIX_PATTERN.matcher(cleanedMessage);
 
             SQLUtils.correctUserLogin(eventUserIID, eventUserName);
 
@@ -123,10 +124,10 @@ public class CommandManager
 
             TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();
 
-            if ((message.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
-                    (StringUtils.startsWithIgnoreCase(message, actualPrefix) && caseInsensitivePrefix))
+            if ((cleanedMessage.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
+                    (StringUtils.startsWithIgnoreCase(cleanedMessage, actualPrefix) && caseInsensitivePrefix))
             {
-                String globalCommand = message.substring(prefixLength).strip();
+                String globalCommand = cleanedMessage.substring(prefixLength).strip();
 
                 if (globalCommands.containsKey(globalCommand))
                 {
@@ -135,7 +136,7 @@ public class CommandManager
                     return;
                 }
 
-                String commandRaw = message.substring(prefixLength).strip();
+                String commandRaw = cleanedMessage.substring(prefixLength).strip();
 
                 String[] messagePartsRaw = commandRaw.split(" ");
                 String[] messageParts = getFilteredParts(messagePartsRaw);
@@ -166,10 +167,10 @@ public class CommandManager
                         return;
                     }
 
-                    String[] prefixedMessagePartsRaw = message.split(" ");
+                    String[] prefixedMessagePartsRaw = cleanedMessage.split(" ");
                     String[] prefixedMessageParts = getFilteredParts(prefixedMessagePartsRaw);
 
-                    if (!command.isBlank() && !onMessage(command, event, prefixedMessageParts, messageParts))
+                    if (!command.isBlank() && !onChatMessage(command, event, prefixedMessageParts, messageParts))
                     {
                         sendChatMessage(channelID, STR."Sadeg '\{command}' command wasn't found.");
                     }
@@ -188,8 +189,8 @@ public class CommandManager
                 boolean exactMatch = keyword.isExactMatch();
                 boolean caseInsensitiveKeyword = keyword.isCaseInsensitive();
 
-                if ((((message.equals(kw) && !caseInsensitiveKeyword) || (message.equalsIgnoreCase(kw) && caseInsensitiveKeyword)) && exactMatch) ||
-                        (((message.contains(kw) && !caseInsensitiveKeyword) || (StringUtils.containsIgnoreCase(message, kw) && caseInsensitiveKeyword)) && !exactMatch))
+                if ((((cleanedMessage.equals(kw) && !caseInsensitiveKeyword) || (cleanedMessage.equalsIgnoreCase(kw) && caseInsensitiveKeyword)) && exactMatch) ||
+                        (((cleanedMessage.contains(kw) && !caseInsensitiveKeyword) || (StringUtils.containsIgnoreCase(cleanedMessage, kw) && caseInsensitiveKeyword)) && !exactMatch))
                 {
                     long currentTimeMillis = System.currentTimeMillis();
 

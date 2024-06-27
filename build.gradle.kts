@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "dev.blocky.twitch"
-version = "2.0.0"
+version = "3.0.0"
 description = "A useful bot for Twitch with many cool utility features."
 
 repositories {
@@ -37,7 +37,7 @@ dependencies {
 
     api("org.xerial:sqlite-jdbc:3.46.0.0")
 
-    api("io.github.cdimascio:dotenv-java:3.0.0")
+    api("io.github.cdimascio:dotenv-java:3.0.1")
 
     api("joda-time:joda-time:2.12.7")
     api("org.quartz-scheduler:quartz:2.3.2")
@@ -48,7 +48,7 @@ dependencies {
     api("org.slf4j:slf4j-api:2.0.13")
     api("ch.qos.logback:logback-classic:1.5.6")
 
-    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.5")
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")
 }
 
 java {

@@ -18,8 +18,7 @@
 package dev.blocky.twitch.commands.owner;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
@@ -36,10 +35,9 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteAdminCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)

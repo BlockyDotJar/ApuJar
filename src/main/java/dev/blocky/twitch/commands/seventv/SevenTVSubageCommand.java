@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.seventv;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.seventv.SevenTVSubage;
@@ -37,14 +35,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVSubageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-
-        String userToCheck = getUserAsString(messageParts, eventUser);
+        String userToCheck = getUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToCheck))
         {
@@ -93,16 +89,16 @@ public class SevenTVSubageCommand implements ICommand
 
         if (willRenew)
         {
-            messageToSend = STR."\{messageToSend}, Renews: \{readableEndsAt}";
+            messageToSend += STR.", Renews: \{readableEndsAt}";
         }
 
-        messageToSend = STR."\{messageToSend})";
+        messageToSend += ")";
 
         String giftedBy = sevenTVSubage.getGiftedBy();
 
         if (giftedBy != null)
         {
-            messageToSend = STR."\{messageToSend} \{giftedBy} was so nice and gifted a sub for a \{unit} to \{userDisplayName} on \{readableStartedAt}";
+            messageToSend += STR." \{giftedBy} was so nice and gifted a sub for a \{unit} to \{userDisplayName} on \{readableStartedAt}";
         }
 
         channelID = getActualChannelID(channelToSend, channelID);

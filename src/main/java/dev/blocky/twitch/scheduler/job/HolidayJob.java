@@ -15,43 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.ivr;
+package dev.blocky.twitch.scheduler.job;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
 
-import java.util.ArrayList;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
-public class IVR
+public class HolidayJob implements Job
 {
-    @SerializedName("mods")
-    ArrayList<IVRModVIP> mods;
-
-    @SerializedName("vips")
-    ArrayList<IVRModVIP> vips;
-
-    @SerializedName("founders")
-    ArrayList<IVRFounder> founders;
-
-    @Nullable
-    public ArrayList<IVRModVIP> getMods()
+    @Override
+    public void execute(@NonNull JobExecutionContext context)
     {
-        return mods;
-    }
-
-    @Nullable
-    public ArrayList<IVRModVIP> getVIPs()
-    {
-        return vips;
-    }
-
-    @Nullable
-    public ArrayList<IVRFounder> getFounders()
-    {
-        return founders;
-    }
-
-    IVR()
-    {
+        sendChatMessage("896181679", "peepoSummer BlockyDotJar is not at home from 29.06.2024 - 03.07.2024 because he is Lounging in Berchtesgaden Gladge (Der hs lässt mich hier ganz alleine schuften UltraMad ) If you need him, set him a reminder with Susgee bot, dm him on discord or send him a dm on Twitch Okayeg");
     }
 }

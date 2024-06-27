@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.stats;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.stats.StreamElementsChatStats;
@@ -36,12 +34,10 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class TopEmotesCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
-
-        EventUser eventUser = event.getUser();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
         String emoteService = "*";
 
@@ -56,7 +52,7 @@ public class TopEmotesCommand implements ICommand
             }
         }
 
-        String userToGetTopEmotesFrom = getSecondUserAsString(messageParts, eventUser);
+        String userToGetTopEmotesFrom = getSecondUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToGetTopEmotesFrom))
         {
@@ -136,7 +132,7 @@ public class TopEmotesCommand implements ICommand
             return;
         }
 
-        messageToSend = STR."\{messageToSend} \{topEmotes}";
+        messageToSend += STR." \{topEmotes}";
 
         channelID = getActualChannelID(channelToSend, channelID);
 

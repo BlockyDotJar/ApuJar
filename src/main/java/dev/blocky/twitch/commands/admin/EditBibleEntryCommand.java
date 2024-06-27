@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.blockyjar.BlockyJarBibleEntry;
 import dev.blocky.api.request.BlockyJarBibleBody;
@@ -35,15 +33,13 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class EditBibleEntryCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)

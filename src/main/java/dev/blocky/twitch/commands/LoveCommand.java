@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,16 +30,14 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class LoveCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
-        String userToLookup = getUserAsString(messageParts, eventUser);
-        String secondUserToLookup = getSecondUserAsString(messageParts, eventUser);
+        String userToLookup = getUserAsString(messageParts, eventUserName);
+        String secondUserToLookup = getSecondUserAsString(messageParts, eventUserName);
 
         if ((eventUserName.equalsIgnoreCase(userToLookup) && eventUserName.equalsIgnoreCase(secondUserToLookup)) || userToLookup.equalsIgnoreCase(secondUserToLookup))
         {

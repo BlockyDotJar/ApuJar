@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVRSubage;
@@ -37,13 +35,11 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class FollowageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
         if (messageParts.length == 1)
         {
@@ -52,7 +48,7 @@ public class FollowageCommand implements ICommand
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
-        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUserName);
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equals(eventUserName))
         {

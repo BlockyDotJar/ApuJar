@@ -15,66 +15,43 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.utils.serialization;
+package dev.blocky.api.entities.tools;
 
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
-public class Location
+import java.util.Date;
+
+public class ToolsModVIP
 {
-    @SerializedName("latitude")
-    double latitude;
+    @SerializedName("login")
+    String userLogin;
 
-    @SerializedName("longitude")
-    double longitude;
+    @SerializedName("granted_at")
+    Date grantedAt;
 
-    @SerializedName("locationName")
-    String locationName;
-
-    @SerializedName("cityName")
-    String cityName;
-
-    @SerializedName("countryCode")
-    String countryCode;
-
-    @SerializedName("hideLocation")
-    boolean hidesLocation;
-
-    public double getLatitude()
-    {
-        return latitude;
-    }
-
-    public double getLongitude()
-    {
-        return longitude;
-    }
-
-    @NonNull
-    public String getLocationName()
-    {
-        return locationName;
-    }
+    @SerializedName("banned")
+    boolean isBanned;
 
     @Nullable
-    public String getCityName()
+    public Date getGrantedAt()
     {
-        return cityName;
+        return grantedAt;
     }
 
     @NonNull
-    public String getCountryCode()
+    public String getUserLogin()
     {
-        return countryCode;
+        return userLogin;
     }
 
-    public boolean hidesLocation()
+    public boolean isBanned()
     {
-        return hidesLocation;
+        return isBanned;
     }
 
-    Location()
+    ToolsModVIP()
     {
     }
 }

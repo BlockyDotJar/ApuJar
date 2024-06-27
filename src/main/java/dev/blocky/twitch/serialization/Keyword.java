@@ -15,42 +15,48 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.ivr;
+package dev.blocky.twitch.serialization;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-import java.util.Date;
-
-public class IVRFounder
+public class Keyword
 {
-    @SerializedName("isSubscribed")
-    boolean isSubscribed;
+    @SerializedName("name")
+    String name;
 
-    @SerializedName("entitlementStarted")
-    Date entitlementStarted;
+    @SerializedName("message")
+    String message;
 
-    @SerializedName("login")
-    String userLogin;
+    @SerializedName("exactMatch")
+    boolean exactMatch;
 
-    public boolean isSubscribed()
+    @SerializedName("caseInsensitive")
+    boolean isCaseInsensitive;
+
+    @NonNull
+    public String getName()
     {
-        return isSubscribed;
+        return name;
     }
 
     @NonNull
-    public Date getEntitlementStart()
+    public String getMessage()
     {
-        return entitlementStarted;
+        return message;
     }
 
-    @NonNull
-    public String getUserLogin()
+    public boolean isExactMatch()
     {
-        return userLogin;
+        return exactMatch;
     }
 
-    IVRFounder()
+    public boolean isCaseInsensitive()
+    {
+        return isCaseInsensitive;
+    }
+
+    Keyword()
     {
     }
 }

@@ -17,7 +17,7 @@
  */
 package dev.blocky.twitch.scheduler.job;
 
-import com.github.twitch4j.chat.TwitchChat;
+import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.joda.time.LocalDateTime;
@@ -25,10 +25,8 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 
 import java.util.Date;
-import java.util.Map;
 import java.util.Set;
 
-import static dev.blocky.twitch.Main.client;
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 @Deprecated
@@ -70,12 +68,11 @@ public class StreamAwardsJob implements Job
 
             Set<String> chatLogins = SQLUtils.getEnabledEventNotificationChatLogins();
 
-            TwitchChat chat = client.getChat();
-            Map<String, String> chatIDs = chat.getChannelNameToChannelId();
-
             for (String chatLogin : chatLogins)
             {
-                String chatID = chatIDs.get(chatLogin);
+                Chat chat = SQLUtils.getChat(chatLogin);
+                int chatID = chat.getUserID();
+
                 sendChatMessage(chatID, STR."Pag \{sentenceBegin} \{sentenceEnding} PauseChamp \uD83D\uDC49 https://twitch.tv/revedtv");
             }
         }

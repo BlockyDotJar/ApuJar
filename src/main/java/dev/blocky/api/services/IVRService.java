@@ -17,7 +17,6 @@
  */
 package dev.blocky.api.services;
 
-import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRUser;
 import retrofit2.Call;
@@ -34,10 +33,4 @@ public interface IVRService
 
     @GET("twitch/subage/{user}/{channel}")
     Call<IVRSubage> getSubage(@Path("user") String user, @Path("channel") String channel);
-
-    @GET("twitch/modvip/{channel}")
-    Call<IVR> getModVip(@Path("channel") String channel);
-
-    @GET("twitch/founders/{login}")
-    Call<IVR> getFounders(@Path("login") String login);
 }

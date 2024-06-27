@@ -18,8 +18,7 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.wordle.Wordle;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -34,10 +33,9 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class WordleCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         LocalDate now = LocalDate.now();

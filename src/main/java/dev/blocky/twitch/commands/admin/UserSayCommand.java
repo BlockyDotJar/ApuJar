@@ -18,22 +18,16 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.Command;
+import dev.blocky.twitch.serialization.Prefix;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.TwitchUtils;
-import dev.blocky.twitch.utils.serialization.Command;
-import dev.blocky.twitch.utils.serialization.Prefix;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -44,15 +38,12 @@ public class UserSayCommand implements ICommand
     public static String channelToSend;
 
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
+        int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
@@ -91,32 +82,10 @@ public class UserSayCommand implements ICommand
 
         String messageToSend = removeElements(messageParts, 2);
 
-        Map<Integer, String> owners = SQLUtils.getOwners();
-        Set<Integer> ownerIDs = owners.keySet();
-
-        if (messageToSend.startsWith("/"))
+        if (messageToSend.startsWith("/") && !messageToSend.equals("/"))
         {
-            if (!ownerIDs.contains(eventUserIID))
-            {
-                sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
-                return;
-            }
-
-            IVR ivr = ServiceProvider.getIVRModVip(channelName);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
-            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
-
-            if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
-            {
-                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
-                return;
-            }
-
-            if (!selfModeratorPerms && !channelName.equalsIgnoreCase("ApuJar"))
-            {
-                sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not the broadcaster or a moderator.");
-                return;
-            }
+            handleSlashCommands(channelIID, eventUserIID, userIID, messageParts, 2);
+            return;
         }
 
         Set<Command> commands = SQLUtils.getCommands();
@@ -189,12 +158,26 @@ public class UserSayCommand implements ICommand
         {
             String message = globalCommands.get(command);
 
-            sendChatMessage(userID, message);
+            boolean wasSent = sendChatMessage(userID, message);
+
+            if (!wasSent)
+            {
+                sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
+                return;
+            }
+
             sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
             return;
         }
 
-        sendChatMessage(userID, messageToSend);
+        boolean wasSent = sendChatMessage(userID, messageToSend);
+
+        if (!wasSent)
+        {
+            sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
+            return;
+        }
+
         sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
     }
 }

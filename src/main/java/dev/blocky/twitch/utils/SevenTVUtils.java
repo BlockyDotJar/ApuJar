@@ -169,9 +169,9 @@ public class SevenTVUtils
         if (allowedUserIDsRaw != null)
         {
             List<Integer> allowedUserIIDs = allowedUserIDsRaw.stream()
-                        .mapToInt(Integer::parseInt)
-                        .boxed()
-                        .toList();
+                    .mapToInt(Integer::parseInt)
+                    .boxed()
+                    .toList();
 
             return allowedUserIIDs.stream().anyMatch(allowedUserIID -> allowedUserIID == userID);
         }
@@ -197,6 +197,11 @@ public class SevenTVUtils
 
         SevenTVUser sevenTVUser = sevenTVTwitchUser.getUser();
         List<SevenTVUser> sevenTVEditors = sevenTVUser.getEditors();
+
+        if (sevenTVEditors == null)
+        {
+            return false;
+        }
 
         sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, userID);
 

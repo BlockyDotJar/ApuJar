@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.lilb.LiLBChatter;
@@ -35,12 +33,10 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class IsInChatCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
-
-        EventUser eventUser = event.getUser();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
@@ -49,7 +45,7 @@ public class IsInChatCommand implements ICommand
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
-        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
@@ -75,6 +71,13 @@ public class IsInChatCommand implements ICommand
         String secondUserLogin = secondUser.getLogin();
 
         LiLBChatter lilbChatter = ServiceProvider.getChatter(secondUserLogin);
+
+        if (lilbChatter == null)
+        {
+            sendChatMessage(channelID, "FeelsOkayMan lilb API server error. dink lilb_lxryer");
+            return;
+        }
+
         List<String> chatters = lilbChatter.getChatters();
 
         boolean isInChat = chatters.stream().anyMatch(userLogin::equalsIgnoreCase);

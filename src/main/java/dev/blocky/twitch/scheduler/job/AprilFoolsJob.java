@@ -17,17 +17,15 @@
  */
 package dev.blocky.twitch.scheduler.job;
 
-import com.github.twitch4j.chat.TwitchChat;
+import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static dev.blocky.twitch.Main.client;
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 @Deprecated
@@ -40,12 +38,10 @@ public class AprilFoolsJob implements Job
         {
             Set<String> chatLogins = SQLUtils.getEnabledEventNotificationChatLogins();
 
-            TwitchChat chat = client.getChat();
-            Map<String, String> chatIDs = chat.getChannelNameToChannelId();
-
             for (String chatLogin : chatLogins)
             {
-                String chatID = chatIDs.get(chatLogin);
+                Chat chat = SQLUtils.getChat(chatLogin);
+                int chatID = chat.getUserID();
 
                 for (int i = 0; i < 3;i++)
                 {

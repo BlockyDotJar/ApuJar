@@ -18,17 +18,14 @@
 package dev.blocky.twitch.utils;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.helix.domain.*;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
-import dev.blocky.api.entities.ivr.IVRModVIP;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRSubageMeta;
 import dev.blocky.api.entities.stats.StreamElementsChatter;
 import dev.blocky.api.entities.stats.StreamElementsEmote;
+import dev.blocky.api.entities.tools.ToolsModVIP;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.RegExUtils;
@@ -36,15 +33,12 @@ import org.apache.commons.lang3.exception.ContextedRuntimeException;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-import static dev.blocky.twitch.Main.helix;
+import static dev.blocky.twitch.Main.*;
 import static dev.blocky.twitch.manager.CommandManager.ratelimitedChats;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
@@ -58,21 +52,21 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String getUserAsString(@NonNull String[] messageParts, @NonNull EventUser eventUser)
+    public static String getUserAsString(@NonNull String[] messageParts, @NonNull String eventUserName)
     {
-        return messageParts.length == 1 ? eventUser.getName() : getUserAsString(messageParts, 1);
+        return messageParts.length == 1 ? eventUserName : getUserAsString(messageParts, 1);
     }
 
     @Nullable
-    public static String getSecondUserAsString(@NonNull String[] messageParts, @NonNull EventUser eventUser)
+    public static String getSecondUserAsString(@NonNull String[] messageParts, @NonNull String eventUserName)
     {
-        return messageParts.length == 3 ? getUserAsString(messageParts, 2) : eventUser.getName();
+        return messageParts.length == 3 ? getUserAsString(messageParts, 2) : eventUserName;
     }
 
     @NonNull
-    public static String getChannelAsString(@NonNull String[] messageParts, @NonNull EventChannel channel)
+    public static String getChannelAsString(@NonNull String[] messageParts, @NonNull String channelName)
     {
-        return messageParts.length == 1 ? channel.getName() : getUserAsString(messageParts, 1);
+        return messageParts.length == 1 ? channelName : getUserAsString(messageParts, 1);
     }
 
     @Nullable
@@ -96,7 +90,7 @@ public class TwitchUtils
     }
 
     @NonNull
-    public static String getParameterUserAsString(@NonNull String[] messageParts, @NonNull String regex, @NonNull EventUser eventUser)
+    public static String getParameterUserAsString(@NonNull String[] messageParts, @NonNull String regex, @NonNull String eventUserName)
     {
         String message = removeElements(messageParts, 1);
         String parameterUser = RegExUtils.removeAll(message, regex);
@@ -114,7 +108,7 @@ public class TwitchUtils
 
         if (parameterUser.isBlank())
         {
-            return eventUser.getName();
+            return eventUserName;
         }
         return parameterUser;
     }
@@ -214,32 +208,32 @@ public class TwitchUtils
         return fallbackChannelID == null ? channelID : fallbackChannelID;
     }
 
-    public static boolean hasModeratorPerms(@NonNull IVR ivr, @NonNull String userName)
+    public static boolean hasModeratorPerms(@NonNull List<ToolsModVIP> mods, @NonNull String userName)
     {
-        for (IVRModVIP ivrModVIP : ivr.getMods())
+        if (mods == null)
         {
-            String userLogin = ivrModVIP.getUserLogin();
-
-            if (userLogin.equalsIgnoreCase(userName))
-            {
-                return true;
-            }
+            return false;
         }
-        return false;
+
+        return mods.stream().anyMatch(mod ->
+        {
+            String userLogin = mod.getUserLogin();
+            return userLogin.equalsIgnoreCase(userName);
+        });
     }
 
-    public static boolean hasVIPPerms(@NonNull IVR ivr, @NonNull String userName)
+    public static boolean hasVIPPerms(@NonNull List<ToolsModVIP> vips, @NonNull String userName)
     {
-        for (IVRModVIP ivrModVIP : ivr.getVIPs())
+        if (vips == null)
         {
-            String userLogin = ivrModVIP.getUserLogin();
-
-            if (userLogin.equalsIgnoreCase(userName))
-            {
-                return true;
-            }
+            return false;
         }
-        return false;
+
+        return vips.stream().anyMatch(vip ->
+        {
+            String userLogin = vip.getUserLogin();
+            return userLogin.equalsIgnoreCase(userName);
+        });
     }
 
     @NonNull
@@ -248,13 +242,13 @@ public class TwitchUtils
         return RegExUtils.replaceAll(prefix, "'", "''");
     }
 
-    public static void sendChatMessage(@NonNull String channelID, @NonNull String message)
+    public static boolean sendChatMessage(@NonNull String channelID, @NonNull String message)
     {
         int channelIID = Integer.parseInt(channelID);
-        sendChatMessage(channelIID, message);
+        return sendChatMessage(channelIID, message);
     }
 
-    public static void sendChatMessage(int channelIID, @NonNull String message)
+    public static boolean sendChatMessage(int channelIID, @NonNull String message)
     {
         String channelID = String.valueOf(channelIID);
 
@@ -269,7 +263,7 @@ public class TwitchUtils
 
             if (!sentChatMessage.isSent())
             {
-                return;
+                return false;
             }
 
             if (chatDropReason != null)
@@ -281,20 +275,24 @@ public class TwitchUtils
                 {
                     long currentTimeMillis = System.currentTimeMillis();
                     ratelimitedChats.put(channelIID, currentTimeMillis);
-                    return;
+                    return false;
                 }
 
                 String messageToSend = STR."Channel message dropped unexpectedly FeelsGoodMan '\{dropCode}' - \{dropReason}";
                 ChatMessage failedChatMessage = new ChatMessage("896181679", "896181679", messageToSend, null);
 
                 helix.sendChatMessage(null, failedChatMessage).execute();
+                return false;
             }
+
+            return true;
         }
         catch (HystrixRuntimeException | ContextedRuntimeException _)
         {
             long currentTimeMillis = System.currentTimeMillis();
-
             ratelimitedChats.put(channelIID, currentTimeMillis);
+
+            return false;
         }
     }
 
@@ -308,9 +306,11 @@ public class TwitchUtils
         ChatSettingsWrapper chatSettingsWrapper = helix.getChatSettings(null, userID, null).execute();
         ChatSettings chatSettings = chatSettingsWrapper.getChatSettings();
 
-        IVR ivr = ServiceProvider.getIVRModVip(userLogin);
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, "ApuJar");
-        boolean hasVIPPerms = TwitchUtils.hasVIPPerms(ivr, "ApuJar");
+        List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(userLogin);
+        List<ToolsModVIP> toolsVIP = ServiceProvider.getToolsVIPs(userLogin);
+
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, "ApuJar");
+        boolean hasVIPPerms = TwitchUtils.hasVIPPerms(toolsVIP, "ApuJar");
 
         if (hasModeratorPerms || hasVIPPerms || channelID.equals("896181679"))
         {
@@ -404,7 +404,7 @@ public class TwitchUtils
 
             StreamElementsEmote emote = emotes.get(i);
             String emoteName = emote.getEmoteName();
-            int amountSent  = emote.getAmountSent();
+            int amountSent = emote.getAmountSent();
 
             DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
             String formattedAmountSent = decimalFormat.format(amountSent);
@@ -432,7 +432,7 @@ public class TwitchUtils
 
             StreamElementsChatter chatter = chatters.get(i);
             String userLogin = chatter.getUserLogin();
-            int messageCount  = chatter.getMessageCount();
+            int messageCount = chatter.getMessageCount();
 
             DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
             String formattedMessageCount = decimalFormat.format(messageCount);
@@ -441,5 +441,229 @@ public class TwitchUtils
         }).toList();
 
         return String.join(" | ", topTwitchChatter);
+    }
+
+    public static void handleSlashCommands(int channelID, int eventUserID, int userID, @NonNull String[] messageParts, int index)
+    {
+        try
+        {
+            String[] slashCommandParts = removeElementsAsArray(messageParts, index);
+
+            String rootCommand = slashCommandParts[0];
+            String command = rootCommand.substring(1);
+
+            int minArgs = switch (command)
+            {
+                case "whisper", "w" -> 2;
+                case "timeout", "untimeout", "ban", "unban", "mod", "unmod" -> 1;
+                default -> -1;
+            };
+
+            int maxArgs = switch (command)
+            {
+                case "timeout" -> 3;
+                case "ban", "whisper", "w" -> Integer.MAX_VALUE;
+                case "untimeout", "unban", "mod", "unmod" -> 1;
+                default -> 0;
+            };
+
+            if (minArgs == -1)
+            {
+                sendChatMessage(channelID, "FeelsDankMan You can only use timeout, untimeout, ban, unban, mod and unmod here.");
+                return;
+            }
+
+            int args = slashCommandParts.length - 1;
+
+            if (args < minArgs || args > maxArgs)
+            {
+                String realMaxArgs = maxArgs == Integer.MAX_VALUE ? "infinite" : String.valueOf(maxArgs);
+
+                sendChatMessage(channelID, STR."FeelsDankMan The command needs to have at least \{minArgs} arguments and can have a maxium of \{realMaxArgs} arguments.");
+                return;
+            }
+
+            if (command.matches("^((un)mod|w(hisper))$") && channelID != 896181679)
+            {
+                sendChatMessage(channelID, "LULE You can only (un)mod/(un)vip users in my chat.");
+                return;
+            }
+
+            Map<Integer, String> owners = SQLUtils.getOwners();
+            Set<Integer> ownerIDs = owners.keySet();
+
+            if (command.matches("^((un)mod|w(hisper))$") && !ownerIDs.contains(eventUserID))
+            {
+                sendChatMessage(channelID, "DatSheffy You don't have permission to use these kinds of / (slash) commands through my account.");
+                return;
+            }
+
+            if (command.matches("^(un)mod$") && channelID != 896181679)
+            {
+                sendChatMessage(channelID, "DatSheffy You can't mod someone in someone others chat.");
+                return;
+            }
+
+            List<User> usersToSay = retrieveUserListByID(client, userID);
+            User userToSay = usersToSay.getFirst();
+            String userToSayLogin = userToSay.getLogin();
+
+            List<User> eventUsersToSay = retrieveUserListByID(client, eventUserID);
+            User eventUserToSay = eventUsersToSay.getFirst();
+            String eventUserLogin = eventUserToSay.getLogin();
+
+            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(userToSayLogin);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserLogin);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, "ApuJar");
+
+            if (!command.matches("^((un)mod|w(hisper))$") && !hasModeratorPerms && channelID != 896181679)
+            {
+                sendChatMessage(channelID, "FeelsMan You don't have mod or broadcaster perms in the specified channel.");
+                return;
+            }
+
+            if (!command.matches("^((un)mod|w(hisper))$") && !selfModeratorPerms && channelID != 896181679)
+            {
+                sendChatMessage(channelID, "FeelsMan I don't have mod or broadcaster perms in the specified channel.");
+                return;
+            }
+
+            String userToCheck = getUserAsString(slashCommandParts, 1);
+
+            if (!isValidUsername(userToCheck))
+            {
+                sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
+                return;
+            }
+
+            List<User> usersToCheck = retrieveUserList(client, userToCheck);
+
+            if (usersToCheck.isEmpty())
+            {
+                sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
+                return;
+            }
+
+            User user = usersToCheck.getFirst();
+            String userToCheckID = user.getId();
+            int userToCheckIID = Integer.parseInt(userToCheckID);
+
+            String broadcasterID = String.valueOf(userID);
+
+            switch (command)
+            {
+                case "whisper", "w" ->
+                {
+                    if (userToCheckIID == 896181679)
+                    {
+                        sendChatMessage(channelID, "FeelsMan I can't dm myself.");
+                        return;
+                    }
+
+                    String messageToSend = removeElements(slashCommandParts, 2);
+                    sendWhisper(userToCheckID, messageToSend);
+                }
+                case "ban" ->
+                {
+                    BanUserInput.BanUserInputBuilder builder = BanUserInput.builder().userId(userToCheckID);
+
+                    if (slashCommandParts.length >= 3)
+                    {
+                        String reason = removeElements(slashCommandParts, 2);
+                        builder.reason(reason);
+                    }
+
+                    BanUserInput banUserInput = builder.build();
+
+                    helix.banUser(null, broadcasterID, "896181679", banUserInput).execute();
+                }
+                case "timeout" ->
+                {
+                    BanUserInput.BanUserInputBuilder builder = BanUserInput.builder().userId(userToCheckID);
+
+                    int duration = 600;
+
+                    if (slashCommandParts.length >= 3)
+                    {
+                        String durationRaw = slashCommandParts[2];
+
+                        if (!durationRaw.matches("^((\\d+[smhdw]){1,4})?\\d+[smhdw]$"))
+                        {
+                            sendChatMessage(channelID, "FeelsMan Specify a value that matches with the regex '^((\\d+[smhdw]){1,4})?\\d+[smhdw]$'.");
+                            return;
+                        }
+
+                        String[] durationParts = durationRaw.split("(?<=\\D)(?=\\d)");
+
+                        int seconds = 0;
+
+                        for (String durationPart : durationParts)
+                        {
+                            String timeRaw = RegExUtils.removeAll(durationPart, "[a-zA-Z]");
+                            int time = Integer.parseInt(timeRaw);
+
+                            String timeUnit = RegExUtils.removeAll(durationPart, "\\d+");
+
+                            seconds += switch (timeUnit)
+                            {
+                                case "s" -> time;
+                                case "m" -> time * 60;
+                                case "h" -> time * 3600;
+                                case "d" -> time * 86400;
+                                case "w" -> time * 604800;
+                                default -> 0;
+                            };
+                        }
+
+                        if (seconds > 1209600)
+                        {
+                            sendChatMessage(channelID, "FeelsMan The timeout can't be longer than 2 weeks.");
+                            return;
+                        }
+
+                        duration = seconds;
+                    }
+
+                    if (slashCommandParts.length >= 4)
+                    {
+                        String reason = removeElements(slashCommandParts, 3);
+                        builder.reason(reason);
+                    }
+
+                    BanUserInput banUserInput = builder.duration(duration).build();
+
+                    helix.banUser(null, broadcasterID, "896181679", banUserInput).execute();
+                }
+                case "untimeout", "unban" -> helix.unbanUser(null, broadcasterID, "896181679", userToCheckID).execute();
+                case "mod" -> helix.addChannelModerator(null, "896181679", userToCheckID).execute();
+                case "unmod" -> helix.removeChannelModerator(null, "896181679", userToCheckID).execute();
+            }
+
+            sendChatMessage(userID, "SeemsGood Successfully executed slash command.");
+        }
+        catch (Exception e)
+        {
+            String error = e.getMessage();
+
+            Class<?> clazz = e.getClass();
+            String clazzName = clazz.getName();
+
+            Throwable cause = e.getCause();
+
+            if (cause instanceof ContextedRuntimeException cre)
+            {
+                String errorMessage = (String) cre.getFirstContextValue("errorMessage");
+                sendChatMessage(userID, STR."FeelsGoodMan \{errorMessage}");
+                return;
+            }
+
+            List<User> users = retrieveUserListByID(client, channelID);
+            User user = users.getFirst();
+            String userLogin = user.getLogin();
+
+            sendChatMessage("896181679", STR."Channel: \{userLogin} Weird Error while trying to execute a slash command FeelsGoodMan \{error} (\{clazzName})");
+
+            e.printStackTrace();
+        }
     }
 }

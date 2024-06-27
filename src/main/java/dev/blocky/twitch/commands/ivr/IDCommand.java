@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.twitch.interfaces.ICommand;
@@ -34,14 +32,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class IDCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-
-        String userToLookup = getUserAsString(messageParts, eventUser);
+        String userToLookup = getUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToLookup))
         {

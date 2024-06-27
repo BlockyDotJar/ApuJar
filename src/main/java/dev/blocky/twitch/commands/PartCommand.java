@@ -19,40 +19,40 @@ package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
+import com.github.twitch4j.eventsub.socket.IEventSubSocket;
+import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
+import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
+import dev.blocky.api.entities.tools.ToolsModVIP;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
+import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static dev.blocky.twitch.utils.TwitchUtils.getUserAsString;
-import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class PartCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
 
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        String chatToPart = getUserAsString(messageParts, eventUser);
+        String chatToPart = getUserAsString(messageParts, eventUserName);
 
         Map<Integer, String> owners = SQLUtils.getOwners();
         Collection<String> ownerLogins = owners.values();
@@ -65,8 +65,8 @@ public class PartCommand implements ICommand
 
         if (!chatToPart.equalsIgnoreCase(eventUserName))
         {
-            IVR ivr = ServiceProvider.getIVRModVip(chatToPart);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
+            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(chatToPart);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserName);
 
             Map<Integer, String> admins = SQLUtils.getAdmins();
             Set<Integer> adminIDs = admins.keySet();
@@ -80,11 +80,31 @@ public class PartCommand implements ICommand
             }
         }
 
-        if (!chat.isChannelJoined(chatToPart))
+        Set<Chat> chats = SQLUtils.getChats();
+
+        boolean isInChannel = chats.stream().anyMatch(ch ->
+        {
+            String userLogin = ch.getUserLogin();
+            return userLogin.equals(chatToPart);
+        });
+
+        if (!isInChannel)
         {
             sendChatMessage(channelID, STR."CoolStoryBob I'm not even in \{chatToPart}'s chat.");
             return;
         }
+
+        List<User> chatsToPart = retrieveUserList(client, chatToPart);
+        User user = chatsToPart.getFirst();
+        String userID = user.getId();
+
+        IEventSubSocket eventSocket = client.getEventSocket();
+
+        eventSocket.unregister(SubscriptionTypes.CHANNEL_CHAT_MESSAGE.prepareSubscription
+                (
+                        builder -> builder.broadcasterUserId(userID).userId("896181679").build(),
+                        null
+                ));
 
         chat.leaveChannel(chatToPart);
 

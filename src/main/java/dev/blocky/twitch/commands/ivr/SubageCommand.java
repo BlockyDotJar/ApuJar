@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.*;
@@ -37,12 +35,10 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SubageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
-
-        EventUser eventUser = event.getUser();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
@@ -51,7 +47,7 @@ public class SubageCommand implements ICommand
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
-        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
@@ -100,14 +96,14 @@ public class SubageCommand implements ICommand
                 Date subEnd = ivrCumulativeSubage.getSubEnd();
                 String readableEnd = formatter.format(subEnd);
 
-                messageToSend = STR."\{messageToSend} (Subscribed for \{cumulativeSubMonths} month";
+                messageToSend += STR." (Subscribed for \{cumulativeSubMonths} month";
 
                 if (cumulativeSubMonths > 1)
                 {
-                    messageToSend = STR."\{messageToSend}s";
+                    messageToSend += "s";
                 }
 
-                messageToSend =  STR."\{messageToSend} before, Ended: \{readableEnd})";
+                messageToSend += STR." before, Ended: \{readableEnd})";
             }
 
             sendChatMessage(channelID, messageToSend);
@@ -124,19 +120,19 @@ public class SubageCommand implements ICommand
 
         if (subType.equals("paid"))
         {
-            messageToSend = STR."\{messageToSend} with a tier \{subTier} sub";
+            messageToSend += STR." with a tier \{subTier} sub";
         }
 
         int cumulativeSubMonths = ivrCumulativeSubage.getSubMonths();
 
-        messageToSend = STR."\{messageToSend} since \{cumulativeSubMonths} month";
+        messageToSend += STR." since \{cumulativeSubMonths} month";
 
         if (cumulativeSubMonths > 1)
         {
-            messageToSend = STR."\{messageToSend}s";
+            messageToSend += "s";
         }
 
-        messageToSend = STR."\{messageToSend} (Ends: \{readableEndsAt}";
+        messageToSend += STR." (Ends: \{readableEndsAt}";
 
         IVRSubageStreak ivrSubageStreak = ivrSubage.getSubageStreak();
 
@@ -144,11 +140,11 @@ public class SubageCommand implements ICommand
         {
             int subStreakMonths = ivrSubageStreak.getSubStreakMonths();
 
-            messageToSend = STR."\{messageToSend}, Streak: \{subStreakMonths} month";
+            messageToSend += STR.", Streak: \{subStreakMonths} month";
 
             if (subStreakMonths > 1)
             {
-                messageToSend = STR."\{messageToSend}s";
+                messageToSend += "s";
             }
         }
 
@@ -157,10 +153,10 @@ public class SubageCommand implements ICommand
         if (renewsAt != null)
         {
             String readableRenewsAt = formatter.format(renewsAt);
-            messageToSend = STR."\{messageToSend}, Renews: \{readableRenewsAt}";
+            messageToSend += STR.", Renews: \{readableRenewsAt}";
         }
 
-        messageToSend = STR."\{messageToSend})";
+        messageToSend += ")";
 
         if (subType.equals("gift"))
         {
@@ -171,7 +167,7 @@ public class SubageCommand implements ICommand
             Date giftDate = ivrSubGiftMeta.getGiftDate();
             String readableGiftDate = formatter.format(giftDate);
 
-            messageToSend = STR."\{messageToSend} \{gifterDisplayName} was so nice and gifted a tier \{subTier} sub to \{userDisplayName} on \{readableGiftDate}";
+            messageToSend += STR." \{gifterDisplayName} was so nice and gifted a tier \{subTier} sub to \{userDisplayName} on \{readableGiftDate}";
         }
 
         channelID = getActualChannelID(channelToSend, channelID);

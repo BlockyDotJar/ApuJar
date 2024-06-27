@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.stats;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.stats.StreamElementsChatStats;
@@ -36,14 +34,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class TopChatterCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-
-        String userToGetTopChatterFrom = getUserAsString(messageParts, eventUser);
+        String userToGetTopChatterFrom = getUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToGetTopChatterFrom))
         {

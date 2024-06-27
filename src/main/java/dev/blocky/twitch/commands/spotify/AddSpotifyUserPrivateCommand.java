@@ -23,7 +23,7 @@ import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.SpotifyUser;
+import dev.blocky.twitch.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import io.github.cdimascio.dotenv.Dotenv;
 import org.joda.time.LocalDateTime;
@@ -53,9 +53,9 @@ public class AddSpotifyUserPrivateCommand implements IPrivateCommand
 
         String authCode = messageParts[1];
 
-        if (!authCode.startsWith("AQ") && !authCode.matches("^[\\w-]{376}$"))
+        if (!authCode.startsWith("AQ") && !authCode.matches("^[\\w-]{340}$"))
         {
-            sendWhisper(eventUserID, "FeelsDankMan Invalid authorization code specified. (Authorization code must start with 'AQ' and contain 376 case insensitive letters with underscores [_], minuses [-] and numbers)");
+            sendWhisper(eventUserID, "FeelsDankMan Invalid authorization code specified. (Authorization code must start with 'AQ' and contain 340 case insensitive letters with underscores [_], minuses [-] and numbers)");
             return;
         }
 

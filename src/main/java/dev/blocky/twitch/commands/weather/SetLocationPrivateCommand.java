@@ -28,7 +28,7 @@ import dev.blocky.api.entities.maps.MapSearch;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Location;
+import dev.blocky.twitch.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

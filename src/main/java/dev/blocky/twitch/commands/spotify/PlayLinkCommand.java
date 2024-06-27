@@ -18,14 +18,12 @@
 package dev.blocky.twitch.commands.spotify;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.google.gson.JsonArray;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.SpotifyUser;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
-import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
@@ -46,14 +44,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class PlayLinkCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
-        String eventUserID = eventUser.getId();
+        String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)

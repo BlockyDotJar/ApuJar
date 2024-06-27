@@ -15,24 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.modscanner;
+package dev.blocky.twitch.commands.rolelookup;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
-import dev.blocky.api.entities.ivr.IVRModVIP;
-import dev.blocky.api.entities.modscanner.ModScanner;
-import dev.blocky.api.entities.modscanner.ModScannerUser;
+import dev.blocky.api.entities.tools.ToolsModVIP;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
@@ -40,13 +36,11 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class VIPageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
         if (messageParts.length == 1)
         {
@@ -55,7 +49,7 @@ public class VIPageCommand implements ICommand
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
-        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUserName);
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
@@ -92,58 +86,34 @@ public class VIPageCommand implements ICommand
         String secondUserLogin = secondUser.getLogin();
         String secondUserDisplayName = secondUser.getDisplayName();
 
-        IVR ivr = ServiceProvider.getIVRModVip(secondUserLogin);
-        boolean isVIP = false;
+        List<ToolsModVIP> toolsVIPs = ServiceProvider.getToolsVIPs(secondUserLogin);
 
-        Date grantedAt = null;
-
-        for (IVRModVIP ivrModVIP : ivr.getVIPs())
+        if (toolsVIPs == null)
         {
-            String vipLogin = ivrModVIP.getUserLogin();
-
-            if (!vipLogin.equals(userLogin))
-            {
-                continue;
-            }
-
-            isVIP = true;
-            grantedAt = ivrModVIP.getGrantedAt();
-            break;
+            sendChatMessage(channelID, STR."Sadeg There are no vips in \{secondUserDisplayName}'s chat at the moment.");
+            return;
         }
 
-        ModScanner modScanner = ServiceProvider.getModScannerChannel(secondUserLogin);
-
-        for (ModScannerUser msUser : modScanner.getChannelVIPs())
+        Optional<ToolsModVIP> optionalToolsVIPs = toolsVIPs.stream().filter(tv ->
         {
-            String vipLogin = msUser.getUserLogin();
+            String vipLogin = tv.getUserLogin();
+            return vipLogin.equals(userLogin);
+        }).findFirst();
 
-            if (!vipLogin.equals(userLogin))
-            {
-                continue;
-            }
+        ToolsModVIP toolsVIP = optionalToolsVIPs.orElse(null);
 
-            if (grantedAt == null)
-            {
-                grantedAt = msUser.getGrantedAt();
-            }
-            break;
-        }
-
-        if (!isVIP)
+        if (toolsVIP == null)
         {
             sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't vip in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
-        String readableGrantDate = "(UNKNOWN_GRANT_DATE)";
+        Date grantedAt = toolsVIP.getGrantedAt();
 
-        if (grantedAt != null)
-        {
-            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-            readableGrantDate = formatter.format(grantedAt);
-        }
+        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        String formattedGrantDate = formatter.format(grantedAt);
 
-        String messageToSend = STR."NOWAYING \{userDisplayName} is vip in \{secondUserDisplayName}'s chat since \{readableGrantDate} PogU";
+        String messageToSend = STR."NOWAYING \{userDisplayName} is vip in \{secondUserDisplayName}'s chat since \{formattedGrantDate} PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

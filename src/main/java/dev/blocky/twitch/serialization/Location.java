@@ -15,50 +15,66 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.modscanner;
+package dev.blocky.twitch.serialization;
 
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.util.Date;
-
-public class ModScannerUser
+public class Location
 {
-    @SerializedName("grantedAt")
-    Date grantedAt;
+    @SerializedName("latitude")
+    double latitude;
 
-    @SerializedName("login")
-    String userLogin;
+    @SerializedName("longitude")
+    double longitude;
 
-    @SerializedName("followers")
-    int userFollowers;
+    @SerializedName("locationName")
+    String locationName;
 
-    @SerializedName("flags")
-    int flags;
+    @SerializedName("cityName")
+    String cityName;
 
-    @NonNull
-    public Date getGrantedAt()
+    @SerializedName("countryCode")
+    String countryCode;
+
+    @SerializedName("hideLocation")
+    boolean hidesLocation;
+
+    public double getLatitude()
     {
-        return grantedAt;
+        return latitude;
+    }
+
+    public double getLongitude()
+    {
+        return longitude;
     }
 
     @NonNull
-    public String getUserLogin()
+    public String getLocationName()
     {
-        return userLogin;
+        return locationName;
     }
 
-    public int getUserFollowers()
+    @Nullable
+    public String getCityName()
     {
-        return userFollowers;
+        return cityName;
     }
 
-    public int getFlags()
+    @NonNull
+    public String getCountryCode()
     {
-        return flags;
+        return countryCode;
     }
 
-    ModScannerUser()
+    public boolean hidesLocation()
+    {
+        return hidesLocation;
+    }
+
+    Location()
     {
     }
 }

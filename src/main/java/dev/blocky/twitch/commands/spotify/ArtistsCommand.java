@@ -18,14 +18,12 @@
 package dev.blocky.twitch.commands.spotify;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.SpotifyUser;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
-import dev.blocky.twitch.utils.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.specification.Artist;
@@ -41,14 +39,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ArtistsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-
-        String userToGetTopArtistsFrom = getParameterUserAsString(messageParts, "(-s(hort)?)|(-l(ong)?)", eventUser);
+        String userToGetTopArtistsFrom = getParameterUserAsString(messageParts, "(-s(hort)?)|(-l(ong)?)", eventUserName);
 
         if (!isValidUsername(userToGetTopArtistsFrom))
         {

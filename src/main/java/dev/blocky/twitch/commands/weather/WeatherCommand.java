@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.weather;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.maps.MapAdress;
 import dev.blocky.api.entities.maps.MapProperty;
@@ -28,9 +26,9 @@ import dev.blocky.api.entities.maps.MapSearch;
 import dev.blocky.api.entities.openmeteo.OpenMeteo;
 import dev.blocky.api.entities.openmeteo.OpenMeteoCurrentWeather;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.Location;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.WeatherUtils;
-import dev.blocky.twitch.utils.serialization.Location;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -43,13 +41,11 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class WeatherCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserID = eventUser.getId();
+        String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
         Location location = SQLUtils.getLocation(eventUserIID);

@@ -18,32 +18,30 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
+import dev.blocky.api.entities.tools.ToolsModVIP;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
+import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
-import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
+
+import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class ReceiveEventNotificationsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelName = channel.getName();
-        String channelID = channel.getId();
+        String channelName = event.getBroadcasterUserName();
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
         if (messageParts.length == 1)
         {
@@ -61,8 +59,8 @@ public class ReceiveEventNotificationsCommand implements ICommand
 
         boolean shouldBeEnabled = Boolean.parseBoolean(receiveValue);
 
-        IVR ivr = ServiceProvider.getIVRModVip(channelName);
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(ivr, eventUserName);
+        List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(channelName);
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserName);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {

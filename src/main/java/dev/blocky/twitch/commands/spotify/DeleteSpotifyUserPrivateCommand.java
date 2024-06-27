@@ -23,7 +23,7 @@ import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.SpotifyUser;
+import dev.blocky.twitch.serialization.SpotifyUser;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;

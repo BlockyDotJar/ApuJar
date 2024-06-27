@@ -15,44 +15,50 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.utils.serialization;
+package dev.blocky.api.entities.tools;
 
 import com.google.gson.annotations.SerializedName;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.joda.time.DateTime;
-import org.joda.time.LocalDateTime;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
-public class SpotifyUser
+import java.util.Date;
+
+public class ToolsFounder
 {
-    @SerializedName("accessToken")
-    String accessToken;
+    @SerializedName("login")
+    String userLogin;
 
-    @SerializedName("refreshToken")
-    String refreshToken;
+    @SerializedName("isSubscribed")
+    boolean isSubscribed;
 
-    @SerializedName("expiresOn")
-    String expiresOn;
+    @SerializedName("firstMonth")
+    Date entitlementStarted;
+
+    @SerializedName("banned")
+    boolean isBanned;
 
     @NonNull
-    public String getAccessToken()
+    public String getUserLogin()
     {
-        return accessToken;
+        return userLogin;
+    }
+
+    public boolean isSubscribed()
+    {
+        return isSubscribed;
     }
 
     @NonNull
-    public String getRefreshToken()
+    public Date getEntitlementStart()
     {
-        return refreshToken;
+        return entitlementStarted;
     }
 
-    @NonNull
-    public LocalDateTime getExpiresOn()
+    public boolean isBanned()
     {
-        DateTime dateTime = new DateTime(expiresOn);
-        return dateTime.toLocalDateTime();
+        return isBanned;
     }
 
-    SpotifyUser()
+    ToolsFounder()
     {
     }
 }

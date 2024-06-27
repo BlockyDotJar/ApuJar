@@ -21,7 +21,7 @@ import com.google.gson.Gson;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.request.BlockyJarUserBody;
 import dev.blocky.twitch.manager.SQLite;
-import dev.blocky.twitch.utils.serialization.*;
+import dev.blocky.twitch.serialization.*;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.collections4.BidiMap;
@@ -289,6 +289,22 @@ public class SQLUtils
                 {
                     int chatID = ch.getUserID();
                     return chatID == userID;
+                })
+                .findFirst();
+
+        return chat.orElse(null);
+    }
+
+    @Nullable
+    public static Chat getChat(String userLogin)
+    {
+        Set<Chat> chats = getChats();
+
+        Optional<Chat> chat = chats.stream()
+                .filter(ch ->
+                {
+                    String chatLogin = ch.getUserLogin();
+                    return chatLogin.equals(userLogin);
                 })
                 .findFirst();
 

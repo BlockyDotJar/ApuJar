@@ -18,9 +18,7 @@
 package dev.blocky.twitch.commands.ivr;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.api.entities.ivr.IVRUserBadge;
@@ -40,14 +38,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class UserCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserName = event.getChatterUserName();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-
-        String userToGet = getUserAsString(messageParts, eventUser);
+        String userToGet = getUserAsString(messageParts, eventUserName);
 
         if (!isValidUsername(userToGet))
         {
@@ -74,7 +70,7 @@ public class UserCommand implements ICommand
         if (ivrUser.isBanned())
         {
             String banReason = ivrUser.getBanReason();
-            userInfo = STR."\u26D4 BANNED \u26D4 (Reason: \{banReason}) ";
+            userInfo += STR."\u26D4 BANNED \u26D4 (Reason: \{banReason})";
         }
 
         String userLogin = ivrUser.getUserLogin();
@@ -82,7 +78,7 @@ public class UserCommand implements ICommand
         int userID = ivrUser.getUserID();
         String userChatColor = ivrUser.getUserChatColor() == null ? "#FFFFFF" : ivrUser.getUserChatColor();
 
-        userInfo = STR."\{userInfo} \uD83D\uDC49 Login: \{userLogin}, Display: \{userDisplayName}, ID: \{userID}, Created: \{readableCreationDate}, Chat-Color: \{userChatColor}";
+        userInfo += STR." \uD83D\uDC49 Login: \{userLogin}, Display: \{userDisplayName}, ID: \{userID}, Created: \{readableCreationDate}, Chat-Color: \{userChatColor}";
 
         ArrayList<IVRUserBadge> ivrUserBadges = ivrUser.getUserBadges();
 
@@ -90,7 +86,7 @@ public class UserCommand implements ICommand
         {
             IVRUserBadge ivrUserBadge = ivrUserBadges.getFirst();
             String badgeName = ivrUserBadge.getBadgeName();
-            userInfo = STR."\{userInfo}, Global-Badge: \{badgeName}";
+            userInfo += STR.", Global-Badge: \{badgeName}";
         }
 
         if (!ivrUser.isBanned())
@@ -98,7 +94,7 @@ public class UserCommand implements ICommand
             int userFollowers = ivrUser.getUserFollowers();
             int chatterCount = ivrUser.getChatterCount();
 
-            userInfo = STR."\{userInfo}, Follower: \{userFollowers}, Chatter: \{chatterCount}";
+            userInfo += STR.", Follower: \{userFollowers}, Chatter: \{chatterCount}";
         }
 
         IVRUserRoles ivrUserRoles = ivrUser.getUserRoles();
@@ -109,14 +105,14 @@ public class UserCommand implements ICommand
         if (isAffiliate || isPartner)
         {
             String broadcasterType = isAffiliate ? "affiliate" : "partner";
-            userInfo = STR."\{userInfo}, Broadcaster-Type: \{broadcasterType}";
+            userInfo += STR.", Broadcaster-Type: \{broadcasterType}";
         }
 
         boolean isStaff = ivrUserRoles.isStaff();
 
         if (isStaff)
         {
-            userInfo = STR."\{userInfo}, Type: staff";
+            userInfo += ", Type: staff";
         }
 
         IVRUserStream ivrUserStream = ivrUser.getLastBroadcast();
@@ -125,7 +121,7 @@ public class UserCommand implements ICommand
         if (startedAt != null)
         {
             String readableStartedAt = formatter.format(startedAt);
-            userInfo = STR."\{userInfo}, Last-Stream: \{readableStartedAt}";
+            userInfo += STR.", Last-Stream: \{readableStartedAt}";
         }
 
         channelID = getActualChannelID(channelToSend, channelID);

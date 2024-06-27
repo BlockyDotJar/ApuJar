@@ -15,31 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.utils.serialization;
+package dev.blocky.api.services;
 
-import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
+import dev.blocky.api.entities.tools.ToolsFounder;
+import dev.blocky.api.entities.tools.ToolsModVIP;
+import retrofit2.Call;
+import retrofit2.http.GET;
+import retrofit2.http.Path;
 
-public class Prefix
+import java.util.List;
+
+public interface ToolsService
 {
-    @SerializedName("prefix")
-    String prefix;
+    @GET("getmods/{channel}")
+    Call<List<ToolsModVIP>> getMods(@Path("channel") String channel);
 
-    @SerializedName("caseInsensitive")
-    boolean isCaseInsensitive;
+    @GET("getvips/{channel}")
+    Call<List<ToolsModVIP>> getVIPs(@Path("channel") String channel);
 
-    @NonNull
-    public String getPrefix()
-    {
-        return prefix == null ? "#" : prefix;
-    }
-
-    public boolean isCaseInsensitive()
-    {
-        return isCaseInsensitive;
-    }
-
-    Prefix()
-    {
-    }
+    @GET("getfounders/{user}")
+    Call<List<ToolsFounder>> getFounders(@Path("user") String user);
 }

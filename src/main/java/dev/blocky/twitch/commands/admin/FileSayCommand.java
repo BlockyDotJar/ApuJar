@@ -18,12 +18,11 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.Command;
+import dev.blocky.twitch.serialization.Prefix;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Command;
-import dev.blocky.twitch.utils.serialization.Prefix;
 import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -36,16 +35,17 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-import static dev.blocky.twitch.utils.TwitchUtils.getFilteredParts;
-import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
+import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class FileSayCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String eventUserID = event.getChatterUserId();
+        int eventUserIID = Integer.parseInt(eventUserID);
+
+        String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
 
         if (messageParts.length == 1)
@@ -100,6 +100,12 @@ public class FileSayCommand implements ICommand
 
             for (String line : lines)
             {
+                if (line.startsWith("/") && !line.equals("/"))
+                {
+                    handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, 2);
+                    continue;
+                }
+
                 Set<Command> commands = SQLUtils.getCommands();
 
                 Prefix prefix = SQLUtils.getPrefix(channelIID);

@@ -15,18 +15,39 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.services;
+package dev.blocky.twitch.serialization;
 
-import dev.blocky.api.entities.modscanner.ModScanner;
-import retrofit2.Call;
-import retrofit2.http.GET;
-import retrofit2.http.Path;
+import com.google.gson.annotations.SerializedName;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-public interface ModScannerService
+public class Chat
 {
-    @GET("user/{user}")
-    Call<ModScanner> getUser(@Path("user") String user);
+    @SerializedName("userID")
+    int userID;
 
-    @GET("channel/{channel}")
-    Call<ModScanner> getChannel(@Path("channel") String channel);
+    @SerializedName("userLogin")
+    String userLogin;
+
+    @SerializedName("eventsEnabled")
+    boolean hasEventsEnabled;
+
+    public int getUserID()
+    {
+        return userID;
+    }
+
+    @NonNull
+    public String getUserLogin()
+    {
+        return userLogin;
+    }
+
+    public boolean hasEventsEnabled()
+    {
+        return hasEventsEnabled;
+    }
+
+    Chat()
+    {
+    }
 }

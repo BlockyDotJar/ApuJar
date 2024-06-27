@@ -15,24 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.modscanner;
+package dev.blocky.twitch.commands.rolelookup;
 
 import com.github.twitch4j.TwitchClient;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
-import com.github.twitch4j.common.events.domain.EventUser;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVR;
-import dev.blocky.api.entities.ivr.IVRFounder;
-import dev.blocky.api.entities.modscanner.ModScanner;
-import dev.blocky.api.entities.modscanner.ModScannerUser;
+import dev.blocky.api.entities.tools.ToolsFounder;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
@@ -40,13 +36,11 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class FounderageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
-        EventUser eventUser = event.getUser();
-        String eventUserName = eventUser.getName();
+        String eventUserName = event.getChatterUserName();
 
         if (messageParts.length == 1)
         {
@@ -55,7 +49,7 @@ public class FounderageCommand implements ICommand
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
-        String secondUserToCheck = getSecondUserAsString(messageParts, eventUser);
+        String secondUserToCheck = getSecondUserAsString(messageParts, eventUserName);
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
@@ -99,63 +93,35 @@ public class FounderageCommand implements ICommand
             return;
         }
 
-        IVR ivr = ServiceProvider.getIVRFounders(secondUserLogin);
+        List<ToolsFounder> toolsFounders = ServiceProvider.getToolsFounders(secondUserLogin);
 
-        boolean isFounder = false;
-        boolean isSubscribed = false;
-        Date entitlementStart = null;
-
-        if (ivr != null)
+        if (toolsFounders == null)
         {
-            for (IVRFounder ivrFounder : ivr.getFounders())
-            {
-                String founderLogin = ivrFounder.getUserLogin();
-
-                if (!founderLogin.equals(userLogin))
-                {
-                    continue;
-                }
-
-                isFounder = true;
-                isSubscribed = ivrFounder.isSubscribed();
-                entitlementStart = ivrFounder.getEntitlementStart();
-                break;
-            }
-
-            ModScanner modScanner = ServiceProvider.getModScannerChannel(secondUserLogin);
-
-            for (ModScannerUser msUser : modScanner.getChannelFounders())
-            {
-                String founderLogin = msUser.getUserLogin();
-
-                if (!founderLogin.equals(userLogin))
-                {
-                    continue;
-                }
-
-                if (entitlementStart == null)
-                {
-                    entitlementStart = msUser.getGrantedAt();
-                }
-                break;
-            }
+            sendChatMessage(channelID, STR."Sadeg There are no founders in \{secondUserDisplayName}'s chat at the moment.");
+            return;
         }
 
-        if (!isFounder)
+        Optional<ToolsFounder> optionalToolsFounder = toolsFounders.stream().filter(tf ->
+        {
+            String founderLogin = tf.getUserLogin();
+            return founderLogin.equals(userLogin);
+        }).findFirst();
+
+        ToolsFounder toolsFounder = optionalToolsFounder.orElse(null);
+
+        if (toolsFounder == null)
         {
             sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't founder in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
-        String readableGrantDate = "(UNKNOWN_GRANT_DATE)";
+        boolean isSubscribed = toolsFounder.isSubscribed();
+        Date entitlementStart = toolsFounder.getEntitlementStart();
 
-        if (entitlementStart != null)
-        {
-            SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-            readableGrantDate = formatter.format(entitlementStart);
-        }
+        SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        String formattedEntitlementStart = formatter.format(entitlementStart);
 
-        String messageToSend = STR."NOWAYING \{userDisplayName} is founder in \{secondUserDisplayName}'s chat since \{readableGrantDate} (Active sub: \{isSubscribed}) PogU";
+        String messageToSend = STR."NOWAYING \{userDisplayName} is founder in \{secondUserDisplayName}'s chat since \{formattedEntitlementStart} (Active sub: \{isSubscribed}) PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

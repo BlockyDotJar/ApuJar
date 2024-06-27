@@ -15,21 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.utils;
+package dev.blocky.twitch.serialization;
 
-public enum ModScannerFlags
+import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.NonNull;
+
+public class Prefix
 {
-    TWITCH_AFFILIATE(1 << 0), TWITCH_PARTNER(1 << 1), TWITCH_STAFF(1 << 2);
+    @SerializedName("prefix")
+    String prefix;
 
-    private final int flag;
+    @SerializedName("caseInsensitive")
+    boolean isCaseInsensitive;
 
-    ModScannerFlags(int flag)
+    @NonNull
+    public String getPrefix()
     {
-        this.flag = flag;
+        return prefix == null ? "#" : prefix;
     }
 
-    public boolean isInFlag(int flags)
+    public boolean isCaseInsensitive()
     {
-        return (flags & flag) == flag;
+        return isCaseInsensitive;
+    }
+
+    Prefix()
+    {
     }
 }

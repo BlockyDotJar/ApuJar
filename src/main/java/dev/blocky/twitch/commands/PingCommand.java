@@ -19,11 +19,11 @@ package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
-import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
-import com.github.twitch4j.common.events.domain.EventChannel;
+import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
+import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import dev.blocky.twitch.interfaces.ICommand;
+import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Chat;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.time.Duration;
@@ -37,12 +37,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class PingCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
+        IEventSubSocket eventSocket = client.getEventSocket();
         TwitchChat chat = client.getChat();
         
-        EventChannel channel = event.getChannel();
-        String channelID = channel.getId();
+        String channelID = event.getBroadcasterUserId();
 
         long now = System.currentTimeMillis();
         long uptime = now - startedAt;
@@ -54,12 +54,13 @@ public class PingCommand implements ICommand
         long HH = uptimeDuration.toHoursPart();
         long DD = uptimeDuration.toDays();
 
-        long ping = chat.getLatency();
+        long chatPing = chat.getLatency();
+        long eventSubPing = eventSocket.getLatency();
 
         Set<Chat> chatLogins = SQLUtils.getChats();
-        int realChats = chatLogins.size() + 1;
+        int realChats = chatLogins.size();
 
-        String messageToSend = STR."ppPong [v2.0.0] WICKED Chat-Ping: \{ping}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
+        String messageToSend = STR."ppPong [v3.0.0] WICKED IRC-Ping: \{chatPing}ms EventSub-Ping: \{eventSubPing}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

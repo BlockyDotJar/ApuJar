@@ -15,35 +15,44 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.ivr;
+package dev.blocky.twitch.serialization;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.joda.time.DateTime;
+import org.joda.time.LocalDateTime;
 
-import java.util.Date;
-
-public class IVRModVIP
+public class SpotifyUser
 {
-    @SerializedName("grantedAt")
-    Date grantedAt;
+    @SerializedName("accessToken")
+    String accessToken;
 
-    @SerializedName("login")
-    String userLogin;
+    @SerializedName("refreshToken")
+    String refreshToken;
 
-    @Nullable
-    public Date getGrantedAt()
+    @SerializedName("expiresOn")
+    String expiresOn;
+
+    @NonNull
+    public String getAccessToken()
     {
-        return grantedAt;
+        return accessToken;
     }
 
     @NonNull
-    public String getUserLogin()
+    public String getRefreshToken()
     {
-        return userLogin;
+        return refreshToken;
     }
 
-    IVRModVIP()
+    @NonNull
+    public LocalDateTime getExpiresOn()
+    {
+        DateTime dateTime = new DateTime(expiresOn);
+        return dateTime.toLocalDateTime();
+    }
+
+    SpotifyUser()
     {
     }
 }

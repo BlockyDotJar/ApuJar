@@ -17,13 +17,13 @@
  */
 package dev.blocky.twitch.manager;
 
-import com.github.philippheuer.events4j.simple.SimpleEventHandler;
+import com.github.philippheuer.events4j.api.IEventManager;
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
+import dev.blocky.twitch.serialization.Prefix;
+import dev.blocky.twitch.serialization.PrivateCommand;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.serialization.Prefix;
-import dev.blocky.twitch.utils.serialization.PrivateCommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.Set;
@@ -37,9 +37,9 @@ import static java.util.regex.Pattern.CASE_INSENSITIVE;
 
 public class PrivateCommandManager
 {
-    public PrivateCommandManager(@NonNull SimpleEventHandler eventHandler)
+    public PrivateCommandManager(@NonNull IEventManager eventManager)
     {
-        eventHandler.onEvent(PrivateMessageEvent.class, this::onPrivateMessage);
+        eventManager.onEvent(PrivateMessageEvent.class, this::onPrivateMessage);
     }
 
     boolean onPrivateMessage(@NonNull String commandOrAlias, @NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception
