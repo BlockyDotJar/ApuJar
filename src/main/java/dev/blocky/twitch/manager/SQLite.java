@@ -35,7 +35,6 @@ public class SQLite
     private static final Logger logger = LoggerFactory.getLogger(SQLite.class);
 
     private static Connection conn;
-    private static Statement stmt;
     private static File file;
 
     @NonNull
@@ -49,7 +48,6 @@ public class SQLite
         String fileName = file.getName();
 
         conn = DriverManager.getConnection(STR."jdbc:sqlite:\{filePath}");
-        stmt = conn.createStatement();
 
         logger.info(STR."Successfully connected to \{fileName}");
         return new SQLite();
@@ -69,12 +67,15 @@ public class SQLite
 
     public static void onUpdate(@NonNull String sql) throws SQLException
     {
+        Statement stmt = conn.createStatement();
         stmt.execute(sql);
+        stmt.close();
     }
 
     @NonNull
     public static ResultSet onQuery(@NonNull String sql) throws SQLException
     {
+        Statement stmt = conn.createStatement();
         return stmt.executeQuery(sql);
     }
 
@@ -87,6 +88,7 @@ public class SQLite
 
             String sql = Files.readString(path);
 
+            Statement stmt = conn.createStatement();
             stmt.executeLargeUpdate(sql);
         }
     }

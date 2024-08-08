@@ -56,12 +56,22 @@ public class WeatherCommand implements ICommand
             return;
         }
 
-        double latitude = location.getLatitude();
-        double longitude = location.getLatitude();
+        double latitude = -1;
+        double longitude = -1;
 
-        String locationName = location.getLocationName();
-        String cityName = location.getCityName();
-        String countryCode = location.getCountryCode();
+        String locationName = null;
+        String cityName = null;
+        String countryCode = null;
+
+        if (messageParts.length == 1)
+        {
+            latitude = location.getLatitude();
+            longitude = location.getLatitude();
+
+            locationName = location.getLocationName();
+            cityName = location.getCityName();
+            countryCode = location.getCountryCode();
+        }
 
         if (messageParts.length > 1)
         {

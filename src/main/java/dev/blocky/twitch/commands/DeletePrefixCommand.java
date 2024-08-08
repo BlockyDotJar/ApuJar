@@ -20,7 +20,7 @@ package dev.blocky.twitch.commands;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Prefix;
@@ -42,10 +42,12 @@ public class DeletePrefixCommand implements ICommand
         int channelIID = Integer.parseInt(channelID);
 
         String eventUserName = event.getChatterUserName();
+        String eventUserID = event.getChatterUserId();
+        int eventUserIID = Integer.parseInt(eventUserID);
 
-        List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(channelName);
+        List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(channelIID);
 
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserName);
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {

@@ -18,20 +18,23 @@
 package dev.blocky.twitch.utils;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.helix.domain.*;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.ivr.IVRSubage;
 import dev.blocky.api.entities.ivr.IVRSubageMeta;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.api.entities.stats.StreamElementsChatter;
 import dev.blocky.api.entities.stats.StreamElementsEmote;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.twitch.manager.ChannelJoinManager;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.exception.ContextedRuntimeException;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -158,6 +161,19 @@ public class TwitchUtils
     }
 
     @NonNull
+    public static List<User> retrieveUserListByIds(@NonNull TwitchClient client, @NonNull List<String> userIDs)
+    {
+        UserList userList = client.getHelix().getUsers
+                        (
+                                null,
+                                userIDs,
+                                null
+                        )
+                .execute();
+        return userList.getUsers();
+    }
+
+    @NonNull
     public static List<User> retrieveUserListByID(@NonNull TwitchClient client, int userIID)
     {
         String userID = String.valueOf(userIID);
@@ -208,21 +224,21 @@ public class TwitchUtils
         return fallbackChannelID == null ? channelID : fallbackChannelID;
     }
 
-    public static boolean hasModeratorPerms(@NonNull List<ToolsModVIP> mods, @NonNull String userName)
+    public static boolean hasModeratorPerms(@NonNull List<ModCheckerUser> mods, int userID)
     {
-        if (mods == null)
+        if (mods == null || mods.isEmpty())
         {
             return false;
         }
 
         return mods.stream().anyMatch(mod ->
         {
-            String userLogin = mod.getUserLogin();
-            return userLogin.equalsIgnoreCase(userName);
+            int userIID = mod.getUserID();
+            return userIID == userID;
         });
     }
 
-    public static boolean hasVIPPerms(@NonNull List<ToolsModVIP> vips, @NonNull String userName)
+    public static boolean hasVIPPerms(@NonNull List<ModCheckerUser> vips, int userID)
     {
         if (vips == null)
         {
@@ -231,8 +247,8 @@ public class TwitchUtils
 
         return vips.stream().anyMatch(vip ->
         {
-            String userLogin = vip.getUserLogin();
-            return userLogin.equalsIgnoreCase(userName);
+            int userIID = vip.getUserID();
+            return userIID == userID;
         });
     }
 
@@ -261,11 +277,6 @@ public class TwitchUtils
 
             ChatDropReason chatDropReason = sentChatMessage.getDropReason();
 
-            if (!sentChatMessage.isSent())
-            {
-                return false;
-            }
-
             if (chatDropReason != null)
             {
                 String dropReason = chatDropReason.getMessage();
@@ -278,14 +289,19 @@ public class TwitchUtils
                     return false;
                 }
 
-                String messageToSend = STR."Channel message dropped unexpectedly FeelsGoodMan '\{dropCode}' - \{dropReason}";
+                List<User> users = TwitchUtils.retrieveUserListByID(client, channelIID);
+
+                User user = users.getFirst();
+                String userDisplayName = user.getDisplayName();
+
+                String messageToSend = STR."\{userDisplayName} - Channel message dropped unexpectedly FeelsGoodMan '\{dropCode}' - \{dropReason}";
                 ChatMessage failedChatMessage = new ChatMessage("896181679", "896181679", messageToSend, null);
 
                 helix.sendChatMessage(null, failedChatMessage).execute();
                 return false;
             }
 
-            return true;
+            return sentChatMessage.isSent();
         }
         catch (HystrixRuntimeException | ContextedRuntimeException _)
         {
@@ -306,11 +322,13 @@ public class TwitchUtils
         ChatSettingsWrapper chatSettingsWrapper = helix.getChatSettings(null, userID, null).execute();
         ChatSettings chatSettings = chatSettingsWrapper.getChatSettings();
 
-        List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(userLogin);
-        List<ToolsModVIP> toolsVIP = ServiceProvider.getToolsVIPs(userLogin);
+        int userIID = Integer.parseInt(userID);
 
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, "ApuJar");
-        boolean hasVIPPerms = TwitchUtils.hasVIPPerms(toolsVIP, "ApuJar");
+        List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userIID);
+        List<ModCheckerUser> modCheckerVIPs = ServiceProvider.getModCheckerChannelVIPs(userIID);
+
+        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, 896181679);
+        boolean hasVIPPerms = TwitchUtils.hasVIPPerms(modCheckerVIPs, 896181679);
 
         if (hasModeratorPerms || hasVIPPerms || channelID.equals("896181679"))
         {
@@ -504,17 +522,9 @@ public class TwitchUtils
                 return;
             }
 
-            List<User> usersToSay = retrieveUserListByID(client, userID);
-            User userToSay = usersToSay.getFirst();
-            String userToSayLogin = userToSay.getLogin();
-
-            List<User> eventUsersToSay = retrieveUserListByID(client, eventUserID);
-            User eventUserToSay = eventUsersToSay.getFirst();
-            String eventUserLogin = eventUserToSay.getLogin();
-
-            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(userToSayLogin);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserLogin);
-            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, "ApuJar");
+            List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userID);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserID);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, 896181679);
 
             if (!command.matches("^((un)mod|w(hisper))$") && !hasModeratorPerms && channelID != 896181679)
             {
@@ -665,5 +675,18 @@ public class TwitchUtils
 
             e.printStackTrace();
         }
+    }
+
+    public static void handleNameChange(int userIID, @NonNull String oldLogin, @NonNull String newLogin) throws SQLException, IOException
+    {
+        TwitchChat chat = client.getChat();
+
+        SQLUtils.correctUserLogin(userIID, newLogin);
+
+        chat.leaveChannel(oldLogin);
+        chat.joinChannel(newLogin);
+
+        ChannelJoinManager joinManager = configurator.getJoinManager();
+        joinManager.joinChannel(userIID);
     }
 }

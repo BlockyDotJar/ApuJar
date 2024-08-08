@@ -27,6 +27,7 @@ import dev.blocky.api.entities.ivr.IVRUserStream;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -94,7 +95,12 @@ public class UserCommand implements ICommand
             int userFollowers = ivrUser.getUserFollowers();
             int chatterCount = ivrUser.getChatterCount();
 
-            userInfo += STR.", Follower: \{userFollowers}, Chatter: \{chatterCount}";
+            DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
+
+            String userFollowersFormatted = decimalFormat.format(userFollowers);
+            String chatterCountFormatted = decimalFormat.format(chatterCount);
+
+            userInfo += STR.", Follower: \{userFollowersFormatted}, Chatter: \{chatterCountFormatted}";
         }
 
         IVRUserRoles ivrUserRoles = ivrUser.getUserRoles();

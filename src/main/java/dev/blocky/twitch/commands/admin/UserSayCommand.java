@@ -140,11 +140,15 @@ public class UserSayCommand implements ICommand
 
                     if (!isSayable)
                     {
+                        channelToSend = null;
                         sendChatMessage(channelID, "4Head Specified command isn't sayable :P");
                         return;
                     }
 
                     commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
+
+                    // TODO: onCommand boolean
+                    // sendChatMessage(channelID, STR."Okei Successfully executed command in channel \{userDisplayName}.");
 
                     channelToSend = null;
                     return;

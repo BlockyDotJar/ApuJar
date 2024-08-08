@@ -23,6 +23,7 @@ import org.quartz.JobExecutionContext;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
+@Deprecated
 public class HolidayJob implements Job
 {
     @Override

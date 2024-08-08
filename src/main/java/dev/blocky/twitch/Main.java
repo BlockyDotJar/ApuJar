@@ -34,8 +34,8 @@ import dev.blocky.twitch.manager.CommandManager;
 import dev.blocky.twitch.manager.PrivateCommandManager;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.manager.TwitchConfigurator;
-import dev.blocky.twitch.scheduler.HolidayScheduler;
 import dev.blocky.twitch.scheduler.InformationMessageScheduler;
+import dev.blocky.twitch.scheduler.NameChangeScheduler;
 import dev.blocky.twitch.scheduler.TicTacToeScheduler;
 import dev.blocky.twitch.utils.OSUtils;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -62,6 +62,7 @@ public class Main
 
     public static TwitchClient client;
     public static TwitchHelix helix;
+    public static TwitchConfigurator configurator;
 
     public static long startedAt;
 
@@ -197,7 +198,7 @@ public class Main
         EventManager clientEventManger = client.getEventManager();
         TwitchChat chat = client.getChat();
 
-        TwitchConfigurator configurator = new TwitchConfigurator(eventSocket, clientEventManger, chat);
+        configurator = new TwitchConfigurator(eventSocket, clientEventManger, chat);
         configurator.configure();
 
         IEventManager eventManager = eventSocket.getEventManager();
@@ -207,12 +208,12 @@ public class Main
 
         new InformationMessageScheduler();
         new TicTacToeScheduler();
-
-        new HolidayScheduler();
+        new NameChangeScheduler();
 
         /*
          *  new StreamAwardsScheduler();
          *  new AprilFoolsScheduler();
+         *  new HolidayScheduler();
          */
 
         cli();

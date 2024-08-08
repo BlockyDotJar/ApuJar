@@ -24,7 +24,7 @@ import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Chat;
@@ -51,7 +51,9 @@ public class JoinCommand implements ICommand
         String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
 
-        String chatToJoin = getUserAsString(messageParts, eventUserName);
+        String chatToJoin = getParameterUserAsString(messageParts, "-s(ilent)", eventUserName);
+
+        boolean hasSilentParameter = hasRegExParameter(messageParts, "-s(ilent)?");
 
         if (!isValidUsername(chatToJoin))
         {
@@ -67,10 +69,16 @@ public class JoinCommand implements ICommand
             return;
         }
 
+        User user = chatsToJoin.getFirst();
+        String userDisplayName = user.getDisplayName();
+        String userLogin = user.getLogin();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
+
         if (!chatToJoin.equalsIgnoreCase(eventUserName))
         {
-            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(chatToJoin);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserName);
+            List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userIID);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
 
             Map<Integer, String> admins = SQLUtils.getAdmins();
             Set<Integer> adminIDs = admins.keySet();
@@ -89,8 +97,8 @@ public class JoinCommand implements ICommand
 
         boolean isInChannel = chats.stream().anyMatch(ch ->
         {
-            String userLogin = ch.getUserLogin();
-            return userLogin.equals(chatToJoin);
+            String chatLogin = ch.getUserLogin();
+            return chatLogin.equals(chatToJoin);
         });
 
         if (isInChannel)
@@ -99,17 +107,15 @@ public class JoinCommand implements ICommand
             return;
         }
 
-        User user = chatsToJoin.getFirst();
-        String userDisplayName = user.getDisplayName();
-        String userLogin = user.getLogin();
-        String userID = user.getId();
-
-        boolean wasSent = sendChatMessage(userID, "lebronJAM Hi, my name is, what? HUH My name is, who? eeeh My name is, ApuApustaja ApuApustaja ApuJar !");
-
-        if (!wasSent)
+        if (!hasSilentParameter)
         {
-            sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
-            return;
+            boolean wasSent = sendChatMessage(userID, "lebronJAM Hi, my name is, what? HUH My name is, who? eeeh My name is, ApuApustaja ApuApustaja ApuJar !");
+
+            if (!wasSent)
+            {
+                sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
+                return;
+            }
         }
 
         IEventSubSocket eventSocket = client.getEventSocket();

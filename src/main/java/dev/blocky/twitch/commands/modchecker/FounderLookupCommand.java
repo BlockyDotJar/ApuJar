@@ -15,25 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.rolelookup;
+package dev.blocky.twitch.commands.modchecker;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
 import dev.blocky.api.entities.blockyjar.KokbinPaste;
-import dev.blocky.api.entities.tools.ToolsFounder;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.ivr.IVRFounder;
+import dev.blocky.api.entities.modchecker.ModCheckerBadge;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class RoleLookupCommand implements ICommand
+public class FounderLookupCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -58,66 +58,59 @@ public class RoleLookupCommand implements ICommand
         }
 
         User user = usersToLookup.getFirst();
-        String userDisplayName = user.getDisplayName();
         String userLogin = user.getLogin();
+        String userDisplayName = user.getDisplayName();
+        String userBroadcasterType = user.getBroadcasterType();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
 
-        int modCount = 0;
-        int vipCount = 0;
-        int founderCount = 0;
-
-        List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(userLogin);
-        List<String> moderators = new ArrayList<>();
-
-        if (toolsMods != null)
+        if (!userBroadcasterType.equals("affiliate") && !userBroadcasterType.equals("partner"))
         {
-            moderators = toolsMods.stream().map(ToolsModVIP::getUserLogin).toList();
-            modCount = toolsMods.size();
+            sendChatMessage(channelID, STR."ManFeels \{userDisplayName} isn't even an affiliate or partner.");
+            return;
         }
 
-        List<ToolsModVIP> toolsVIPs = ServiceProvider.getToolsVIPs(userLogin);
-        List<String> vips = new ArrayList<>();
+        List<ModCheckerUser> modCheckerUsers = ServiceProvider.getModCheckerUsers(userIID);
 
-        if (toolsVIPs != null)
+        if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
-            vips = toolsVIPs.stream().map(ToolsModVIP::getUserLogin).toList();
-            vipCount = toolsVIPs.size();
+            sendChatMessage(channelID, STR."ohh User \{userDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
+            return;
         }
 
-        List<ToolsFounder> toolsFounders = ServiceProvider.getToolsFounders(userLogin);
-        List<String> founders = new ArrayList<>();
+        List<ModCheckerBadge> modCheckerUserBadges = modCheckerUsers.getFirst().getBadges();
+        List<String> modCheckerBadges = modCheckerUserBadges.stream().map(ModCheckerBadge::getBadgeName).toList();
+        String readableBadges = String.join(", ", modCheckerBadges);
 
-        if (toolsFounders != null)
+        List<IVRFounder> ivrFounders = ServiceProvider.getIVRFounders(userLogin);
+
+        if (ivrFounders == null || ivrFounders.isEmpty())
         {
-            founders = toolsFounders.stream().map(ToolsFounder::getUserLogin).toList();
-            founderCount = toolsFounders.size();
+            sendChatMessage(channelID, STR."Sadeg No founders for user \{userDisplayName} found.");
+            return;
         }
 
-        String moderatorsFormatted = String.join("\n", moderators);
-        String vipsFormatted = String.join("\n", vips);
+        List<String> founders = ivrFounders.stream().map(IVRFounder::getUserLogin).toList();
+
+        int founderCount = ivrFounders.size();
+
         String foundersFormatted = String.join("\n", founders);
 
-        String realModerators = moderatorsFormatted.isBlank() ? "- / -" : moderatorsFormatted;
-        String realVIPs = vipsFormatted.isBlank() ? "- / -" : vipsFormatted;
-        String realFounders = foundersFormatted.isBlank() ? "- / -" : foundersFormatted;
-
-        String roles = STR."""
-                Moderator:
-
-                \{realModerators}
-
-                VIP:
-
-                \{realVIPs}
-
+        String founder = STR."""
                 Founder:
 
-                \{realFounders}
+                \{foundersFormatted}
                 """;
 
-        KokbinPaste kokbinPaste = ServiceProvider.paste(roles);
+        KokbinPaste kokbinPaste = ServiceProvider.paste(founder);
         String pasteKey = kokbinPaste.getKey();
 
-        String messageToSend = STR."PogChamp \{userDisplayName} has \{modCount} moderators, \{vipCount} vips and \{founderCount} founder in its channel! o_O https://paste.blockyjar.dev/\{pasteKey}";
+        String messageToSend = STR."PogChamp \{userDisplayName} has \{founderCount} founder! o_O https://paste.blockyjar.dev/\{pasteKey}";
+
+        if (!readableBadges.isBlank())
+        {
+            messageToSend += STR." - Badges: \{readableBadges}";
+        }
 
         channelID = getActualChannelID(channelToSend, channelID);
 

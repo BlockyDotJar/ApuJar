@@ -20,7 +20,7 @@ package dev.blocky.twitch.commands.admin;
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
@@ -42,6 +42,7 @@ public class SpamCommand implements ICommand
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
+        int channelIID = Integer.parseInt(channelID);
 
         String eventUserName = event.getChatterUserName();
         String eventUserID = event.getChatterUserId();
@@ -88,10 +89,10 @@ public class SpamCommand implements ICommand
                 return;
             }
 
-            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(channelName);
+            List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(channelIID);
 
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserName);
-            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, "ApuJar");
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, 896181679);
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {

@@ -7,11 +7,11 @@ plugins {
 
     id("com.github.ben-manes.versions") version ("0.51.0")
 
-    kotlin("jvm") version("2.0.0")
+    kotlin("jvm") version("2.0.10")
 }
 
 group = "dev.blocky.twitch"
-version = "3.0.1"
+version = "3.2.1"
 description = "A useful bot for Twitch with many cool utility features."
 
 repositories {
@@ -21,10 +21,10 @@ repositories {
 dependencies {
     api(kotlin("stdlib"))
 
-    api("com.github.twitch4j:twitch4j:1.20.0")
+    api("com.github.twitch4j:twitch4j:1.21.0")
     api("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
-    api("se.michaelthelin.spotify:spotify-web-api-java:8.4.0")
+    api("se.michaelthelin.spotify:spotify-web-api-java:8.4.1")
 
     api("com.squareup.retrofit2:retrofit:2.11.0")
     api("com.squareup.retrofit2:converter-gson:2.11.0")
@@ -35,17 +35,17 @@ dependencies {
 
     api("org.json:json:20240303")
 
-    api("org.xerial:sqlite-jdbc:3.46.0.0")
+    api("org.xerial:sqlite-jdbc:3.46.0.1")
 
     api("io.github.cdimascio:dotenv-java:3.0.1")
 
     api("joda-time:joda-time:2.12.7")
     api("org.quartz-scheduler:quartz:2.3.2")
 
-    api("org.apache.commons:commons-lang3:3.14.0")
+    api("org.apache.commons:commons-lang3:3.16.0")
     api("org.apache.commons:commons-collections4:4.4")
 
-    api("org.slf4j:slf4j-api:2.0.13")
+    api("org.slf4j:slf4j-api:2.0.15")
     api("ch.qos.logback:logback-classic:1.5.6")
 
     compileOnly("com.github.spotbugs:spotbugs-annotations:4.8.6")

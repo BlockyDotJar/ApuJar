@@ -24,7 +24,7 @@ import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Chat;
@@ -63,10 +63,15 @@ public class PartCommand implements ICommand
             return;
         }
 
+        List<User> chatsToPart = retrieveUserList(client, chatToPart);
+        User user = chatsToPart.getFirst();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
+
         if (!chatToPart.equalsIgnoreCase(eventUserName))
         {
-            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(chatToPart);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, eventUserName);
+            List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userIID);
+            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
 
             Map<Integer, String> admins = SQLUtils.getAdmins();
             Set<Integer> adminIDs = admins.keySet();
@@ -93,10 +98,6 @@ public class PartCommand implements ICommand
             sendChatMessage(channelID, STR."CoolStoryBob I'm not even in \{chatToPart}'s chat.");
             return;
         }
-
-        List<User> chatsToPart = retrieveUserList(client, chatToPart);
-        User user = chatsToPart.getFirst();
-        String userID = user.getId();
 
         IEventSubSocket eventSocket = client.getEventSocket();
 

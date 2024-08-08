@@ -60,7 +60,7 @@ public class PingCommand implements ICommand
         Set<Chat> chatLogins = SQLUtils.getChats();
         int realChats = chatLogins.size();
 
-        String messageToSend = STR."ppPong [v3.0.1] WICKED IRC-Ping: \{chatPing}ms EventSub-Ping: \{eventSubPing}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
+        String messageToSend = STR."ppPong [v3.2.1] WICKED IRC-Ping: \{chatPing}ms EventSub-Ping: \{eventSubPing}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

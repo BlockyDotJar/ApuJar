@@ -15,13 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.rolelookup;
+package dev.blocky.twitch.commands.modchecker;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsFounder;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -33,7 +33,7 @@ import java.util.Optional;
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class FounderageCommand implements ICommand
+public class VIPageCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -53,13 +53,13 @@ public class FounderageCommand implements ICommand
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
-            sendChatMessage(channelID, "DIESOFCRINGE You can't be founder in your own chat.");
+            sendChatMessage(channelID, "DIESOFCRINGE You can't be vip in your own chat.");
             return;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
-            sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be founder in his/her own chat.");
+            sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be vip in his/her own chat.");
             return;
         }
 
@@ -79,49 +79,51 @@ public class FounderageCommand implements ICommand
         }
 
         User user = usersToCheck.getFirst();
-        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
 
         User secondUser = secondUsersToCheck.getFirst();
-        String secondUserLogin = secondUser.getLogin();
         String secondUserDisplayName = secondUser.getDisplayName();
-        String secondUserBroadcasterType = secondUser.getBroadcasterType();
+        String secondUserID = secondUser.getId();
+        int secondUserIID = Integer.parseInt(secondUserID);
 
-        if (!secondUserBroadcasterType.equals("affiliate") && !secondUserBroadcasterType.equals("partner"))
+        List<ModCheckerUser> modCheckerUsers = ServiceProvider.getModCheckerUsers(secondUserIID);
+
+        if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
-            sendChatMessage(channelID, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
+            sendChatMessage(channelID, STR."ohh User \{secondUserDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
             return;
         }
 
-        List<ToolsFounder> toolsFounders = ServiceProvider.getToolsFounders(secondUserLogin);
+        List<ModCheckerUser> modCheckerVIPs = ServiceProvider.getModCheckerChannelVIPs(secondUserIID);
 
-        if (toolsFounders == null)
+        if (modCheckerVIPs == null || modCheckerVIPs.isEmpty())
         {
-            sendChatMessage(channelID, STR."Sadeg There are no founders in \{secondUserDisplayName}'s chat at the moment.");
+            sendChatMessage(channelID, STR."Sadeg There are no vips in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
-        Optional<ToolsFounder> optionalToolsFounder = toolsFounders.stream().filter(tf ->
+        Optional<ModCheckerUser> optionalModCheckerVIP = modCheckerVIPs.stream().filter(tv ->
         {
-            String founderLogin = tf.getUserLogin();
-            return founderLogin.equals(userLogin);
+            int vipID = tv.getUserID();
+            return vipID == userIID;
         }).findFirst();
 
-        ToolsFounder toolsFounder = optionalToolsFounder.orElse(null);
+        ModCheckerUser modCheckerVIP = optionalModCheckerVIP.orElse(null);
 
-        if (toolsFounder == null)
+        if (modCheckerVIP == null)
         {
-            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't founder in \{secondUserDisplayName}'s chat at the moment.");
+            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't vip in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
-        boolean isSubscribed = toolsFounder.isSubscribed();
-        Date entitlementStart = toolsFounder.getEntitlementStart();
+        Date grantedAt = modCheckerVIP.getGrantedAt();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
-        String formattedEntitlementStart = formatter.format(entitlementStart);
+        String formattedGrantDate = formatter.format(grantedAt);
 
-        String messageToSend = STR."NOWAYING \{userDisplayName} is founder in \{secondUserDisplayName}'s chat since \{formattedEntitlementStart} (Active sub: \{isSubscribed}) PogU";
+        String messageToSend = STR."NOWAYING \{userDisplayName} is vip in \{secondUserDisplayName}'s chat since \{formattedGrantDate} PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

@@ -17,39 +17,32 @@
  */
 package dev.blocky.twitch.scheduler;
 
-import dev.blocky.twitch.scheduler.job.HolidayJob;
+import dev.blocky.twitch.scheduler.job.NameChangeJob;
 import org.quartz.*;
 import org.quartz.impl.StdSchedulerFactory;
 
-import java.util.Date;
-
-@Deprecated
-public class HolidayScheduler
+public class NameChangeScheduler
 {
-    public HolidayScheduler() throws SchedulerException
+    public NameChangeScheduler() throws SchedulerException
     {
         SchedulerFactory schedulerFactory = new StdSchedulerFactory();
         Scheduler scheduler = schedulerFactory.getScheduler();
 
         scheduler.start();
 
-        JobDetail job = JobBuilder.newJob(HolidayJob.class)
-                .withIdentity("holiday-job", "holiday")
+        JobDetail job = JobBuilder.newJob(NameChangeJob.class)
+                .withIdentity("name-change-job", "name-change")
                 .build();
 
         SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder.simpleSchedule()
-                .withIntervalInHours(6)
+                .withIntervalInHours(1)
                 .repeatForever();
 
-        Date startAt = DateBuilder.dateOf(0, 0, 0, 27,6, 2024);
-        Date endAt = DateBuilder.dateOf(0, 0, 0, 4,7, 2024);
-
         Trigger trigger = TriggerBuilder.newTrigger()
-                .withIdentity("holiday-trigger", "holiday")
+                .withIdentity("name-change-trigger", "name-change")
                 .withSchedule(scheduleBuilder)
                 .forJob(job)
-                .startAt(startAt)
-                .endAt(endAt)
+                .startNow()
                 .build();
 
         scheduler.scheduleJob(job, trigger);

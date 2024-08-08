@@ -15,24 +15,42 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.services;
+package dev.blocky.api.entities.ivr;
 
-import dev.blocky.api.entities.tools.ToolsFounder;
-import dev.blocky.api.entities.tools.ToolsModVIP;
-import retrofit2.Call;
-import retrofit2.http.GET;
-import retrofit2.http.Path;
+import com.google.gson.annotations.SerializedName;
+import edu.umd.cs.findbugs.annotations.NonNull;
 
-import java.util.List;
+import java.util.Date;
 
-public interface ToolsService
+public class IVRFounder
 {
-    @GET("getmods/{channel}")
-    Call<List<ToolsModVIP>> getMods(@Path("channel") String channel);
+    @SerializedName("isSubscribed")
+    boolean isSubscribed;
 
-    @GET("getvips/{channel}")
-    Call<List<ToolsModVIP>> getVIPs(@Path("channel") String channel);
+    @SerializedName("entitlementStarted")
+    Date entitlementStarted;
 
-    @GET("getfounders/{user}")
-    Call<List<ToolsFounder>> getFounders(@Path("user") String user);
+    @SerializedName("login")
+    String userLogin;
+
+    public boolean isSubscribed()
+    {
+        return isSubscribed;
+    }
+
+    @NonNull
+    public Date getEntitlementStart()
+    {
+        return entitlementStarted;
+    }
+
+    @NonNull
+    public String getUserLogin()
+    {
+        return userLogin;
+    }
+
+    IVRFounder()
+    {
+    }
 }

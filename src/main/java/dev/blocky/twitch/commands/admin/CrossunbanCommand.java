@@ -21,7 +21,7 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -86,9 +86,10 @@ public class CrossunbanCommand implements ICommand
             List<User> chatUsers = retrieveUserList(client, chatLogin);
             User chatUser = chatUsers.getFirst();
             String chatUserID = chatUser.getId();
+            int chatUserIID = Integer.parseInt(chatUserID);
 
-            List<ToolsModVIP> toolsMods = ServiceProvider.getToolsMods(chatLogin);
-            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(toolsMods, "ApuJar");
+            List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(chatUserIID);
+            boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, 896181679);
 
             if (!selfModeratorPerms)
             {

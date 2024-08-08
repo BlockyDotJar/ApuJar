@@ -23,6 +23,7 @@ import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.Set;
 
@@ -30,6 +31,8 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
 public class TwitchConfigurator
 {
+    private ChannelJoinManager joinManager;
+
     private final Set<Chat> chats;
     private final IEventSubSocket eventSocket;
     private final EventManager eventManager;
@@ -49,7 +52,7 @@ public class TwitchConfigurator
 
         int chatCount = 0;
 
-        ChannelJoinManager joinManager = new ChannelJoinManager(eventSocket, eventManager);
+        joinManager = new ChannelJoinManager(eventSocket, eventManager);
 
         for (Chat ch : chats)
         {
@@ -86,5 +89,11 @@ public class TwitchConfigurator
         }
 
         sendChatMessage("896181679", STR."TriFi Successfully connected to \{chatCount} chats.");
+    }
+
+    @Nullable
+    public ChannelJoinManager getJoinManager()
+    {
+        return joinManager;
     }
 }

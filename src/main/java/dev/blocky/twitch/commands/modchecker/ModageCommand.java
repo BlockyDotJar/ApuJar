@@ -15,13 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.rolelookup;
+package dev.blocky.twitch.commands.modchecker;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.tools.ToolsModVIP;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
@@ -33,7 +33,7 @@ import java.util.Optional;
 import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class VIPageCommand implements ICommand
+public class ModageCommand implements ICommand
 {
     @Override
     public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
@@ -53,13 +53,13 @@ public class VIPageCommand implements ICommand
 
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
-            sendChatMessage(channelID, "DIESOFCRINGE You can't be vip in your own chat.");
+            sendChatMessage(channelID, "DIESOFCRINGE You can't be mod in your own chat.");
             return;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
-            sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be vip in his/her own chat.");
+            sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be mod in his/her own chat.");
             return;
         }
 
@@ -70,50 +70,60 @@ public class VIPageCommand implements ICommand
         }
 
         List<User> usersToCheck = retrieveUserList(client, userToCheck);
-        List<User> secondsUserToCheck = retrieveUserList(client, secondUserToCheck);
+        List<User> secondUsersToCheck = retrieveUserList(client, secondUserToCheck);
 
-        if (usersToCheck.isEmpty() || secondsUserToCheck.isEmpty())
+        if (usersToCheck.isEmpty() || secondUsersToCheck.isEmpty())
         {
             sendChatMessage(channelID, ":| One or both users not found.");
             return;
         }
 
         User user = usersToCheck.getFirst();
-        String userLogin = user.getLogin();
         String userDisplayName = user.getDisplayName();
+        String userID = user.getId();
+        int userIID = Integer.parseInt(userID);
 
-        User secondUser = secondsUserToCheck.getFirst();
-        String secondUserLogin = secondUser.getLogin();
+        User secondUser = secondUsersToCheck.getFirst();
         String secondUserDisplayName = secondUser.getDisplayName();
+        String secondUserID = secondUser.getId();
+        int secondUserIID = Integer.parseInt(secondUserID);
 
-        List<ToolsModVIP> toolsVIPs = ServiceProvider.getToolsVIPs(secondUserLogin);
+        List<ModCheckerUser> modCheckerUsers = ServiceProvider.getModCheckerUsers(secondUserIID);
 
-        if (toolsVIPs == null)
+        if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
-            sendChatMessage(channelID, STR."Sadeg There are no vips in \{secondUserDisplayName}'s chat at the moment.");
+            sendChatMessage(channelID, STR."ohh User \{secondUserDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
             return;
         }
 
-        Optional<ToolsModVIP> optionalToolsVIPs = toolsVIPs.stream().filter(tv ->
+        List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(secondUserIID);
+
+        if (modCheckerMods == null || modCheckerMods.isEmpty())
         {
-            String vipLogin = tv.getUserLogin();
-            return vipLogin.equals(userLogin);
+            sendChatMessage(channelID, STR."Sadeg There are no mods in \{secondUserDisplayName}'s chat at the moment.");
+            return;
+        }
+
+        Optional<ModCheckerUser> optionalModCheckerMod = modCheckerMods.stream().filter(tm ->
+        {
+            int modID = tm.getUserID();
+            return modID ==  userIID;
         }).findFirst();
 
-        ToolsModVIP toolsVIP = optionalToolsVIPs.orElse(null);
+        ModCheckerUser modCheckerMod = optionalModCheckerMod.orElse(null);
 
-        if (toolsVIP == null)
+        if (modCheckerMod == null)
         {
-            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't vip in \{secondUserDisplayName}'s chat at the moment.");
+            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't mod in \{secondUserDisplayName}'s chat at the moment.");
             return;
         }
 
-        Date grantedAt = toolsVIP.getGrantedAt();
+        Date grantedAt = modCheckerMod.getGrantedAt();
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
         String formattedGrantDate = formatter.format(grantedAt);
 
-        String messageToSend = STR."NOWAYING \{userDisplayName} is vip in \{secondUserDisplayName}'s chat since \{formattedGrantDate} PogU";
+        String messageToSend = STR."NOWAYING \{userDisplayName} mods \{secondUserDisplayName}'s chat since \{formattedGrantDate} PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
         sendChatMessage(channelID, messageToSend);

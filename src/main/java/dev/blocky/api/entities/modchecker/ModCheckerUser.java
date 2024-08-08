@@ -15,43 +15,47 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.api.entities.tools;
+package dev.blocky.api.entities.modchecker;
 
 import com.google.gson.annotations.SerializedName;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import java.util.Date;
+import java.util.List;
 
-public class ToolsModVIP
+public class ModCheckerUser
 {
-    @SerializedName("login")
-    String userLogin;
+    @SerializedName("id")
+    int userID;
 
-    @SerializedName("granted_at")
+    @SerializedName("badges")
+    List<ModCheckerBadge> badges;
+
+    @SerializedName("granted")
     Date grantedAt;
 
-    @SerializedName("banned")
-    boolean isBanned;
+    @SerializedName("follower")
+    long follower;
 
-    @Nullable
+    public int getUserID()
+    {
+        return userID;
+    }
+
+    @NonNull
+    public List<ModCheckerBadge> getBadges()
+    {
+        return badges;
+    }
+
+    @NonNull
     public Date getGrantedAt()
     {
         return grantedAt;
     }
 
-    @NonNull
-    public String getUserLogin()
+    public long getFollower()
     {
-        return userLogin;
-    }
-
-    public boolean isBanned()
-    {
-        return isBanned;
-    }
-
-    ToolsModVIP()
-    {
+        return follower;
     }
 }

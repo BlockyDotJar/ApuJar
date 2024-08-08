@@ -47,11 +47,11 @@ public class ChannelJoinManager
 
     public void onChannelNotice(@NonNull ChannelNoticeEvent event)
     {
+        EventChannel channel = event.getChannel();
+        String channelName = channel.getName();
+
         try
         {
-            EventChannel channel = event.getChannel();
-            String channelName = channel.getName();
-
             String message = event.getMessage();
 
             if (message.contains("banned"))
@@ -70,7 +70,7 @@ public class ChannelJoinManager
             Class<?> clazz = e.getClass();
             String clazzName = clazz.getName();
 
-            sendChatMessage("896181679", STR."Weird Error while trying to listen to channel notices FeelsGoodMan \{error} (\{clazzName})");
+            sendChatMessage("896181679", STR."Channel: \{channelName} Weird Error while trying to listen to channel notices FeelsGoodMan \{error} (\{clazzName})");
 
             e.printStackTrace();
         }
@@ -116,7 +116,10 @@ public class ChannelJoinManager
             Class<?> clazz = e.getClass();
             String clazzName = clazz.getName();
 
-            sendChatMessage("896181679", STR."Weird Error while trying to listen to channel notices FeelsGoodMan \{error} (\{clazzName})");
+            EventChannel channel = event.getChannel();
+            String channelName = channel.getName();
+
+            sendChatMessage("896181679", STR."Channel: \{channelName} Weird Error while trying to listen to channel notices FeelsGoodMan \{error} (\{clazzName})");
 
             e.printStackTrace();
         }

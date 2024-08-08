@@ -17,24 +17,27 @@
  */
 package dev.blocky.api.services;
 
-import dev.blocky.api.entities.ivr.IVRSubage;
-import dev.blocky.api.entities.ivr.IVRUser;
-import okhttp3.ResponseBody;
+import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import retrofit2.Call;
 import retrofit2.http.GET;
-import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 import java.util.List;
 
-public interface IVRService
+public interface ModCheckerService
 {
-    @GET("twitch/user")
-    Call<List<IVRUser>> getUser(@Query("login") String login);
+    @GET("users")
+    Call<List<ModCheckerUser>> getUsers(@Query("id") int userID);
 
-    @GET("twitch/subage/{user}/{channel}")
-    Call<IVRSubage> getSubage(@Path("user") String user, @Path("channel") String channel);
+    @GET("mods")
+    Call<List<ModCheckerUser>> getUserMods(@Query("user_id") int userID);
 
-    @GET("twitch/founders/{channel}")
-    Call<ResponseBody> getFounders(@Path("channel") String channel);
+    @GET("vips")
+    Call<List<ModCheckerUser>> getUserVIPs(@Query("user_id") int userID);
+
+    @GET("mods")
+    Call<List<ModCheckerUser>> getChannelMods(@Query("channel_id") int channelID);
+
+    @GET("vips")
+    Call<List<ModCheckerUser>> getChannelVIPs(@Query("channel_id") int channelID);
 }
