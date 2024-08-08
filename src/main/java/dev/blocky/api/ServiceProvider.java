@@ -109,7 +109,6 @@ public class ServiceProvider
             case "BlockyJarService" -> STR."https://api.blockyjar.dev/v\{BLOCKYJAR_API_VERSION}/";
             case "NoEmbedService" -> "https://noembed.com/";
             case "YouTubeDislikesService" -> "https://returnyoutubedislikeapi.com/";
-            case "TwitchGQLService" -> "https://gql.twitch.tv/";
             case "KokBinService" -> "https://paste.blockyjar.dev/";
             case "SusgeLogsService" -> "https://logs.susgee.dev/";
             case "StreamElementsService" -> STR."https://api.streamelements.com/kappa/v\{STREAMELEMENTS_API_VERSION}/";
