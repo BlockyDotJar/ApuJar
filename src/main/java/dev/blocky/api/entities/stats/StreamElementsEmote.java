@@ -22,20 +22,11 @@ import edu.umd.cs.findbugs.annotations.Nullable;
 
 public class StreamElementsEmote
 {
-    @SerializedName("id")
-    String emoteID;
-
     @SerializedName("emote")
     String emoteName;
 
     @SerializedName("amount")
     int amountSent;
-
-    @Nullable
-    public String getEmoteID()
-    {
-        return emoteID;
-    }
 
     @Nullable
     public String getEmoteName()

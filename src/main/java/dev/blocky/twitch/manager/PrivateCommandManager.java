@@ -30,7 +30,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static dev.blocky.twitch.Main.helix;
 import static dev.blocky.twitch.utils.TwitchUtils.getFilteredParts;
 import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
@@ -54,7 +53,7 @@ public class PrivateCommandManager
             if (commandExists)
             {
                 IPrivateCommand privateCommand = privateCmd.getCommandAsClass();
-                privateCommand.onPrivateCommand(event, helix, messageParts);
+                privateCommand.onPrivateCommand(event, messageParts);
                 return true;
             }
         }

@@ -18,17 +18,12 @@
 package dev.blocky.api.entities.seventv;
 
 import com.google.gson.annotations.SerializedName;
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 
-import java.util.Date;
 import java.util.List;
 
 public class SevenTVTwitchUser
 {
-    @SerializedName("id")
-    String userID;
-
     @SerializedName("display_name")
     String userDisplayName;
 
@@ -38,17 +33,8 @@ public class SevenTVTwitchUser
     @SerializedName("user")
     SevenTVUser user;
 
-    @SerializedName("linkedAt")
-    Date linkedAt;
-
     @SerializedName("cosmentics")
     List<SevenTVCosmetic> cosmentics;
-
-    @NonNull
-    public String getUserID()
-    {
-        return userID;
-    }
 
     @Nullable
     public String getUserDisplayName()
@@ -66,12 +52,6 @@ public class SevenTVTwitchUser
     public SevenTVUser getUser()
     {
         return user;
-    }
-
-    @Nullable
-    public Date getLinkedAt()
-    {
-        return linkedAt;
     }
 
     @Nullable

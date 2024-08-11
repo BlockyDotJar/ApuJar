@@ -19,17 +19,15 @@ package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.User;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Chat;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -73,12 +71,12 @@ public class JoinCommand implements ICommand
         String userDisplayName = user.getDisplayName();
         String userLogin = user.getLogin();
         String userID = user.getId();
-        int userIID = Integer.parseInt(userID);
 
         if (!chatToJoin.equalsIgnoreCase(eventUserName))
         {
-            List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userIID);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
+            List<Badge> badges = event.getBadges();
+
+            boolean hasModeratorPerms = badges.stream().map(Badge::getSetId).anyMatch(badgeID -> badgeID.equals("moderator"));
 
             Map<Integer, String> admins = SQLUtils.getAdmins();
             Set<Integer> adminIDs = admins.keySet();

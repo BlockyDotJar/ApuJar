@@ -54,7 +54,10 @@ public class DeleteGlobalCommandCommand implements ICommand
 
         if ((gcName.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcName, actualPrefix) && caseInsensitivePrefix))
         {
-            gcName = gcName.substring(prefixLength);
+            if (!gcName.equals(actualPrefix))
+            {
+                gcName = gcName.substring(prefixLength);
+            }
         }
 
         TreeMap<String, String> globalCommands = SQLUtils.getGlobalCommands();

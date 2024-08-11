@@ -72,7 +72,7 @@ public class BibleInformationCommand implements ICommand
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
         Date addedAt = bibleEntry.getAddedAt();
-        Date updatedAt = bibleEntry.getAddedAt();
+        Date updatedAt = bibleEntry.getUpdatedAt();
 
         String readableAddedAt = formatter.format(addedAt);
         String readableUpdatedAt = formatter.format(updatedAt);

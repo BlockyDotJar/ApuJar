@@ -18,6 +18,7 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.serialization.Command;
@@ -31,6 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
@@ -102,7 +104,8 @@ public class FileSayCommand implements ICommand
             {
                 if (line.startsWith("/") && !line.equals("/"))
                 {
-                    handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, 2);
+                    List<Badge> badges = event.getBadges();
+                    handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, badges, 2);
                     continue;
                 }
 

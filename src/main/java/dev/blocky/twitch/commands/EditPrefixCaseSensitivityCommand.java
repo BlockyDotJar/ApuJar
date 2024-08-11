@@ -18,14 +18,12 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Prefix;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -42,8 +40,6 @@ public class EditPrefixCaseSensitivityCommand implements ICommand
         int channelIID = Integer.parseInt(channelID);
 
         String eventUserName = event.getChatterUserName();
-        String eventUserID = event.getChatterUserId();
-        int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
         {
@@ -59,13 +55,14 @@ public class EditPrefixCaseSensitivityCommand implements ICommand
             return;
         }
 
-        boolean caseInsensitive = Boolean.parseBoolean(caseSensitivityValue);
+        boolean caseInsensitive = !Boolean.parseBoolean(caseSensitivityValue);
 
         Prefix prefix = SQLUtils.getPrefix(channelIID);
         String actualPrefix = prefix.getPrefix();
 
-        List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(channelIID);
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
+        List<Badge> badges = event.getBadges();
+
+        boolean hasModeratorPerms = badges.stream().map(Badge::getSetId).anyMatch(badgeID -> badgeID.equals("moderator"));
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
@@ -79,8 +76,8 @@ public class EditPrefixCaseSensitivityCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE customPrefixes SET caseInsensitive = '\{caseInsensitive}' WHERE userID = \{channelID}");
+        SQLite.onUpdate(STR."UPDATE customPrefixes SET caseInsensitive = \{caseInsensitive} WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, STR."8-) Successfully edited prefix case-sensitivity to '\{caseInsensitive}'.");
+        sendChatMessage(channelID, STR."8-) Successfully edited prefix case-sensitivity to '\{!caseInsensitive}'.");
     }
 }

@@ -18,14 +18,12 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Keyword;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -43,8 +41,6 @@ public class DeleteKeywordCommand implements ICommand
         int channelIID = Integer.parseInt(channelID);
 
         String eventUserName = event.getChatterUserName();
-        String eventUserID = event.getChatterUserId();
-        int eventUserIID = Integer.parseInt(eventUserID);
 
         if (messageParts.length == 1)
         {
@@ -52,9 +48,9 @@ public class DeleteKeywordCommand implements ICommand
             return;
         }
 
-        List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(channelIID);
+        List<Badge> badges = event.getBadges();
 
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
+        boolean hasModeratorPerms = badges.stream().map(Badge::getSetId).anyMatch(badgeID -> badgeID.equals("moderator"));
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {

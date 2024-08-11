@@ -19,7 +19,6 @@ package dev.blocky.twitch.commands.weather;
 
 import com.github.twitch4j.common.events.domain.EventUser;
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
-import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.twitch.interfaces.IPrivateCommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.utils.SQLUtils;
@@ -31,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 public class HideLocationPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull TwitchHelix helix, @NotNull String[] messageParts) throws Exception
+    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts) throws Exception
     {
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();

@@ -32,7 +32,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SetChatColorCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
         String channelID = event.getBroadcasterUserId();
 

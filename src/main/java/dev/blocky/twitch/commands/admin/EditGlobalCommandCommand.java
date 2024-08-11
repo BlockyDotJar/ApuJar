@@ -67,7 +67,10 @@ public class EditGlobalCommandCommand implements ICommand
 
         if ((gcNameRaw.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcNameRaw, actualPrefix) && caseInsensitivePrefix))
         {
-            gcNameRaw = gcNameRaw.substring(prefixLength);
+            if (!gcNameRaw.equals(actualPrefix))
+            {
+                gcNameRaw = gcNameRaw.substring(prefixLength);
+            }
         }
 
         String gcName = handleIllegalCharacters(gcNameRaw);

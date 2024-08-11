@@ -19,6 +19,7 @@ package dev.blocky.twitch.utils;
 
 import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.TwitchChat;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.helix.domain.*;
 import com.netflix.hystrix.exception.HystrixRuntimeException;
 import dev.blocky.api.ServiceProvider;
@@ -461,7 +462,7 @@ public class TwitchUtils
         return String.join(" | ", topTwitchChatter);
     }
 
-    public static void handleSlashCommands(int channelID, int eventUserID, int userID, @NonNull String[] messageParts, int index)
+    public static void handleSlashCommands(int channelID, int eventUserID, int userID, @NonNull String[] messageParts, @NonNull List<Badge> badges, int index)
     {
         try
         {
@@ -523,7 +524,8 @@ public class TwitchUtils
             }
 
             List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userID);
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserID);
+
+            boolean hasModeratorPerms = badges.stream().map(Badge::getSetId).anyMatch(badgeID -> badgeID.equals("moderator"));
             boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, 896181679);
 
             if (!command.matches("^((un)mod|w(hisper))$") && !hasModeratorPerms && channelID != 896181679)

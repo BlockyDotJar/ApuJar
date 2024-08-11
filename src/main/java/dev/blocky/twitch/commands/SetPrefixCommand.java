@@ -18,14 +18,12 @@
 package dev.blocky.twitch.commands;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.modchecker.ModCheckerUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import dev.blocky.twitch.manager.SQLite;
 import dev.blocky.twitch.serialization.Prefix;
 import dev.blocky.twitch.utils.SQLUtils;
-import dev.blocky.twitch.utils.TwitchUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
@@ -42,8 +40,6 @@ public class SetPrefixCommand implements ICommand
         int channelIID = Integer.parseInt(channelID);
 
         String eventUserName = event.getChatterUserName();
-        String eventUserID = event.getChatterUserId();
-        int eventUserIID = Integer.parseInt(eventUserID);
 
         boolean hasCaseInsensitiveParameter = hasRegExParameter(messageParts, "-(cis|case-insensitive)");
 
@@ -58,9 +54,10 @@ public class SetPrefixCommand implements ICommand
 
         Prefix prefix = SQLUtils.getPrefix(channelIID);
         String actualPrefix = prefix.getPrefix();
+        boolean isCaseInsensitive = prefix.isCaseInsensitive();
 
-        List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(channelIID);
-        boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
+        List<Badge> badges = event.getBadges();
+        boolean hasModeratorPerms = badges.stream().map(Badge::getSetId).anyMatch(badgeID -> badgeID.equals("moderator"));
 
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
@@ -82,10 +79,26 @@ public class SetPrefixCommand implements ICommand
 
         if (!actualPrefix.equals("#") && userPrefix.equals("#"))
         {
-            SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
+            if (!isCaseInsensitive && !hasCaseInsensitiveParameter)
+            {
+                SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
+                sendChatMessage(channelID, "8-) Successfully reseted prefix.");
+                return;
+            }
 
-            sendChatMessage(channelID, "8-) Successfully deleted prefix.");
-            return;
+            if (isCaseInsensitive)
+            {
+                SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '#' WHERE userID = \{channelID}");
+                sendChatMessage(channelID, "8-) Successfully reseted prefix.");
+                return;
+            }
+
+            if (hasCaseInsensitiveParameter)
+            {
+                SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '#', caseInsensitive = TRUE WHERE userID = \{channelID}");
+                sendChatMessage(channelID, "8-) Successfully reseted prefix.");
+                return;
+            }
         }
 
         if (actualPrefix.equals("#"))
@@ -96,8 +109,19 @@ public class SetPrefixCommand implements ICommand
             return;
         }
 
-        SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{userPrefix}' WHERE userID = \{channelID}");
+        if (!hasCaseInsensitiveParameter)
+        {
+            SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{userPrefix}' WHERE userID = \{channelID}");
+        }
 
-        sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefixRaw} '. (Case-Insensitive: \{hasCaseInsensitiveParameter})");
+        if (hasCaseInsensitiveParameter)
+        {
+            SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '\{userPrefix}', caseInsensitive = TRUE WHERE userID = \{channelID}");
+        }
+
+        Prefix newPrefix = SQLUtils.getPrefix(channelIID);
+        isCaseInsensitive = newPrefix.isCaseInsensitive();
+
+        sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefixRaw} '. (Case-Insensitive: \{isCaseInsensitive})");
     }
 }

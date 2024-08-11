@@ -18,10 +18,9 @@
 package dev.blocky.twitch.interfaces;
 
 import com.github.twitch4j.common.events.user.PrivateMessageEvent;
-import com.github.twitch4j.helix.TwitchHelix;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 public interface IPrivateCommand
 {
-    void onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull TwitchHelix helix, @NonNull String[] messageParts) throws Exception;
+    void onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception;
 }

@@ -43,9 +43,8 @@ public class SQLUtils
     @Nullable
     public static <T> T get(@NonNull String sql, @NonNull String columnLabel, @NonNull Class<T> clazz)
     {
-        try
+        try (ResultSet result = SQLite.onQuery(sql))
         {
-            ResultSet result = SQLite.onQuery(sql);
             return result.getObject(columnLabel, clazz);
         }
         catch (Exception e)
@@ -66,10 +65,8 @@ public class SQLUtils
     @NonNull
     public static <T> Set<T> getAll(@NonNull String sql, @NonNull String columnLabel, @NonNull Class<T> clazz)
     {
-        try
+        try (ResultSet result = SQLite.onQuery(sql))
         {
-            ResultSet result = SQLite.onQuery(sql);
-
             Set<T> set = new HashSet<>();
 
             while (result.next())
@@ -97,10 +94,8 @@ public class SQLUtils
     @NonNull
     public static Map<String, Object> getMapped(@NonNull String sql, @NonNull Map<String, Class<?>> columnLabels, boolean nilCheck)
     {
-        try
+        try (ResultSet result = SQLite.onQuery(sql))
         {
-            ResultSet result = SQLite.onQuery(sql);
-
             Map<String, Object> map = new HashMap<>();
             List<Boolean> nils = new ArrayList<>();
 
@@ -149,10 +144,8 @@ public class SQLUtils
     @NonNull
     public static List<Map<String, Object>> getAllMapped(@NonNull String sql, @NonNull Map<String, Class<?>> columnLabels)
     {
-        try
+        try (ResultSet result = SQLite.onQuery(sql))
         {
-            ResultSet result = SQLite.onQuery(sql);
-
             List<Map<String, Object>> results = new ArrayList<>();
 
             while (result.next())
@@ -190,10 +183,8 @@ public class SQLUtils
     @NonNull
     public static TreeMap<String, String> getAllTreeMapped(@NonNull String sql, @NonNull List<String> columnLabels)
     {
-        try
+        try (ResultSet result = SQLite.onQuery(sql))
         {
-            ResultSet result = SQLite.onQuery(sql);
-
             TreeMap<String, String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
             while (result.next())
@@ -226,10 +217,8 @@ public class SQLUtils
     @NonNull
     public static <U, T> BidiMap<U, T> getAllBidiMapped(@NonNull String sql, @NonNull List<String> columnLabels, @NonNull Class<U> clazz, @NonNull Class<T> extraClazz)
     {
-        try
+        try (ResultSet result = SQLite.onQuery(sql))
         {
-            ResultSet result = SQLite.onQuery(sql);
-
             BidiMap<U, T> map = new DualHashBidiMap<>();
 
             while (result.next())

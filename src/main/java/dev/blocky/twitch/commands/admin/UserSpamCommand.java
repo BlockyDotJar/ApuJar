@@ -18,6 +18,7 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import com.github.twitch4j.helix.domain.User;
 import dev.blocky.api.ServiceProvider;
@@ -115,9 +116,10 @@ public class UserSpamCommand implements ICommand
                 return;
             }
 
+            List<Badge> badges = event.getBadges();
             List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(channelIID);
 
-            boolean hasModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, eventUserIID);
+            boolean hasModeratorPerms = badges.stream().map(Badge::getSetId).anyMatch(badgeID -> badgeID.equals("moderator"));
             boolean selfModeratorPerms = TwitchUtils.hasModeratorPerms(modCheckerMods, 896181679);
 
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)

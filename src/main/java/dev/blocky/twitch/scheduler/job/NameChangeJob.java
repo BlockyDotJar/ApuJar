@@ -23,7 +23,6 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.TwitchUtils;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class NameChangeJob implements Job
 {
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException
+    public void execute(JobExecutionContext context)
     {
         try
         {

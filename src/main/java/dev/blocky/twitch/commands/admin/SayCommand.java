@@ -18,9 +18,12 @@
 package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
+
+import java.util.List;
 
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
@@ -46,7 +49,8 @@ public class SayCommand implements ICommand
 
         if (messageToSend.startsWith("/") && !messageToSend.equals("/"))
         {
-            handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, 1);
+            List<Badge> badges = event.getBadges();
+            handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, badges, 1);
             return;
         }
 
