@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class EditKeywordCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,13 +45,13 @@ public class EditKeywordCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a keyword.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
-            return;
+            return false;
         }
 
         List<Badge> badges = event.getBadges();
@@ -61,7 +61,7 @@ public class EditKeywordCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "ManFeels You can't edit a keyword, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         String kw = messageParts[1];
@@ -72,7 +72,7 @@ public class EditKeywordCommand implements ICommand
         if (kw.startsWith("/") || kwMessage.startsWith("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The keyword/message can't start with a / (slash) haha");
-            return;
+            return false;
         }
 
         Set<Keyword> keywords = SQLUtils.getKeywords(channelIID);
@@ -91,7 +91,7 @@ public class EditKeywordCommand implements ICommand
                 if (kwdMessage.equals(kwMessageRaw))
                 {
                     sendChatMessage(channelID, STR."4Head The new value for '\{kw}' does exactly match with the old one.");
-                    return;
+                    return false;
                 }
 
                 break;
@@ -101,11 +101,11 @@ public class EditKeywordCommand implements ICommand
         if (!keywordExists)
         {
             sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kw} ' doesn't exist.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."UPDATE customKeywords SET message = '\{kwMessage}' WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword ' \{kw} '.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword ' \{kw} '.");
     }
 }

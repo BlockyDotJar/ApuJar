@@ -37,7 +37,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class FounderageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -46,7 +46,7 @@ public class FounderageCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsDankMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
@@ -55,19 +55,19 @@ public class FounderageCommand implements ICommand
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
             sendChatMessage(channelID, "DIESOFCRINGE You can't be founder in your own chat.");
-            return;
+            return false;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
             sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be founder in his/her own chat.");
-            return;
+            return false;
         }
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
             sendChatMessage(channelID, "o_O One or both usernames don't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToCheck = retrieveUserList(client, userToCheck);
@@ -76,7 +76,7 @@ public class FounderageCommand implements ICommand
         if (usersToCheck.isEmpty() || secondUsersToCheck.isEmpty())
         {
             sendChatMessage(channelID, ":| One or both users not found.");
-            return;
+            return false;
         }
 
         User user = usersToCheck.getFirst();
@@ -93,7 +93,7 @@ public class FounderageCommand implements ICommand
         if (!secondUserBroadcasterType.equals("affiliate") && !secondUserBroadcasterType.equals("partner"))
         {
             sendChatMessage(channelID, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
-            return;
+            return false;
         }
 
         List<ModCheckerUser> modCheckerUsers = ServiceProvider.getModCheckerUsers(userIID);
@@ -101,7 +101,7 @@ public class FounderageCommand implements ICommand
         if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
             sendChatMessage(channelID, STR."ohh User \{userDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
-            return;
+            return false;
         }
 
         List<IVRFounder> ivrFounders = ServiceProvider.getIVRFounders(secondUserLogin);
@@ -109,7 +109,7 @@ public class FounderageCommand implements ICommand
         if (ivrFounders == null)
         {
             sendChatMessage(channelID, STR."Sadeg There are no founders in \{secondUserDisplayName}'s chat at the moment.");
-            return;
+            return false;
         }
 
         Optional<IVRFounder> optionalIVRFounder = ivrFounders.stream().filter(tf ->
@@ -122,8 +122,7 @@ public class FounderageCommand implements ICommand
 
         if (ivrFounder == null)
         {
-            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't founder in \{secondUserDisplayName}'s chat at the moment.");
-            return;
+            return sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't founder in \{secondUserDisplayName}'s chat at the moment.");
         }
 
         boolean isSubscribed = ivrFounder.isSubscribed();
@@ -135,6 +134,6 @@ public class FounderageCommand implements ICommand
         String messageToSend = STR."NOWAYING \{userDisplayName} is founder in \{secondUserDisplayName}'s chat since \{formattedEntitlementStart} (Active sub: \{isSubscribed}) PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

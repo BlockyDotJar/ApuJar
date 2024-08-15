@@ -32,14 +32,14 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class IsBannedCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
@@ -47,15 +47,15 @@ public class IsBannedCommand implements ICommand
         if (!isValidUsername(userToCheck))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrUsers.isEmpty())
+        if (ivrUsers == null || ivrUsers.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
-            return;
+            return false;
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
@@ -63,14 +63,13 @@ public class IsBannedCommand implements ICommand
 
         if (!ivrUser.isBanned())
         {
-            sendChatMessage(channelID, STR."Saved \{userDisplayName} isn't banned from Twitch at the moment.");
-            return;
+            return sendChatMessage(channelID, STR."Saved \{userDisplayName} isn't banned from Twitch at the moment.");
         }
 
         String userBanReason = ivrUser.getBanReason();
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."monakS \{userDisplayName} is banned from Twitch \u26D4 (Reason: \{userBanReason}) \u26D4");
+        return sendChatMessage(channelID, STR."monakS \{userDisplayName} is banned from Twitch \u26D4 (Reason: \{userBanReason}) \u26D4");
     }
 }

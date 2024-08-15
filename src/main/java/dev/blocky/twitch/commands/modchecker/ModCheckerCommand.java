@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ModCheckerCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,7 +45,7 @@ public class ModCheckerCommand implements ICommand
         if (!isValidUsername(userToLookup))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToLookup = retrieveUserList(client, userToLookup);
@@ -53,7 +53,7 @@ public class ModCheckerCommand implements ICommand
         if (usersToLookup.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToLookup}' found.");
-            return;
+            return false;
         }
 
         User user = usersToLookup.getFirst();
@@ -67,7 +67,7 @@ public class ModCheckerCommand implements ICommand
         if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
             sendChatMessage(channelID, STR."ohh User \{userDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
-            return;
+            return false;
         }
 
         String messageToSend = null;
@@ -124,6 +124,6 @@ public class ModCheckerCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

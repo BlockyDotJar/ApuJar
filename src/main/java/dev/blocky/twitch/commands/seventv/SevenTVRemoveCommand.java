@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class SevenTVRemoveCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -49,7 +49,7 @@ public class SevenTVRemoveCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a emote.");
-            return;
+            return false;
         }
 
         String emoteToRemove = messageParts[1];
@@ -62,14 +62,14 @@ public class SevenTVRemoveCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
             sendChatMessage(channelID, "ManFeels You can't remove emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
-            return;
+            return false;
         }
 
         SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, channelIID);
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
@@ -77,7 +77,7 @@ public class SevenTVRemoveCommand implements ICommand
         if (sevenTVEmoteSet == null)
         {
             sendChatMessage(channelID, "FeelsGoodMan No emote active emote-set found.");
-            return;
+            return false;
         }
 
         String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
@@ -90,7 +90,7 @@ public class SevenTVRemoveCommand implements ICommand
         if (sevenTVEmotesFiltered.isEmpty())
         {
             sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToRemove}' found.");
-            return;
+            return false;
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
@@ -102,9 +102,9 @@ public class SevenTVRemoveCommand implements ICommand
 
         if (SevenTVUtils.checkErrors(channelID, errors))
         {
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully removed (7TV) emote \{emoteToRemove}.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully removed (7TV) emote \{emoteToRemove}.");
     }
 }

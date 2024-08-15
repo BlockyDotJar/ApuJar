@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVAllowCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -47,7 +47,7 @@ public class SevenTVAllowCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToAllow = getUserAsString(messageParts, 1);
@@ -55,7 +55,7 @@ public class SevenTVAllowCommand implements ICommand
         if (!isValidUsername(userToAllow))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToAllow = retrieveUserList(client, userToAllow);
@@ -63,7 +63,7 @@ public class SevenTVAllowCommand implements ICommand
         if (usersToAllow.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToAllow}' found.");
-            return;
+            return false;
         }
 
         User user = usersToAllow.getFirst();
@@ -74,14 +74,14 @@ public class SevenTVAllowCommand implements ICommand
         if (!channelName.equals(eventUserName))
         {
             sendChatMessage(channelID, STR."NiceTry \{eventUserName} but you aren't the broadcaster of this channel.");
-            return;
+            return false;
         }
 
         SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, userIID);
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         boolean isAllowedEditor = SevenTVUtils.isAllowedEditor(channelIID, userIID);
@@ -89,7 +89,7 @@ public class SevenTVAllowCommand implements ICommand
         if (isAllowedEditor)
         {
             sendChatMessage(channelID, STR."WHAT \{userDisplayName} is already able to update emotes.");
-            return;
+            return false;
         }
 
         Set<String> sevenTVAllowedUserIDs = SQLUtils.getSevenTVAllowedUserIDs(channelIID);
@@ -97,8 +97,7 @@ public class SevenTVAllowCommand implements ICommand
         if (sevenTVAllowedUserIDs == null)
         {
             SQLite.onUpdate(STR."INSERT INTO sevenTVUsers(userID, allowedUserIDs) VALUES(\{channelIID}, '\{userID}')");
-            sendChatMessage(channelID, STR."POGGERS Successfully added \{userDisplayName} as editor.");
-            return;
+            return sendChatMessage(channelID, STR."POGGERS Successfully added \{userDisplayName} as editor.");
         }
 
         String sevenTVAllowedUserIDsFormatted = String.join(",", sevenTVAllowedUserIDs);
@@ -106,6 +105,6 @@ public class SevenTVAllowCommand implements ICommand
 
         SQLite.onUpdate(STR."UPDATE sevenTVUsers SET allowedUserIDs = '\{newAllowedUserIDs}' WHERE userID = \{channelIID}");
 
-        sendChatMessage(channelID, STR."POGGERS Successfully added \{userDisplayName} as editor.");
+        return sendChatMessage(channelID, STR."POGGERS Successfully added \{userDisplayName} as editor.");
     }
 }

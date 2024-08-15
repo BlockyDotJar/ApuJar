@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class IsAffiliateCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -43,15 +43,15 @@ public class IsAffiliateCommand implements ICommand
         if (!isValidUsername(userToCheck))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrUsers.isEmpty())
+        if (ivrUsers == null || ivrUsers.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
-            return;
+            return false;
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
@@ -60,12 +60,11 @@ public class IsAffiliateCommand implements ICommand
 
         if (!ivrUserRoles.isAffiliate())
         {
-            sendChatMessage(channelID, STR."Sadge \{userDisplayName} isn't a Twitch affiliate at the moment.");
-            return;
+            return sendChatMessage(channelID, STR."Sadge \{userDisplayName} isn't a Twitch affiliate at the moment.");
         }
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."DinoDance \{userDisplayName} is a Twitch affiliate POGGERS");
+        return sendChatMessage(channelID, STR."DinoDance \{userDisplayName} is a Twitch affiliate POGGERS");
     }
 }

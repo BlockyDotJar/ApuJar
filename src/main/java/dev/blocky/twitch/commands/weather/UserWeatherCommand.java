@@ -39,14 +39,14 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class UserWeatherCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToGetWeatherFrom = getUserAsString(messageParts, 1);
@@ -54,7 +54,7 @@ public class UserWeatherCommand implements ICommand
         if (!isValidUsername(userToGetWeatherFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetWeatherFrom = retrieveUserList(client, userToGetWeatherFrom);
@@ -62,7 +62,7 @@ public class UserWeatherCommand implements ICommand
         if (usersToGetWeatherFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetWeatherFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetWeatherFrom.getFirst();
@@ -75,7 +75,7 @@ public class UserWeatherCommand implements ICommand
         if (location == null)
         {
             sendChatMessage(channelID, "FeelsMan Please the specified user was not found in the location database Weird The user needs to set an location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
-            return;
+            return false;
         }
 
         double latitude = location.getLatitude();
@@ -147,7 +147,7 @@ public class UserWeatherCommand implements ICommand
         if (hideLocation)
         {
             sendChatMessage(channelID, STR."Weather for \{userDisplayName}'s location FeelsGoodMan Secret location Susge \{weather}");
-            return;
+            return false;
         }
 
         String userLocation = cityName;
@@ -159,6 +159,6 @@ public class UserWeatherCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Weather for \{userDisplayName}'s location FeelsGoodMan \{userLocation} \{emoji} \{weather}");
+        return sendChatMessage(channelID, STR."Weather for \{userDisplayName}'s location FeelsGoodMan \{userLocation} \{emoji} \{weather}");
     }
 }

@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SubageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -43,7 +43,7 @@ public class SubageCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
@@ -52,7 +52,7 @@ public class SubageCommand implements ICommand
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
             sendChatMessage(channelID, "o_O One or both usernames aren't matching with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> users = retrieveUserList(client, userToCheck);
@@ -61,7 +61,7 @@ public class SubageCommand implements ICommand
         if (users.isEmpty() || secondUsers.isEmpty())
         {
             sendChatMessage(channelID, ":| One or both users not found.");
-            return;
+            return false;
         }
 
         User user = users.getFirst();
@@ -76,7 +76,7 @@ public class SubageCommand implements ICommand
         if (secondUserBroadcasterType.isEmpty())
         {
             sendChatMessage(channelID, STR."ManFeels \{secondUserDisplayName} isn't even an affiliate or partner.");
-            return;
+            return false;
         }
 
         IVRSubage ivrSubage = ServiceProvider.getIVRSubage(userLogin, secondUserLogin);
@@ -106,8 +106,7 @@ public class SubageCommand implements ICommand
                 messageToSend += STR." before, Ended: \{readableEnd})";
             }
 
-            sendChatMessage(channelID, messageToSend);
-            return;
+            return sendChatMessage(channelID, messageToSend);
         }
 
         Date endsAt = ivrSubageMeta.getEndsAt();
@@ -172,6 +171,6 @@ public class SubageCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

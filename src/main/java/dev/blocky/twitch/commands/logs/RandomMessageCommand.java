@@ -32,7 +32,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class RandomMessageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -43,7 +43,7 @@ public class RandomMessageCommand implements ICommand
         if (!isValidUsername(userToCheck))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToCheck = retrieveUserList(client, userToCheck);
@@ -51,7 +51,7 @@ public class RandomMessageCommand implements ICommand
         if (usersToCheck.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
-            return;
+            return false;
         }
 
         User user = usersToCheck.getFirst();
@@ -61,7 +61,7 @@ public class RandomMessageCommand implements ICommand
 
         if (randomMessage == null)
         {
-            return;
+            return false;
         }
 
         String[] randomMessageParts = randomMessage.split(" ");
@@ -82,6 +82,6 @@ public class RandomMessageCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."FeelsOkayMan \uD83D\uDC49 Sent on \{sentAtReadable} from \{sender} \{message}");
+        return sendChatMessage(channelID, STR."FeelsOkayMan \uD83D\uDC49 Sent on \{sentAtReadable} from \{sender} \{message}");
     }
 }

@@ -22,5 +22,5 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 
 public interface IPrivateCommand
 {
-    void onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception;
+    boolean onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception;
 }

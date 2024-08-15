@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ChatStatsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -46,7 +46,7 @@ public class ChatStatsCommand implements ICommand
         if (!isValidUsername(userToGetChatStatsFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetChatStatsFrom = retrieveUserList(client, userToGetChatStatsFrom);
@@ -54,7 +54,7 @@ public class ChatStatsCommand implements ICommand
         if (usersToGetChatStatsFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetChatStatsFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetChatStatsFrom.getFirst();
@@ -66,7 +66,7 @@ public class ChatStatsCommand implements ICommand
         if (streamElementsChatStats == null)
         {
             sendChatMessage(channelID, "UNLUCKY No streamelements chatstats for user found.");
-            return;
+            return false;
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("###,###,###");
@@ -121,6 +121,6 @@ public class ChatStatsCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -23,5 +23,5 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 
 public interface ICommand
 {
-    void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception;
+    boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception;
 }

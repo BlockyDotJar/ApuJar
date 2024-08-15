@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class LeaveCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -50,7 +50,7 @@ public class LeaveCommand implements ICommand
         if (ticTacToe == null)
         {
             sendChatMessage(channelID, "FeelsDankMan No tictactoe game found.");
-            return;
+            return false;
         }
 
         List<Integer> playerIDs = ticTacToe.getPlayerIDs();
@@ -61,7 +61,7 @@ public class LeaveCommand implements ICommand
         if (eventUserIID != player1ID && eventUserIID != player2ID)
         {
             sendChatMessage(channelID, "FeelsDankMan You don't even play along.");
-            return;
+            return false;
         }
 
         int round = ticTacToe.getRound();
@@ -88,6 +88,6 @@ public class LeaveCommand implements ICommand
 
         SQLite.onUpdate(STR."DELETE FROM tictactoe WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, STR."YIPPEE \{eventUserName} left the game. \{userDisplayName} won the game! happie (Game lasted \{MM}:\{SS} | \{round} rounds)");
+        return sendChatMessage(channelID, STR."YIPPEE \{eventUserName} left the game. \{userDisplayName} won the game! happie (Game lasted \{MM}:\{SS} | \{round} rounds)");
     }
 }

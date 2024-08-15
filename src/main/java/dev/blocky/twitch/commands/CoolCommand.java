@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class CoolCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -42,6 +42,6 @@ public class CoolCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Nice \{userToLookup} is \{coolness}% cool.");
+        return sendChatMessage(channelID, STR."Nice \{userToLookup} is \{coolness}% cool.");
     }
 }

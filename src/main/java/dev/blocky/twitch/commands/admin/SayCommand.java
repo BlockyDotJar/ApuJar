@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SayCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -42,7 +42,7 @@ public class SayCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a message.");
-            return;
+            return false;
         }
 
         String messageToSend = removeElements(messageParts, 1);
@@ -50,17 +50,26 @@ public class SayCommand implements ICommand
         if (messageToSend.startsWith("/") && !messageToSend.equals("/"))
         {
             List<Badge> badges = event.getBadges();
-            handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, badges, 1);
-            return;
+
+            boolean successfulExecution = handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, badges, 1);
+
+            if (successfulExecution)
+            {
+                sendChatMessage(channelID, "GIGACHAD Successfully executed slash command.");
+                return true;
+            }
+
+            sendChatMessage(channelID, "MONKA Slash command execution failed unexpectedly.");
+            return false;
         }
 
         boolean isSendable = checkChatSettings(messageParts, channelName, channelID, channelID);
 
         if (!isSendable)
         {
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -37,7 +37,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVYoinkCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -50,7 +50,7 @@ public class SevenTVYoinkCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToYoink = getUserAsString(messageParts, 1);
@@ -58,7 +58,7 @@ public class SevenTVYoinkCommand implements ICommand
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a emote.");
-            return;
+            return false;
         }
 
         String emoteToYoink = messageParts[2];
@@ -72,7 +72,7 @@ public class SevenTVYoinkCommand implements ICommand
         if (!isValidUsername(userToYoink))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToYoink = retrieveUserList(client, userToYoink);
@@ -80,7 +80,7 @@ public class SevenTVYoinkCommand implements ICommand
         if (usersToYoink.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToYoink}' found.");
-            return;
+            return false;
         }
 
         User user = usersToYoink.getFirst();
@@ -95,14 +95,14 @@ public class SevenTVYoinkCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
             sendChatMessage(channelID, "ManFeels You can't add emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
-            return;
+            return false;
         }
 
         SevenTVTwitchUser sevenTVTwitchUser = ServiceProvider.getSevenTVUser(channelIID, userIID);
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
@@ -110,7 +110,7 @@ public class SevenTVYoinkCommand implements ICommand
         if (sevenTVEmoteSet == null)
         {
             sendChatMessage(channelID, "FeelsGoodMan No emote active emote-set found.");
-            return;
+            return false;
         }
 
         String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
@@ -123,7 +123,7 @@ public class SevenTVYoinkCommand implements ICommand
         if (sevenTVEmotesFiltered.isEmpty())
         {
             sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToYoink}' found.");
-            return;
+            return false;
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
@@ -139,7 +139,7 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
@@ -151,9 +151,9 @@ public class SevenTVYoinkCommand implements ICommand
 
         if (SevenTVUtils.checkErrors(channelID, errors))
         {
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed})");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated}, Listed: \{isListed})");
     }
 }

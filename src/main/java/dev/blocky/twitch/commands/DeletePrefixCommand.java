@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeletePrefixCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -48,7 +48,7 @@ public class DeletePrefixCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "ManFeels You can't delete a prefix, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         Prefix prefix = SQLUtils.getPrefix(channelIID);
@@ -57,11 +57,11 @@ public class DeletePrefixCommand implements ICommand
         if (actualPrefix.equals("#"))
         {
             sendChatMessage(channelID, "CoolStoryBob You don't have a custom prefix.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, "8-) Successfully deleted prefix.");
+        return sendChatMessage(channelID, "8-) Successfully deleted prefix.");
     }
 }

@@ -34,25 +34,17 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class SQLCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please send some sql.");
-            return;
+            return false;
         }
 
         String sql = removeElements(messageParts, 1);
-
-        if (!StringUtils.startsWithIgnoreCase(sql, "SELECT"))
-        {
-            SQLite.onUpdate(sql);
-
-            sendChatMessage(channelID, "o7 Successfully executed your sql code.");
-            return;
-        }
 
         try
         {
@@ -84,14 +76,22 @@ public class SQLCommand implements ICommand
                         output.append(" - ");
                     }
 
-                    sendChatMessage(channelID, output.toString());
+                    String sqlMetdata = output.toString();
+
+                    return sendChatMessage(channelID, sqlMetdata);
                 }
             }
+
+            SQLite.onUpdate(sql);
+
+            return sendChatMessage(channelID, "o7 Successfully executed your sql code.");
         }
         catch (SQLException e)
         {
             String errorMessage = e.getMessage();
+
             sendChatMessage(channelID, STR."ApuApustaja \{errorMessage}");
+            return false;
         }
     }
 }

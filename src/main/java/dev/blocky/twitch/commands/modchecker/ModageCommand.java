@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ModageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -45,7 +45,7 @@ public class ModageCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsDankMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
@@ -54,19 +54,19 @@ public class ModageCommand implements ICommand
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equalsIgnoreCase(eventUserName))
         {
             sendChatMessage(channelID, "DIESOFCRINGE You can't be mod in your own chat.");
-            return;
+            return false;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
             sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't be mod in his/her own chat.");
-            return;
+            return false;
         }
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
             sendChatMessage(channelID, "o_O One or both usernames don't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToCheck = retrieveUserList(client, userToCheck);
@@ -75,7 +75,7 @@ public class ModageCommand implements ICommand
         if (usersToCheck.isEmpty() || secondUsersToCheck.isEmpty())
         {
             sendChatMessage(channelID, ":| One or both users not found.");
-            return;
+            return false;
         }
 
         User user = usersToCheck.getFirst();
@@ -93,7 +93,7 @@ public class ModageCommand implements ICommand
         if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
             sendChatMessage(channelID, STR."ohh User \{secondUserDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
-            return;
+            return false;
         }
 
         List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(secondUserIID);
@@ -101,7 +101,7 @@ public class ModageCommand implements ICommand
         if (modCheckerMods == null || modCheckerMods.isEmpty())
         {
             sendChatMessage(channelID, STR."Sadeg There are no mods in \{secondUserDisplayName}'s chat at the moment.");
-            return;
+            return false;
         }
 
         Optional<ModCheckerUser> optionalModCheckerMod = modCheckerMods.stream().filter(tm ->
@@ -114,8 +114,7 @@ public class ModageCommand implements ICommand
 
         if (modCheckerMod == null)
         {
-            sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't mod in \{secondUserDisplayName}'s chat at the moment.");
-            return;
+            return sendChatMessage(channelID, STR."forsenLaughingAtYou \{userDisplayName} isn't mod in \{secondUserDisplayName}'s chat at the moment.");
         }
 
         Date grantedAt = modCheckerMod.getGrantedAt();
@@ -126,6 +125,6 @@ public class ModageCommand implements ICommand
         String messageToSend = STR."NOWAYING \{userDisplayName} mods \{secondUserDisplayName}'s chat since \{formattedGrantDate} PogU";
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

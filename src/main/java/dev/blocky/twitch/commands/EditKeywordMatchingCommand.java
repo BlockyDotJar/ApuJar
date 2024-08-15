@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class EditKeywordMatchingCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,13 +45,13 @@ public class EditKeywordMatchingCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a keyword.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a boolean. (Either true or false)");
-            return;
+            return false;
         }
 
         String matchValue = messageParts[2];
@@ -59,7 +59,7 @@ public class EditKeywordMatchingCommand implements ICommand
         if (!matchValue.matches("^true|false$"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between true or false)");
-            return;
+            return false;
         }
 
         boolean exactMatch = Boolean.parseBoolean(matchValue);
@@ -71,7 +71,7 @@ public class EditKeywordMatchingCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "ManFeels You can't edit the keyword matching, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         String kw = messageParts[1];
@@ -92,7 +92,7 @@ public class EditKeywordMatchingCommand implements ICommand
                 if (kwdExactMatch == exactMatch)
                 {
                     sendChatMessage(channelID, STR."4Head The new matching for '\{kw}' does exactly match with the old one.");
-                    return;
+                    return false;
                 }
 
                 break;
@@ -102,11 +102,11 @@ public class EditKeywordMatchingCommand implements ICommand
         if (!keywordExists)
         {
             sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kw} ' doesn't exist.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."UPDATE customKeywords SET exactMatch = \{exactMatch} WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword matching to '\{exactMatch}'.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully edited keyword matching to '\{exactMatch}'.");
     }
 }

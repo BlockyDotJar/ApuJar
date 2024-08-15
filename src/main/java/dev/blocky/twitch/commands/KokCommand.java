@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class KokCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -42,6 +42,6 @@ public class KokCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Tasty \{userToLookup}'s kok is \{kokSize} cm long.");
+        return sendChatMessage(channelID, STR."Tasty \{userToLookup}'s kok is \{kokSize} cm long.");
     }
 }

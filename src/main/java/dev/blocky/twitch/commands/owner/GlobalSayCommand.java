@@ -35,14 +35,14 @@ public class GlobalSayCommand implements ICommand
     public static String channelToSend;
 
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
-            return;
+            return false;
         }
 
         String messageToSend = removeElements(messageParts, 1);
@@ -50,7 +50,7 @@ public class GlobalSayCommand implements ICommand
         if (messageToSend.startsWith("/"))
         {
             sendChatMessage(channelID, "4Head / (slash) commands are not allowed in global commands.");
-            return;
+            return false;
         }
 
         Set<Chat> chats = SQLUtils.getChats();
@@ -67,6 +67,6 @@ public class GlobalSayCommand implements ICommand
 
         int chatCount = chats.size();
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{chatCount} chats.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{chatCount} chats.");
     }
 }

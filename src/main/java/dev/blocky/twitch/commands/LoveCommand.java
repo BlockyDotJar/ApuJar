@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class LoveCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -57,6 +57,6 @@ public class LoveCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."peepoLove \{userToLookup} loves \{secondUserToLookup} \{love}%.");
+        return sendChatMessage(channelID, STR."peepoLove \{userToLookup} loves \{secondUserToLookup} \{love}%.");
     }
 }

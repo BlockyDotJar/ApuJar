@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class IsInChatCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -41,7 +41,7 @@ public class IsInChatCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
@@ -50,7 +50,7 @@ public class IsInChatCommand implements ICommand
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
             sendChatMessage(channelID, "o_O One or both usernames aren't matching with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> users = retrieveUserList(client, userToCheck);
@@ -59,7 +59,7 @@ public class IsInChatCommand implements ICommand
         if (users.isEmpty() || secondUsers.isEmpty())
         {
             sendChatMessage(channelID, ":| One or both users not found.");
-            return;
+            return false;
         }
 
         User user = users.getFirst();
@@ -75,7 +75,7 @@ public class IsInChatCommand implements ICommand
         if (lilbChatter == null)
         {
             sendChatMessage(channelID, "FeelsOkayMan lilb API server error. dink lilb_lxryer");
-            return;
+            return false;
         }
 
         List<String> chatters = lilbChatter.getChatters();
@@ -87,9 +87,9 @@ public class IsInChatCommand implements ICommand
         if (!isInChat)
         {
             sendChatMessage(channelID, STR."mhm \{userDisplayName} is not in \{secondUserDisplayName}'s chat.");
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."Susge \{userDisplayName} is currently in \{secondUserDisplayName}'s chat.");
+        return sendChatMessage(channelID, STR."Susge \{userDisplayName} is currently in \{secondUserDisplayName}'s chat.");
     }
 }

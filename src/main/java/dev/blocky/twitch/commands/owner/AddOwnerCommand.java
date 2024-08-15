@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class AddOwnerCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -47,13 +47,13 @@ public class AddOwnerCommand implements ICommand
         if (eventUserIID != 755628467)
         {
             sendChatMessage(channelID, "oop You are not my founder.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String chatToPromote = getUserAsString(messageParts, 1);
@@ -61,7 +61,7 @@ public class AddOwnerCommand implements ICommand
         if (!isValidUsername(chatToPromote))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> chatsToPromote = retrieveUserList(client, chatToPromote);
@@ -69,7 +69,7 @@ public class AddOwnerCommand implements ICommand
         if (chatsToPromote.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{chatToPromote}' found.");
-            return;
+            return false;
         }
 
         User user = chatsToPromote.getFirst();
@@ -84,7 +84,7 @@ public class AddOwnerCommand implements ICommand
         if (ownerIDs.contains(userIID))
         {
             sendChatMessage(channelID, STR."CoolStoryBob Already promoted \{chatToPromote}.");
-            return;
+            return false;
         }
 
         Map<Integer, String> admins = SQLUtils.getAdmins();
@@ -94,8 +94,7 @@ public class AddOwnerCommand implements ICommand
         {
             SQLite.onUpdate(STR."UPDATE admins SET isOwner = TRUE WHERE userID = \{userID}");
 
-            sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
-            return;
+            return sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
         }
 
         SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', TRUE)");
@@ -103,6 +102,6 @@ public class AddOwnerCommand implements ICommand
         BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
         ServiceProvider.postOwner(channelIID, body);
 
-        sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
+        return sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an owner.");
     }
 }

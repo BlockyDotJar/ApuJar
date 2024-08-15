@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class AddAdminCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -44,7 +44,7 @@ public class AddAdminCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String chatToPromote = getUserAsString(messageParts, 1);
@@ -52,7 +52,7 @@ public class AddAdminCommand implements ICommand
         if (!isValidUsername(chatToPromote))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> chatsToPromote = retrieveUserList(client, chatToPromote);
@@ -60,7 +60,7 @@ public class AddAdminCommand implements ICommand
         if (chatsToPromote.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{chatToPromote}' found.");
-            return;
+            return false;
         }
 
         User user = chatsToPromote.getFirst();
@@ -78,7 +78,7 @@ public class AddAdminCommand implements ICommand
         if (adminIDs.contains(userIID) || ownerIDs.contains(userIID))
         {
             sendChatMessage(channelID, STR."CoolStoryBob Already promoted \{chatToPromote}.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."INSERT INTO admins(userID, userLogin, isOwner) VALUES(\{userID}, '\{userLogin}', FALSE)");
@@ -86,6 +86,6 @@ public class AddAdminCommand implements ICommand
         BlockyJarUserBody body = new BlockyJarUserBody(userIID, userLogin);
         ServiceProvider.postAdmin(channelIID, body);
 
-        sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
+        return sendChatMessage(channelID, STR."BloodTrail Successfully promoted \{userDisplayName} as an admin.");
     }
 }

@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class ReceiveEventNotificationsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -44,7 +44,7 @@ public class ReceiveEventNotificationsCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a boolean. (Either true or false)");
-            return;
+            return false;
         }
 
         String receiveValue = messageParts[1];
@@ -52,7 +52,7 @@ public class ReceiveEventNotificationsCommand implements ICommand
         if (!receiveValue.matches("^true|false$"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between true or false)");
-            return;
+            return false;
         }
 
         boolean shouldBeEnabled = Boolean.parseBoolean(receiveValue);
@@ -63,7 +63,7 @@ public class ReceiveEventNotificationsCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "ManFeels You can't edit event notifcations, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         Chat chat = SQLUtils.getChat(channelIID);
@@ -74,11 +74,11 @@ public class ReceiveEventNotificationsCommand implements ICommand
         if (shouldBeEnabled == isEnabled)
         {
             sendChatMessage(channelID, STR."4Head Event notifications had already been \{receiveValue}.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."UPDATE chats SET eventsEnabled = \{shouldBeEnabled} WHERE userID = \{channelIID}");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully \{receiveValue} event notifications for this chat.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully \{receiveValue} event notifications for this chat.");
     }
 }

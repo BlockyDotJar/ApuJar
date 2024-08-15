@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class TopEmotesCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -48,7 +48,7 @@ public class TopEmotesCommand implements ICommand
             if (!emoteService.matches("^(twitch|ttv|7tv|stv|seventv|betterttv|bttv|frankerfacez|ffz)$"))
             {
                 sendChatMessage(channelID, "FeelsMan Please specify a valid emote service. (7tv, bttv or ffz)");
-                return;
+                return false;
             }
         }
 
@@ -57,7 +57,7 @@ public class TopEmotesCommand implements ICommand
         if (!isValidUsername(userToGetTopEmotesFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetTopEmotesFrom = retrieveUserList(client, userToGetTopEmotesFrom);
@@ -65,7 +65,7 @@ public class TopEmotesCommand implements ICommand
         if (usersToGetTopEmotesFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetTopEmotesFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetTopEmotesFrom.getFirst();
@@ -77,7 +77,7 @@ public class TopEmotesCommand implements ICommand
         if (streamElementsChatStats == null)
         {
             sendChatMessage(channelID, "UNLUCKY No streamelements chatstats for user found.");
-            return;
+            return false;
         }
 
         String messageToSend = STR."peepoChat Here are the top emotes for \{userDisplayName} \uD83D\uDC49";
@@ -129,13 +129,13 @@ public class TopEmotesCommand implements ICommand
         if (topEmotes.isBlank())
         {
             sendChatMessage(channelID, "Sadeg No top emotes found.");
-            return;
+            return false;
         }
 
         messageToSend += STR." \{topEmotes}";
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class AddBibleEntryCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -45,7 +45,7 @@ public class AddBibleEntryCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a entry.");
-            return;
+            return false;
         }
 
         String entryRaw = removeElements(messageParts, 1);
@@ -56,7 +56,7 @@ public class AddBibleEntryCommand implements ICommand
 
         if (bibleEntry == null)
         {
-            return;
+            return false;
         }
 
         int page = bibleEntry.getPage();
@@ -65,6 +65,6 @@ public class AddBibleEntryCommand implements ICommand
 
         SQLite.onUpdate(STR."INSERT INTO bible(page, entry, addedAt, updatedAt, userID, userLogin) VALUES(\{page}, '\{entry}', '\{now}', '\{now}', \{eventUserID}, '\{eventUserName}')");
 
-        sendChatMessage(channelID, STR."\{eventUserName} Successfully added entry #\{page} to our bible!");
+        return sendChatMessage(channelID, STR."\{eventUserName} Successfully added entry #\{page} to our bible!");
     }
 }

@@ -38,7 +38,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class VolumeCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -48,7 +48,7 @@ public class VolumeCommand implements ICommand
         if (!isValidUsername(userToGetVolumeFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetVolumeFrom = retrieveUserList(client, userToGetVolumeFrom);
@@ -56,7 +56,7 @@ public class VolumeCommand implements ICommand
         if (usersToGetVolumeFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetVolumeFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetVolumeFrom.getFirst();
@@ -69,7 +69,7 @@ public class VolumeCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
@@ -82,7 +82,7 @@ public class VolumeCommand implements ICommand
         if (devices.length == 0 || !anyActiveDevice)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{userDisplayName} isn't online on Spotify.");
-            return;
+            return false;
         }
 
         Device device = devices[0];
@@ -91,6 +91,6 @@ public class VolumeCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."pepeBASS \{userDisplayName} is listening to a song with a volume of \{volume}% WAYTOODANK");
+        return sendChatMessage(channelID, STR."pepeBASS \{userDisplayName} is listening to a song with a volume of \{volume}% WAYTOODANK");
     }
 }

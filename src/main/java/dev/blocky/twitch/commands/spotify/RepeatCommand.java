@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class RepeatCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -47,7 +47,7 @@ public class RepeatCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify the way the track should be repeated. (off/track/context)");
-            return;
+            return false;
         }
 
         String repeatMode = messageParts[1].toLowerCase();
@@ -55,7 +55,7 @@ public class RepeatCommand implements ICommand
         if (!repeatMode.matches("^(off|track|context)$"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid repeat mode specified. (Choose between off, track or context)");
-            return;
+            return false;
         }
 
         SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(eventUserIID);
@@ -63,7 +63,7 @@ public class RepeatCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
@@ -76,12 +76,12 @@ public class RepeatCommand implements ICommand
         if (devices.length == 0 || !anyActiveDevice)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
-            return;
+            return false;
         }
 
         SetRepeatModeOnUsersPlaybackRequest repeatRequest = spotifyAPI.setRepeatModeOnUsersPlayback(repeatMode).build();
         repeatRequest.execute();
 
-        sendChatMessage(channelID, STR."PassTheBurrito Set \{eventUserName}'s repeat mode to \{repeatMode}.");
+        return sendChatMessage(channelID, STR."PassTheBurrito Set \{eventUserName}'s repeat mode to \{repeatMode}.");
     }
 }

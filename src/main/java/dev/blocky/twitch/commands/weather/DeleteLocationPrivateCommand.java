@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 public class DeleteLocationPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts) throws Exception
+    public boolean onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts) throws Exception
     {
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -41,11 +41,12 @@ public class DeleteLocationPrivateCommand implements IPrivateCommand
         if (location == null)
         {
             sendWhisper(eventUserID, "4Head No location found in the database for your user id.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."DELETE FROM weatherLocations WHERE userID = \{eventUserIID}");
 
         sendWhisper(eventUserID, ":O Successfully deleted your location from our database :D");
+        return true;
     }
 }

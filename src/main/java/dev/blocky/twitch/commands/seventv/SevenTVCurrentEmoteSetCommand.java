@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVCurrentEmoteSetCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
 
@@ -45,7 +45,7 @@ public class SevenTVCurrentEmoteSetCommand implements ICommand
         if (!isValidUsername(userToGetEmoteSetFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetURLFrom = retrieveUserList(client, userToGetEmoteSetFrom);
@@ -53,7 +53,7 @@ public class SevenTVCurrentEmoteSetCommand implements ICommand
         if (usersToGetURLFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetEmoteSetFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetURLFrom.getFirst();
@@ -65,7 +65,7 @@ public class SevenTVCurrentEmoteSetCommand implements ICommand
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
@@ -73,7 +73,7 @@ public class SevenTVCurrentEmoteSetCommand implements ICommand
         if (sevenTVEmoteSet == null)
         {
             sendChatMessage(channelID, "FeelsGoodMan No emote active emote-set found.");
-            return;
+            return false;
         }
 
         String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
@@ -85,6 +85,6 @@ public class SevenTVCurrentEmoteSetCommand implements ICommand
         int emoteCount = sevenTVEmoteSet.getEmoteCount();
         int emoteSetCapacity = sevenTVEmoteSet.getCapacity();
 
-        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote-set link for the '\{emoteSetName}' emote-set from \{userDisplayName} (Capacity: \{emoteCount}/\{emoteSetCapacity}) \uD83D\uDC49 https://7tv.app/emote-sets/\{sevenTVEmoteSetID}");
+        return sendChatMessage(channelID, STR."SeemsGood Here is your 7tv emote-set link for the '\{emoteSetName}' emote-set from \{userDisplayName} (Capacity: \{emoteCount}/\{emoteSetCapacity}) \uD83D\uDC49 https://7tv.app/emote-sets/\{sevenTVEmoteSetID}");
     }
 }

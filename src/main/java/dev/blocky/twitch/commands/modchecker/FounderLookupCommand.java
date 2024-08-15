@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class FounderLookupCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -46,7 +46,7 @@ public class FounderLookupCommand implements ICommand
         if (!isValidUsername(userToLookup))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToLookup = retrieveUserList(client, userToLookup);
@@ -54,7 +54,7 @@ public class FounderLookupCommand implements ICommand
         if (usersToLookup.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToLookup}' found.");
-            return;
+            return false;
         }
 
         User user = usersToLookup.getFirst();
@@ -67,7 +67,7 @@ public class FounderLookupCommand implements ICommand
         if (!userBroadcasterType.equals("affiliate") && !userBroadcasterType.equals("partner"))
         {
             sendChatMessage(channelID, STR."ManFeels \{userDisplayName} isn't even an affiliate or partner.");
-            return;
+            return false;
         }
 
         List<ModCheckerUser> modCheckerUsers = ServiceProvider.getModCheckerUsers(userIID);
@@ -75,7 +75,7 @@ public class FounderLookupCommand implements ICommand
         if (modCheckerUsers == null || modCheckerUsers.isEmpty())
         {
             sendChatMessage(channelID, STR."ohh User \{userDisplayName} doesn't get logged by modChecker at the moment or the user opted himself/herself out from the tracking. Please try searching the user FeelsOkayMan \uD83D\uDC49 https://mdc.lol/c");
-            return;
+            return false;
         }
 
         List<ModCheckerBadge> modCheckerUserBadges = modCheckerUsers.getFirst().getBadges();
@@ -87,7 +87,7 @@ public class FounderLookupCommand implements ICommand
         if (ivrFounders == null || ivrFounders.isEmpty())
         {
             sendChatMessage(channelID, STR."Sadeg No founders for user \{userDisplayName} found.");
-            return;
+            return false;
         }
 
         List<String> founders = ivrFounders.stream().map(IVRFounder::getUserLogin).toList();
@@ -114,6 +114,6 @@ public class FounderLookupCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class YouTubeCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -45,7 +45,7 @@ public class YouTubeCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a YouTube url or video id.");
-            return;
+            return false;
         }
 
         String videoID = messageParts[1];
@@ -53,7 +53,7 @@ public class YouTubeCommand implements ICommand
         if (!videoID.matches("^(https?://(www.|m.|music.)?youtu(be.com|.be)/(watch[?]v=|shorts/))?[\\w-]{11}((&|[?])[\\w=?&]+)?$"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid YouTube url or video id specified.");
-            return;
+            return false;
         }
 
         if (videoID.length() != 11)
@@ -78,7 +78,7 @@ public class YouTubeCommand implements ICommand
         if (videoTitle == null && videoAuthor == null)
         {
             sendChatMessage(channelID, STR."FeelsGoodMan No YouTube video found for id '\{videoID}'.");
-            return;
+            return false;
         }
 
         YouTubeDislikes youTubeDislikes = ServiceProvider.getYouTubeVideoVotes(videoID);
@@ -109,6 +109,6 @@ public class YouTubeCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

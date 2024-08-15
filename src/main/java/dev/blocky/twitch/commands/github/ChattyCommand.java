@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ChattyCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -55,8 +55,7 @@ public class ChattyCommand implements ICommand
 
         if (assets.isEmpty() || (!hasEXEParameter && !hasZIPParameter))
         {
-            sendChatMessage(channelID, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} \uD83D\uDC49 \{htmlURL}");
-            return;
+            return sendChatMessage(channelID, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} \uD83D\uDC49 \{htmlURL}");
         }
 
         String neededFileType = null;
@@ -95,6 +94,6 @@ public class ChattyCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}) \uD83D\uDC49 \{browserDownloadURL}");
+        return sendChatMessage(channelID, STR."SeemsGood The latest version of chatty is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}) \uD83D\uDC49 \{browserDownloadURL}");
     }
 }

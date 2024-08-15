@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class EditGlobalCommandCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -41,13 +41,13 @@ public class EditGlobalCommandCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a global command name.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
-            return;
+            return false;
         }
 
         Prefix prefix = SQLUtils.getPrefix(channelIID);
@@ -62,7 +62,7 @@ public class EditGlobalCommandCommand implements ICommand
         if (gcNameRaw.startsWith("/") || gcMessageRaw.startsWith("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The global command name/message can't start with a / (slash) haha");
-            return;
+            return false;
         }
 
         if ((gcNameRaw.startsWith(actualPrefix) && !caseInsensitivePrefix) || (StringUtils.startsWithIgnoreCase(gcNameRaw, actualPrefix) && caseInsensitivePrefix))
@@ -81,17 +81,17 @@ public class EditGlobalCommandCommand implements ICommand
         if (!globalCommands.containsKey(gcNameRaw))
         {
             sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcNameRaw}' doesn't exist.");
-            return;
+            return false;
         }
 
         if (globalCommands.containsKey(gcNameRaw) && globalCommands.get(gcNameRaw).equals(gcMessageRaw))
         {
             sendChatMessage(channelID, STR."4Head The new value for '\{gcNameRaw}' does exactly match with the old one.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."UPDATE globalCommands SET message = '\{gcMessage}' WHERE name = '\{gcName}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully edited global command '\{gcName}'");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully edited global command '\{gcName}'");
     }
 }

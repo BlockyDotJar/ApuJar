@@ -40,7 +40,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class TicCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -54,7 +54,7 @@ public class TicCommand implements ICommand
         if (ticTacToe == null)
         {
             sendChatMessage(channelID, "FeelsDankMan Use the 'tictactoe' command to start a game.");
-            return;
+            return false;
         }
 
         int currentUserID = ticTacToe.getNextUserID();
@@ -62,13 +62,13 @@ public class TicCommand implements ICommand
         if (eventUserIID != currentUserID)
         {
             sendChatMessage(channelID, STR."WTF It's not your turn \{eventUserName}.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a field.");
-            return;
+            return false;
         }
 
         String position = messageParts[1];
@@ -76,7 +76,7 @@ public class TicCommand implements ICommand
         if (position.matches("^[1-9]$"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between 1 and 9)");
-            return;
+            return false;
         }
 
         int index = Integer.parseInt(position);
@@ -86,7 +86,7 @@ public class TicCommand implements ICommand
         if (board[index - 1] != 0)
         {
             sendChatMessage(channelID, STR."FeelsDankMan Position \{position} is already specified.");
-            return;
+            return false;
         }
 
         board[index - 1] = 1;
@@ -173,16 +173,14 @@ public class TicCommand implements ICommand
         {
             SQLite.onUpdate(STR."DELETE FROM tictactoe WHERE userID = \{channelID}");
 
-            sendChatMessage(channelID, STR."UNLUCKY The tic tac toe session ended with a tie. (Game lasted \{MM}:\{SS} | 9 rounds)");
-            return;
+            return sendChatMessage(channelID, STR."UNLUCKY The tic tac toe session ended with a tie. (Game lasted \{MM}:\{SS} | 9 rounds)");
         }
 
         if (TTTMinimaxAI.checkForWinner(board) == 1)
         {
             SQLite.onUpdate(STR."DELETE FROM tictactoe WHERE userID = \{channelID}");
 
-            sendChatMessage(channelID, STR."Pag \{eventUserName} (\u274C) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
-            return;
+            return sendChatMessage(channelID, STR."Pag \{eventUserName} (\u274C) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
         }
 
         if (TTTMinimaxAI.checkForWinner(board) == 2)
@@ -191,12 +189,10 @@ public class TicCommand implements ICommand
 
             if (aiTurn)
             {
-                sendChatMessage(channelID, STR."EZ I (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
-                return;
+                return sendChatMessage(channelID, STR."EZ I (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
             }
 
-            sendChatMessage(channelID, STR."Pag \{eventUserName} (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
-            return;
+            return sendChatMessage(channelID, STR."Pag \{eventUserName} (\u2B55) won the game. (Game lasted \{MM}:\{SS} | \{round} rounds)");
         }
 
         String newBoard = Arrays.stream(board)
@@ -207,6 +203,6 @@ public class TicCommand implements ICommand
 
         SQLite.onUpdate(STR."UPDATE tictactoe SET board = '\{newBoard}', nextUserID = \{nextUserID}, round = \{nextRound} WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

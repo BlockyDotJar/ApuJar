@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SetPrefixCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -46,7 +46,7 @@ public class SetPrefixCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a prefix.");
-            return;
+            return false;
         }
 
         String userPrefixRaw = getParameterAsString(messageParts, "-(cis|case-insensitive)");
@@ -62,19 +62,19 @@ public class SetPrefixCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "NOIDONTTHINKSO You can't set a prefix, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         if (userPrefix.equals("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The new prefix can't be / (slash) haha");
-            return;
+            return false;
         }
 
         if (actualPrefix.equals(userPrefixRaw))
         {
             sendChatMessage(channelID, "CoolStoryBob The new prefix matches exactly with the old one.");
-            return;
+            return false;
         }
 
         if (!actualPrefix.equals("#") && userPrefix.equals("#"))
@@ -82,22 +82,19 @@ public class SetPrefixCommand implements ICommand
             if (!isCaseInsensitive && !hasCaseInsensitiveParameter)
             {
                 SQLite.onUpdate(STR."DELETE FROM customPrefixes WHERE userID = \{channelID}");
-                sendChatMessage(channelID, "8-) Successfully reseted prefix.");
-                return;
+                return sendChatMessage(channelID, "8-) Successfully reseted prefix.");
             }
 
             if (isCaseInsensitive)
             {
                 SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '#' WHERE userID = \{channelID}");
-                sendChatMessage(channelID, "8-) Successfully reseted prefix.");
-                return;
+                return sendChatMessage(channelID, "8-) Successfully reseted prefix.");
             }
 
             if (hasCaseInsensitiveParameter)
             {
                 SQLite.onUpdate(STR."UPDATE customPrefixes SET prefix = '#', caseInsensitive = TRUE WHERE userID = \{channelID}");
-                sendChatMessage(channelID, "8-) Successfully reseted prefix.");
-                return;
+                return sendChatMessage(channelID, "8-) Successfully reseted prefix.");
             }
         }
 
@@ -105,8 +102,7 @@ public class SetPrefixCommand implements ICommand
         {
             SQLite.onUpdate(STR."INSERT INTO customPrefixes(userID, prefix, caseInsensitive) VALUES(\{channelID}, '\{userPrefix}', \{hasCaseInsensitiveParameter})");
 
-            sendChatMessage(channelID, STR."8-) Successfully set prefix to \{userPrefixRaw}");
-            return;
+            return sendChatMessage(channelID, STR."8-) Successfully set prefix to \{userPrefixRaw}");
         }
 
         if (!hasCaseInsensitiveParameter)
@@ -122,6 +118,6 @@ public class SetPrefixCommand implements ICommand
         Prefix newPrefix = SQLUtils.getPrefix(channelIID);
         isCaseInsensitive = newPrefix.isCaseInsensitive();
 
-        sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefixRaw} '. (Case-Insensitive: \{isCaseInsensitive})");
+        return sendChatMessage(channelID, STR."8-) Successfully set prefix to ' \{userPrefixRaw} '. (Case-Insensitive: \{isCaseInsensitive})");
     }
 }

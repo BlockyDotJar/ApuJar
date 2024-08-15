@@ -38,7 +38,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class SetProgressCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -49,7 +49,7 @@ public class SetProgressCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a value that matches with the RegEx. (^\\d{1,2}:\\d{1,2}$))");
-            return;
+            return false;
         }
 
         String progressValue = messageParts[1];
@@ -57,7 +57,7 @@ public class SetProgressCommand implements ICommand
         if (!progressValue.matches("^\\d{1,2}:\\d{1,2}$"))
         {
             sendChatMessage(channelID, "FeelsDankMan Your specified progress must match with RegEx. (^\\d{1,2}:\\d{1,2}$)");
-            return;
+            return false;
         }
 
         String[] progressParts = progressValue.split(":");
@@ -72,7 +72,7 @@ public class SetProgressCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
@@ -83,7 +83,7 @@ public class SetProgressCommand implements ICommand
         if (currentlyPlaying == null)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song.");
-            return;
+            return false;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
@@ -107,7 +107,7 @@ public class SetProgressCommand implements ICommand
         if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
         {
             sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
-            return;
+            return false;
         }
 
         long progressDurationMillis = progressDuration.toMillis();
@@ -120,6 +120,6 @@ public class SetProgressCommand implements ICommand
 
         String messageToSend = STR."FeelsGoodMan Skipped \{eventUserName}'s song position to \{progressMinutes}:\{progressSeconds} (of \{durationMinutes}:\{durationSeconds}) pepeJAMJAM";
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

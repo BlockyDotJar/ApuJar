@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class TopChatterCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -44,7 +44,7 @@ public class TopChatterCommand implements ICommand
         if (!isValidUsername(userToGetTopChatterFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetTopChatterFrom = retrieveUserList(client, userToGetTopChatterFrom);
@@ -52,7 +52,7 @@ public class TopChatterCommand implements ICommand
         if (usersToGetTopChatterFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetTopChatterFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetTopChatterFrom.getFirst();
@@ -64,7 +64,7 @@ public class TopChatterCommand implements ICommand
         if (streamElementsChatStats == null)
         {
             sendChatMessage(channelID, "UNLUCKY No streamelements chatstats for user found.");
-            return;
+            return false;
         }
 
         List<StreamElementsChatter> chatters = streamElementsChatStats.getChatters();
@@ -72,6 +72,6 @@ public class TopChatterCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."peepoChat Here are the top chatter for \{userDisplayName} \uD83D\uDC49 \{topChatter}");
+        return sendChatMessage(channelID, STR."peepoChat Here are the top chatter for \{userDisplayName} \uD83D\uDC49 \{topChatter}");
     }
 }

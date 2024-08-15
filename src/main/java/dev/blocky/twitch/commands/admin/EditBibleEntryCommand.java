@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class EditBibleEntryCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -45,7 +45,7 @@ public class EditBibleEntryCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a bible page.");
-            return;
+            return false;
         }
 
         String pageRaw = messageParts[1];
@@ -53,7 +53,7 @@ public class EditBibleEntryCommand implements ICommand
         if (!pageRaw.matches("^\\d+$"))
         {
             sendChatMessage(channelID, "oop Specified value isn't a number.");
-            return;
+            return false;
         }
 
         int page = Integer.parseInt(pageRaw);
@@ -61,13 +61,13 @@ public class EditBibleEntryCommand implements ICommand
         if (page <= 0)
         {
             sendChatMessage(channelID, "oop Number can't be equal to 0 or negative.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a entry.");
-            return;
+            return false;
         }
 
         String entryRaw = removeElements(messageParts, 2);
@@ -78,13 +78,13 @@ public class EditBibleEntryCommand implements ICommand
 
         if (bibleEntry == null)
         {
-            return;
+            return false;
         }
 
         LocalDateTime now = LocalDateTime.now();
 
         SQLite.onUpdate(STR."UPDATE bible SET entry = '\{entry}', updatedAt = '\{now}' WHERE page = \{page}");
 
-        sendChatMessage(channelID, STR."\{eventUserName} Successfully added entry #\{page} to our bible!");
+        return sendChatMessage(channelID, STR."\{eventUserName} Successfully added entry #\{page} to our bible!");
     }
 }

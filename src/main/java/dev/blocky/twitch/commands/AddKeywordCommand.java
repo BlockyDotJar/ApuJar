@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class AddKeywordCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,13 +45,13 @@ public class AddKeywordCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a keyword.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
-            return;
+            return false;
         }
 
         boolean hasExactMatchParameter = hasRegExParameter(messageParts, "-(em|exact-match)");
@@ -64,7 +64,7 @@ public class AddKeywordCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "ManFeels You can't add a keyword, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         String kwRaw = messageParts[1];
@@ -76,7 +76,7 @@ public class AddKeywordCommand implements ICommand
         if (kw.startsWith("/") || kwMessage.startsWith("/"))
         {
             sendChatMessage(channelID, "monkaLaugh The keyword/message can't start with a / (slash) haha");
-            return;
+            return false;
         }
 
         Set<Keyword> keywords = SQLUtils.getKeywords(channelIID);
@@ -88,12 +88,12 @@ public class AddKeywordCommand implements ICommand
             if (kwd.equals(kwRaw))
             {
                 sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kwRaw} ' does already exist.");
-                return;
+                return false;
             }
         }
 
         SQLite.onUpdate(STR."INSERT INTO customKeywords(userID, name, message, exactMatch, caseInsensitive) VALUES(\{channelID}, '\{kw}', '\{kwMessage}', \{hasExactMatchParameter}, \{hasCaseInsensitiveParameter})");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully created keyword ' \{kwRaw} '. (Exact match: \{hasExactMatchParameter}, Case-Insensitive: \{hasCaseInsensitiveParameter})");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully created keyword ' \{kwRaw} '. (Exact match: \{hasExactMatchParameter}, Case-Insensitive: \{hasCaseInsensitiveParameter})");
     }
 }

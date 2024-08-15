@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class PauseCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -47,7 +47,7 @@ public class PauseCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{eventUserName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
@@ -58,18 +58,18 @@ public class PauseCommand implements ICommand
         if (currentlyPlaying == null)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song.");
-            return;
+            return false;
         }
 
         if (!currentlyPlaying.getIs_playing())
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} your song is already paused.");
-            return;
+            return false;
         }
 
         PauseUsersPlaybackRequest pauseRequest = spotifyAPI.pauseUsersPlayback().build();
         pauseRequest.execute();
 
-        sendChatMessage(channelID, STR."jamm \{eventUserName} paused his/her song.");
+        return sendChatMessage(channelID, STR."jamm \{eventUserName} paused his/her song.");
     }
 }

@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteKeywordCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,7 +45,7 @@ public class DeleteKeywordCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a keyword.");
-            return;
+            return false;
         }
 
         List<Badge> badges = event.getBadges();
@@ -55,7 +55,7 @@ public class DeleteKeywordCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "ManFeels You can't delete a keyword, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         String kw = messageParts[1];
@@ -78,11 +78,11 @@ public class DeleteKeywordCommand implements ICommand
         if (!keywordExists)
         {
             sendChatMessage(channelID, STR."CoolStoryBob Keyword ' \{kw} ' doesn't exist.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."DELETE FROM customKeywords WHERE userID = \{channelIID} AND name = '\{kw}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully deleted keyword ' \{kw} '.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully deleted keyword ' \{kw} '.");
     }
 }

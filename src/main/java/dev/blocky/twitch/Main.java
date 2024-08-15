@@ -30,10 +30,7 @@ import com.github.twitch4j.common.util.ThreadUtils;
 import com.github.twitch4j.eventsub.socket.IEventSubSocket;
 import com.github.twitch4j.helix.TwitchHelix;
 import dev.blocky.api.exceptions.Unauthorized;
-import dev.blocky.twitch.manager.CommandManager;
-import dev.blocky.twitch.manager.PrivateCommandManager;
-import dev.blocky.twitch.manager.SQLite;
-import dev.blocky.twitch.manager.TwitchConfigurator;
+import dev.blocky.twitch.manager.*;
 import dev.blocky.twitch.scheduler.InformationMessageScheduler;
 import dev.blocky.twitch.scheduler.NameChangeScheduler;
 import dev.blocky.twitch.scheduler.TicTacToeScheduler;
@@ -83,7 +80,7 @@ public class Main
     {
         SQLite.connect().initDatabase();
 
-        String directoryPath = OSUtils.getDirectoryPath();
+        String directoryPath = OSUtils.getFilePath(null);
 
         Dotenv env = Dotenv.configure()
                 .directory(directoryPath)

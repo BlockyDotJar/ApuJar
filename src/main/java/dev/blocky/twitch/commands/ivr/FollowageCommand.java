@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class FollowageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -44,7 +44,7 @@ public class FollowageCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToCheck = getUserAsString(messageParts, 1);
@@ -53,19 +53,19 @@ public class FollowageCommand implements ICommand
         if (userToCheck.equalsIgnoreCase(eventUserName) && secondUserToCheck.equals(eventUserName))
         {
             sendChatMessage(channelID, "FeelsMan You can't follow yourself.");
-            return;
+            return false;
         }
 
         if (userToCheck.equalsIgnoreCase(secondUserToCheck))
         {
             sendChatMessage(channelID, STR."FeelsDankMan \{userToCheck} can't follow hisself/herself.");
-            return;
+            return false;
         }
 
         if (!isValidUsername(userToCheck) || !isValidUsername(secondUserToCheck))
         {
             sendChatMessage(channelID, "o_O One or both usernames aren't matching with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> users = retrieveUserList(client, userToCheck);
@@ -74,7 +74,7 @@ public class FollowageCommand implements ICommand
         if (users.isEmpty() || secondUsers.isEmpty())
         {
             sendChatMessage(channelID, ":| One or both users not found.");
-            return;
+            return false;
         }
 
         User user = users.getFirst();
@@ -90,8 +90,7 @@ public class FollowageCommand implements ICommand
 
         if (followedAt == null)
         {
-            sendChatMessage(channelID, STR."Bad \{userDisplayName} isn't following \{secondUserDisplayName} at the moment.");
-            return;
+            return sendChatMessage(channelID, STR."Bad \{userDisplayName} isn't following \{secondUserDisplayName} at the moment.");
         }
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
@@ -99,6 +98,6 @@ public class FollowageCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Strong \{userDisplayName} follows \{secondUserDisplayName} since \{readableFollowedAt} Gladge");
+        return sendChatMessage(channelID, STR."Strong \{userDisplayName} follows \{secondUserDisplayName} since \{readableFollowedAt} Gladge");
     }
 }

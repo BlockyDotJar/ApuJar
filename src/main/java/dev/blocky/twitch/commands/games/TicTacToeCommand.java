@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class TicTacToeCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -49,13 +49,13 @@ public class TicTacToeCommand implements ICommand
         if (ticTacToe != null)
         {
             sendChatMessage(channelID, "NOIDONTTHINKSO There can only be one game at a time in a channel.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToPlayWith = getUserAsString(messageParts, 1);
@@ -63,7 +63,7 @@ public class TicTacToeCommand implements ICommand
         if (!isValidUsername(userToPlayWith))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToPlayWith = retrieveUserList(client, userToPlayWith);
@@ -71,7 +71,7 @@ public class TicTacToeCommand implements ICommand
         if (usersToPlayWith.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToPlayWith}' found.");
-            return;
+            return false;
         }
 
         User user = usersToPlayWith.getFirst();
@@ -82,7 +82,7 @@ public class TicTacToeCommand implements ICommand
         if (userIID == eventUserIID)
         {
             sendChatMessage(channelID, "UHM You can't play with yourself.");
-            return;
+            return false;
         }
 
         String playerIDs = STR."\{eventUserID},\{userID}";
@@ -108,6 +108,6 @@ public class TicTacToeCommand implements ICommand
             TimeUnit.MILLISECONDS.sleep(500);
         }
 
-        sendChatMessage(channelID, STR."PogU It's your turn \{nextUserName} NOWAYING Use the 'tic' command with a value between 1 and 9.");
+        return sendChatMessage(channelID, STR."PogU It's your turn \{nextUserName} NOWAYING Use the 'tic' command with a value between 1 and 9.");
     }
 }

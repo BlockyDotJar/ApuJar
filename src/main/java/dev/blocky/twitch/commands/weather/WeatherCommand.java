@@ -41,7 +41,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class WeatherCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -53,7 +53,7 @@ public class WeatherCommand implements ICommand
         if (messageParts.length == 1 && location == null)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
-            return;
+            return false;
         }
 
         double latitude = -1;
@@ -80,7 +80,7 @@ public class WeatherCommand implements ICommand
             if (userLocation.isBlank())
             {
                 sendChatMessage(channelID, "FeelsMan Please specify a location or set an anonymous location by sending me a whisper with the input 'setlocation <YOUR_LOCATION_HERE>'.");
-                return;
+                return false;
             }
 
             MapSearch mapSearch = ServiceProvider.getSearchedMaps(userLocation);
@@ -89,7 +89,7 @@ public class WeatherCommand implements ICommand
             if (mapAdresses.isEmpty())
             {
                 sendChatMessage(channelID, STR."UNLUCKY No location called '\{userLocation}' found.");
-                return;
+                return false;
             }
 
             MapAdress mapAdress = mapAdresses.getFirst();
@@ -166,7 +166,7 @@ public class WeatherCommand implements ICommand
             if (hideLocation)
             {
                 sendChatMessage(channelID, STR."FeelsGoodMan Secret location Susge \{weather}");
-                return;
+                return false;
             }
         }
 
@@ -179,6 +179,6 @@ public class WeatherCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."FeelsGoodMan \{userLocation} \{emoji} \{weather}");
+        return sendChatMessage(channelID, STR."FeelsGoodMan \{userLocation} \{emoji} \{weather}");
     }
 }

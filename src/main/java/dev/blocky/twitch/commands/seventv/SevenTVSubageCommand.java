@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVSubageCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,7 +45,7 @@ public class SevenTVSubageCommand implements ICommand
         if (!isValidUsername(userToCheck))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToCheck = retrieveUserList(client, userToCheck);
@@ -53,7 +53,7 @@ public class SevenTVSubageCommand implements ICommand
         if (usersToCheck.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
-            return;
+            return false;
         }
 
         User user = usersToCheck.getFirst();
@@ -64,7 +64,7 @@ public class SevenTVSubageCommand implements ICommand
         if (sevenTVSubage == null)
         {
             sendChatMessage(channelID, STR."Bad \{userDisplayName} isn't subscribing to (7TV) at the moment NotLikeThis");
-            return;
+            return false;
         }
 
         String statusRaw = sevenTVSubage.getStatus();
@@ -103,6 +103,6 @@ public class SevenTVSubageCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

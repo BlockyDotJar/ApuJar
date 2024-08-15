@@ -50,7 +50,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class YoinkCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -61,7 +61,7 @@ public class YoinkCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "WideHardo Please specify the user.");
-            return;
+            return false;
         }
 
         boolean skipToExactPosition = false;
@@ -94,7 +94,7 @@ public class YoinkCommand implements ICommand
         if (!isValidUsername(userToYoinkSongFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToYoinkSongFrom = retrieveUserList(client, userToYoinkSongFrom);
@@ -102,7 +102,7 @@ public class YoinkCommand implements ICommand
         if (usersToYoinkSongFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToYoinkSongFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToYoinkSongFrom.getFirst();
@@ -114,7 +114,7 @@ public class YoinkCommand implements ICommand
         if (userLogin.equals(eventUserName))
         {
             sendChatMessage(channelID, STR."4Head \{userDisplayName} you can't yoink your own song.");
-            return;
+            return false;
         }
 
         SpotifyUser spotifyUser = SQLUtils.getSpotifyUser(userIID);
@@ -122,7 +122,7 @@ public class YoinkCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
@@ -133,7 +133,7 @@ public class YoinkCommand implements ICommand
         if (currentlyPlaying == null)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{userDisplayName} isn't listening to a song.");
-            return;
+            return false;
         }
 
         SpotifyApi eventUserSpotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
@@ -146,7 +146,7 @@ public class YoinkCommand implements ICommand
         if (devices.length == 0 || !anyActiveDevice)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
-            return;
+            return false;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
@@ -156,7 +156,7 @@ public class YoinkCommand implements ICommand
         if (itemID == null)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you can't yoink local file songs.");
-            return;
+            return false;
         }
 
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
@@ -221,7 +221,7 @@ public class YoinkCommand implements ICommand
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
                 sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
-                return;
+                return false;
             }
 
             Duration progressDuration = Duration.parse(STR."PT\{PMM}M\{PSS}S");
@@ -238,6 +238,6 @@ public class YoinkCommand implements ICommand
 
         String messageToSend = STR."AlienDance \{eventUserName} you yoinked \{userDisplayName}'s song '\{itemName}' by \{artists} from \{albumName} WideHardo (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

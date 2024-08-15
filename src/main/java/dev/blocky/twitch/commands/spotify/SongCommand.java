@@ -45,7 +45,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SongCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -55,7 +55,7 @@ public class SongCommand implements ICommand
         if (!isValidUsername(userToGetSongFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetSongFrom = retrieveUserList(client, userToGetSongFrom);
@@ -63,7 +63,7 @@ public class SongCommand implements ICommand
         if (usersToGetSongFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetSongFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetSongFrom.getFirst();
@@ -76,7 +76,7 @@ public class SongCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
@@ -87,7 +87,7 @@ public class SongCommand implements ICommand
         if (currentlyPlaying == null)
         {
             sendChatMessage(channelID, STR."AlienUnpleased \{userDisplayName} isn't listening to a song.");
-            return;
+            return false;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
@@ -158,6 +158,6 @@ public class SongCommand implements ICommand
             messageToSend = STR."\{beginEmote} \{userDisplayName} is currently listening to '\{itemName}' (local file) donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds})";
         }
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

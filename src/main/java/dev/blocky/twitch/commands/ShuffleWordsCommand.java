@@ -22,26 +22,35 @@ import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
 import dev.blocky.twitch.interfaces.ICommand;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
-import static dev.blocky.twitch.utils.TwitchUtils.*;
+import static dev.blocky.twitch.utils.TwitchUtils.removeElementsAsArray;
+import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
-public class SusCommand implements ICommand
+public class ShuffleWordsCommand implements ICommand
 {
     @Override
     public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts)
     {
-        String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
 
-        String userToLookup = getUserAsString(messageParts, eventUserName);
+        if (messageParts.length < 3)
+        {
+            sendChatMessage(channelID, "FeelsDankMan Please specify at least 2 words.");
+            return false;
+        }
 
-        Random random = new Random();
-        int susness = random.nextInt(0, 100);
+        String[] textPartsToDankifyRaw = removeElementsAsArray(messageParts, 1);
+        List<String> textPartsToDankify = Arrays.stream(textPartsToDankifyRaw).collect(Collectors.toCollection(ArrayList::new));
 
-        channelID = getActualChannelID(channelToSend, channelID);
+        Collections.shuffle(textPartsToDankify);
 
-        return sendChatMessage(channelID, STR."Susge \{userToLookup} is \{susness}% sus.");
+        String dankifiedText = String.join(" ", textPartsToDankify);
+
+        return sendChatMessage(channelID, STR."Here is your new dank text FeelsOkayMan \uD83D\uDC49 \{dankifiedText}");
     }
 }

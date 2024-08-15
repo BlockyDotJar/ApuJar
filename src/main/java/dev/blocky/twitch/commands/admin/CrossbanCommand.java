@@ -38,7 +38,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class CrossbanCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -48,7 +48,7 @@ public class CrossbanCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "MEGALUL Please specify a user.");
-            return;
+            return false;
         }
 
         String userToBan = getUserAsString(messageParts, 1);
@@ -56,7 +56,7 @@ public class CrossbanCommand implements ICommand
         if (!isValidUsername(userToBan))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToBan = retrieveUserList(client, userToBan);
@@ -64,7 +64,7 @@ public class CrossbanCommand implements ICommand
         if (usersToBan.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToBan}' found.");
-            return;
+            return false;
         }
 
         String reason = null;
@@ -81,7 +81,7 @@ public class CrossbanCommand implements ICommand
         if (eventUserIID == userIID)
         {
             sendChatMessage(channelID, "FeelsDankMan You definitely don't want to crossban yourself.");
-            return;
+            return false;
         }
 
         Set<Chat> chats = SQLUtils.getChats();
@@ -123,9 +123,9 @@ public class CrossbanCommand implements ICommand
         if (bannedChats == 0)
         {
             sendChatMessage(channelID, STR."User '\{userToBan}' is already banned in every chat that i'm mod in NotLikeThis");
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."Successfully crossbanned '\{userToBan}' from \{bannedChats} chats LEL");
+        return sendChatMessage(channelID, STR."Successfully crossbanned '\{userToBan}' from \{bannedChats} chats LEL");
     }
 }

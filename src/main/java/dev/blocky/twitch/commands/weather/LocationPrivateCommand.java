@@ -31,7 +31,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 public class LocationPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts)
+    public boolean onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts)
     {
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -42,7 +42,7 @@ public class LocationPrivateCommand implements IPrivateCommand
         if (location == null)
         {
             sendWhisper(eventUserID, "4Head No location found in the database for your user id.");
-            return;
+            return false;
         }
 
         String locationName = location.getLocationName();
@@ -61,5 +61,6 @@ public class LocationPrivateCommand implements IPrivateCommand
         }
 
         sendWhisper(eventUserID, STR.":D Your location is currently set to '\{locationName}' \{emoji}.");
+        return true;
     }
 }

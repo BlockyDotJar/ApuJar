@@ -31,7 +31,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class CommandsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -42,7 +42,7 @@ public class CommandsCommand implements ICommand
         if (chatsToSend.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{chatToSend}' found.");
-            return;
+            return false;
         }
 
         User user = chatsToSend.getFirst();
@@ -50,6 +50,6 @@ public class CommandsCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."\{userDisplayName} peepoHappy \uD83D\uDC49 Here you can see everything important about the bot https://apujar.blockyjar.dev/ FeelsOkayMan");
+        return sendChatMessage(channelID, STR."\{userDisplayName} peepoHappy \uD83D\uDC49 Here you can see everything important about the bot https://apujar.blockyjar.dev/ FeelsOkayMan");
     }
 }

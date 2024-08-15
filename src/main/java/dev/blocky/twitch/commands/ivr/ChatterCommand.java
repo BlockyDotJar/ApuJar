@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ChatterCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -45,15 +45,15 @@ public class ChatterCommand implements ICommand
         if (!isValidUsername(userToCheck))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
 
-        if (ivrUsers.isEmpty())
+        if (ivrUsers == null || ivrUsers.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
-            return;
+            return false;
         }
 
         IVRUser ivrUser = ivrUsers.getFirst();
@@ -68,7 +68,7 @@ public class ChatterCommand implements ICommand
         if (lilbChatter == null)
         {
             sendChatMessage(channelID, "FeelsOkayMan lilb API server error. dink lilb_lxryer");
-            return;
+            return false;
         }
 
         int moderatorCount = lilbChatter.getModeratorCount();
@@ -116,6 +116,6 @@ public class ChatterCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Susge There are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderatorCount}, VIP: \{vipCount}, Viewer: \{viewerCountFormatted}) https://paste.blockyjar.dev/\{pasteKey}");
+        return sendChatMessage(channelID, STR."Susge There are \{chatterCount} chatter in \{userDisplayName}'s chat. (Moderator: \{moderatorCount}, VIP: \{vipCount}, Viewer: \{viewerCountFormatted}) https://paste.blockyjar.dev/\{pasteKey}");
     }
 }

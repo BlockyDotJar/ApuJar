@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVUserCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
 
@@ -45,7 +45,7 @@ public class SevenTVUserCommand implements ICommand
         if (!isValidUsername(userToGetURLFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetURLFrom = retrieveUserList(client, userToGetURLFrom);
@@ -53,7 +53,7 @@ public class SevenTVUserCommand implements ICommand
         if (usersToGetURLFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetURLFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetURLFrom.getFirst();
@@ -64,7 +64,7 @@ public class SevenTVUserCommand implements ICommand
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         SevenTVUser sevenTVUser = sevenTVTwitchUser.getUser();
@@ -72,6 +72,6 @@ public class SevenTVUserCommand implements ICommand
         String sevenTVUserDisplayName = sevenTVTwitchUser.getUserDisplayName();
         String sevenTVUserID = sevenTVUser.getUserID();
 
-        sendChatMessage(channelID, STR."SeemsGood Here is your 7tv user link for \{sevenTVUserDisplayName} \uD83D\uDC49 https://7tv.app/users/\{sevenTVUserID}");
+        return sendChatMessage(channelID, STR."SeemsGood Here is your 7tv user link for \{sevenTVUserDisplayName} \uD83D\uDC49 https://7tv.app/users/\{sevenTVUserID}");
     }
 }

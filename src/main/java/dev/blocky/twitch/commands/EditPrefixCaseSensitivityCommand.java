@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class EditPrefixCaseSensitivityCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -44,7 +44,7 @@ public class EditPrefixCaseSensitivityCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a boolean. (Either true or false)");
-            return;
+            return false;
         }
 
         String caseSensitivityValue = messageParts[1];
@@ -52,7 +52,7 @@ public class EditPrefixCaseSensitivityCommand implements ICommand
         if (!caseSensitivityValue.matches("^true|false$"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid value specified. (Choose between true or false)");
-            return;
+            return false;
         }
 
         boolean caseInsensitive = !Boolean.parseBoolean(caseSensitivityValue);
@@ -67,17 +67,17 @@ public class EditPrefixCaseSensitivityCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
         {
             sendChatMessage(channelID, "NOIDONTTHINKSO You can't set the prefix case-sensitivity, because you aren't the broadcaster or a moderator.");
-            return;
+            return false;
         }
 
         if (actualPrefix.equals("#"))
         {
             sendChatMessage(channelID, "NOIDONTTHINKSO You don't even have a custom prefix for this chat.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."UPDATE customPrefixes SET caseInsensitive = \{caseInsensitive} WHERE userID = \{channelID}");
 
-        sendChatMessage(channelID, STR."8-) Successfully edited prefix case-sensitivity to '\{!caseInsensitive}'.");
+        return sendChatMessage(channelID, STR."8-) Successfully edited prefix case-sensitivity to '\{!caseInsensitive}'.");
     }
 }

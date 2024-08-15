@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteBibleEntryCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws IOException, SQLException
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws IOException, SQLException
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -43,7 +43,7 @@ public class DeleteBibleEntryCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a bible page.");
-            return;
+            return false;
         }
 
         String pageRaw = messageParts[1];
@@ -51,7 +51,7 @@ public class DeleteBibleEntryCommand implements ICommand
         if (!pageRaw.matches("^\\d+$"))
         {
             sendChatMessage(channelID, "oop Specified value isn't a number.");
-            return;
+            return false;
         }
 
         int page = Integer.parseInt(pageRaw);
@@ -59,18 +59,18 @@ public class DeleteBibleEntryCommand implements ICommand
         if (page <= 0)
         {
             sendChatMessage(channelID, "oop Number can't be equal to 0 or negative.");
-            return;
+            return false;
         }
 
         BlockyJarBibleEntry bibleEntry = ServiceProvider.deleteBibleEntry(channelIID, page);
 
         if (bibleEntry == null)
         {
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."DELETE FROM bible WHERE page = \{page}");
 
-        sendChatMessage(channelID, STR."\{eventUserName} Successfully deleted entry #\{page} from our bible!");
+        return sendChatMessage(channelID, STR."\{eventUserName} Successfully deleted entry #\{page} from our bible!");
     }
 }

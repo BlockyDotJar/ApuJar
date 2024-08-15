@@ -32,7 +32,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SetChatColorCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -51,7 +51,7 @@ public class SetChatColorCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, STR."FeelsMan Please specify a color. (Choose between: \{namedUserChatColorsReadable})");
-            return;
+            return false;
         }
 
         String chatColorName = removeElements(messageParts, 1);
@@ -60,13 +60,13 @@ public class SetChatColorCommand implements ICommand
         if (namedUserChatColor == null)
         {
             sendChatMessage(channelID, STR."FeelsMan Invalid color specified. (Choose between: \{namedUserChatColorsReadable})");
-            return;
+            return false;
         }
 
         String chatColor = namedUserChatColor.getHexCode();
 
         helix.updateUserChatColor(null, "896181679", chatColor).execute();
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully updated my chat color to \{chatColor}");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully updated my chat color to \{chatColor}");
     }
 }

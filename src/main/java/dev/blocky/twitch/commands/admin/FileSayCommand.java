@@ -42,7 +42,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class FileSayCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String eventUserID = event.getChatterUserId();
         int eventUserIID = Integer.parseInt(eventUserID);
@@ -53,7 +53,7 @@ public class FileSayCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a link to a text file.");
-            return;
+            return false;
         }
 
         String link = messageParts[1];
@@ -61,7 +61,7 @@ public class FileSayCommand implements ICommand
         if (!link.startsWith("https://") && !link.startsWith("http://"))
         {
             sendChatMessage(channelID, "FeelsMan Invalid link specified.");
-            return;
+            return false;
         }
 
         OkHttpClient okHttpClient = new OkHttpClient();
@@ -77,7 +77,7 @@ public class FileSayCommand implements ICommand
             if (statusCode != 200)
             {
                 sendChatMessage(channelID, STR."DankThink Server returned status code \{statusCode}.");
-                return;
+                return false;
             }
 
             Headers headers = response.headers();
@@ -86,7 +86,7 @@ public class FileSayCommand implements ICommand
             if (!contentType.contains("text/plain"))
             {
                 sendChatMessage(channelID, "DankThink Server doesn't return plain text as response.");
-                return;
+                return false;
             }
 
             String body = response.body().string();
@@ -94,7 +94,7 @@ public class FileSayCommand implements ICommand
             if (body.isBlank())
             {
                 sendChatMessage(channelID, "DankThink Server returned empty response.");
-                return;
+                return false;
             }
 
             String[] linesRaw = body.split("\n");
@@ -156,7 +156,7 @@ public class FileSayCommand implements ICommand
                             if (!isSayable)
                             {
                                 sendChatMessage(channelID, "4Head Specified command isn't sayable :P");
-                                return;
+                                return false;
                             }
 
                             commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
@@ -186,11 +186,12 @@ public class FileSayCommand implements ICommand
 
             int lineCount = lines.length;
 
-            sendChatMessage(channelID, STR."WOW Successfully sent \{lineCount} lines.");
+            return sendChatMessage(channelID, STR."WOW Successfully sent \{lineCount} lines.");
         }
         catch (UnknownHostException _)
         {
             sendChatMessage(channelID, "FeelsMan Host of the website is unknown.");
+            return false;
         }
     }
 }

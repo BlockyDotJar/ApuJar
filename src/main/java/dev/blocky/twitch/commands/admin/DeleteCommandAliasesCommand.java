@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteCommandAliasesCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -44,7 +44,7 @@ public class DeleteCommandAliasesCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a command.");
-            return;
+            return false;
         }
 
         String command = messageParts[1].toLowerCase();
@@ -52,13 +52,13 @@ public class DeleteCommandAliasesCommand implements ICommand
         if (!command.matches("^[a-zA-Z\\d]+$"))
         {
             sendChatMessage(channelID, "FeelsMan Specified command is invalid.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsGoodMan Please specify at least one alias.");
-            return;
+            return false;
         }
 
         String[] aliasesRaw = removeElementsAsArray(messageParts, 2);
@@ -89,7 +89,7 @@ public class DeleteCommandAliasesCommand implements ICommand
         if (cmd == null)
         {
             sendChatMessage(channelID, STR."FeelsDankMan Command '\{command}' is either a owner command or doesn't even exist.");
-            return;
+            return false;
         }
 
         Set<String> cmdAliases = cmd.getAliases();
@@ -110,7 +110,7 @@ public class DeleteCommandAliasesCommand implements ICommand
         if (aliases.isEmpty())
         {
             sendChatMessage(channelID, "FeelsDankMan Specified aliases aren't even defined for the command.");
-            return;
+            return false;
         }
 
         int aliasCount = aliases.size();
@@ -132,12 +132,11 @@ public class DeleteCommandAliasesCommand implements ICommand
         {
             SQLite.onUpdate(STR."UPDATE commands SET aliases = NULL WHERE command = '\{command}'");
 
-            sendChatMessage(channelID, messageToSend);
-            return;
+            return sendChatMessage(channelID, messageToSend);
         }
 
         SQLite.onUpdate(STR."UPDATE commands SET aliases = '\{newAliases}' WHERE command = '\{command}'");
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

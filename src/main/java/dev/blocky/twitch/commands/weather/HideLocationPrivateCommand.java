@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 public class HideLocationPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts) throws Exception
+    public boolean onPrivateCommand(@NotNull PrivateMessageEvent event, @NotNull String[] messageParts) throws Exception
     {
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -39,7 +39,7 @@ public class HideLocationPrivateCommand implements IPrivateCommand
         if (messageParts.length == 1)
         {
             sendWhisper(eventUserID, ";) Please specify a boolean. (Either true or false)");
-            return;
+            return false;
         }
 
         String hideValue = messageParts[1];
@@ -47,7 +47,7 @@ public class HideLocationPrivateCommand implements IPrivateCommand
         if (!hideValue.matches("^true|false$"))
         {
             sendWhisper(eventUserID, ":O Invalid value specified. (Choose between true or false)");
-            return;
+            return false;
         }
 
         Location location = SQLUtils.getLocation(eventUserIID);
@@ -55,7 +55,7 @@ public class HideLocationPrivateCommand implements IPrivateCommand
         if (location == null)
         {
             sendWhisper(eventUserID, "4Head No location found in the database for your user id.");
-            return;
+            return false;
         }
 
         boolean hideLocation = Boolean.parseBoolean(hideValue);
@@ -64,11 +64,12 @@ public class HideLocationPrivateCommand implements IPrivateCommand
         if (hideLocation == hidesLocation)
         {
             sendWhisper(eventUserID, "4Head The new value does exactly match with the old one.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."UPDATE weatherLocations SET hideLocation = \{hideLocation} WHERE userID = \{eventUserIID}");
 
         sendWhisper(eventUserID, STR.":O Successfully updated your location visibility to '\{hideLocation}'.");
+        return true;
     }
 }

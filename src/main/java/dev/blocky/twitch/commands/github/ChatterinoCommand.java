@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ChatterinoCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -81,8 +81,7 @@ public class ChatterinoCommand implements ICommand
 
         if (assets.isEmpty() || (!isWindowsParameter && !isMacOsParameter && !isLinuxParameter))
         {
-            sendChatMessage(channelID, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} \uD83D\uDC49 \{htmlURL}");
-            return;
+            return sendChatMessage(channelID, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} \uD83D\uDC49 \{htmlURL}");
         }
 
         String fileRaw = getParameterValue(messageParts, "-(exe|dmg|deb)(=(arm64|x86))?");
@@ -143,6 +142,6 @@ public class ChatterinoCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}) \uD83D\uDC49 \{browserDownloadURL}");
+        return sendChatMessage(channelID, STR."SeemsGood The latest version of \{repository} is \{tagName} and was released on \{readablePublishedAt} (Asset-ID: \{assetID}) \uD83D\uDC49 \{browserDownloadURL}");
     }
 }

@@ -20,6 +20,8 @@ package dev.blocky.twitch.utils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.lang3.SystemUtils;
 
+import static java.lang.StringTemplate.STR;
+
 public class OSUtils
 {
     @NonNull
@@ -27,20 +29,9 @@ public class OSUtils
     {
         if (SystemUtils.IS_OS_WINDOWS)
         {
-            return STR."src/main/resources/\{filePath}";
+            return filePath == null ? "src/main/resources/" : STR."src/main/resources/\{filePath}";
         }
 
-        return STR."/usr/local/apujar/\{filePath}";
-    }
-
-    @NonNull
-    public static String getDirectoryPath()
-    {
-        if (SystemUtils.IS_OS_WINDOWS)
-        {
-            return "src/main/resources/";
-        }
-
-        return "/usr/local/apujar/";
+        return filePath == null ? "/usr/local/apujar/" : STR."/usr/local/apujar/\{filePath}";
     }
 }

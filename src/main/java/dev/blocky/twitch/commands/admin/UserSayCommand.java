@@ -39,7 +39,7 @@ public class UserSayCommand implements ICommand
     public static String channelToSend;
 
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -50,13 +50,13 @@ public class UserSayCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a chat.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsGoodMan Please specify a message.");
-            return;
+            return false;
         }
 
         String chatToSay = getUserAsString(messageParts, 1);
@@ -64,7 +64,7 @@ public class UserSayCommand implements ICommand
         if (!isValidUsername(chatToSay))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToSay = retrieveUserList(client, chatToSay);
@@ -72,7 +72,7 @@ public class UserSayCommand implements ICommand
         if (usersToSay.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{chatToSay}' found.");
-            return;
+            return false;
         }
 
         User user = usersToSay.getFirst();
@@ -86,8 +86,17 @@ public class UserSayCommand implements ICommand
         if (messageToSend.startsWith("/") && !messageToSend.equals("/"))
         {
             List<Badge> badges = event.getBadges();
-            handleSlashCommands(channelIID, eventUserIID, userIID, messageParts, badges, 2);
-            return;
+
+            boolean successfulExecution = handleSlashCommands(channelIID, eventUserIID, userIID, messageParts, badges, 2);
+
+            if (successfulExecution)
+            {
+                sendChatMessage(channelID, "GIGACHAD Successfully executed slash command.");
+                return true;
+            }
+
+            sendChatMessage(channelID, "MONKA Slash command execution failed unexpectedly.");
+            return false;
         }
 
         Set<Command> commands = SQLUtils.getCommands();
@@ -104,7 +113,7 @@ public class UserSayCommand implements ICommand
 
         if (!isSendable)
         {
-            return;
+            return false;
         }
 
         if ((command.startsWith(actualPrefix) && !caseInsensitivePrefix) ||
@@ -125,7 +134,7 @@ public class UserSayCommand implements ICommand
                     if (adminCommands.contains(command) || ownerCommands.contains(command))
                     {
                         sendChatMessage(channelID, "4Head Admin or owner commands aren't allowed to use here :P");
-                        return;
+                        return false;
                     }
 
                     channelToSend = userID;
@@ -144,16 +153,21 @@ public class UserSayCommand implements ICommand
                     {
                         channelToSend = null;
                         sendChatMessage(channelID, "4Head Specified command isn't sayable :P");
-                        return;
+                        return false;
                     }
 
-                    commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
-
-                    // TODO: onCommand boolean
-                    // sendChatMessage(channelID, STR."Okei Successfully executed command in channel \{userDisplayName}.");
+                    boolean successfulExecution = commandOrAlias.onCommand(event, client, prefixedMessageParts, messageParts);
 
                     channelToSend = null;
-                    return;
+
+                    if (successfulExecution)
+                    {
+                        sendChatMessage(channelID, STR."Okei Successfully executed command in channel \{userDisplayName}.");
+                        return true;
+                    }
+
+                    sendChatMessage(channelID, "MONKA Something went wrong, executing the requested command.");
+                    return false;
                 }
             }
         }
@@ -169,11 +183,10 @@ public class UserSayCommand implements ICommand
             if (!wasSent)
             {
                 sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
-                return;
+                return false;
             }
 
-            sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
-            return;
+            return sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
         }
 
         boolean wasSent = sendChatMessage(userID, messageToSend);
@@ -181,9 +194,9 @@ public class UserSayCommand implements ICommand
         if (!wasSent)
         {
             sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully sent message in \{userDisplayName}'s chat.");
     }
 }

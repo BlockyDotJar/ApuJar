@@ -36,7 +36,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVAddCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -49,7 +49,7 @@ public class SevenTVAddCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a emote.");
-            return;
+            return false;
         }
 
         boolean hasCaseInsensitiveParameter = hasRegExParameter(messageParts, "-(cis|case-insensitive)");
@@ -59,7 +59,7 @@ public class SevenTVAddCommand implements ICommand
         if (emoteToAdd.matches("https?://7tv.app/emotes/[a-z\\d]{24}"))
         {
             sendChatMessage(channelID, "FeelsOkayMan Please use the '7tvaddlink' command to add emotes from a link.");
-            return;
+            return false;
         }
 
         String emoteAlias = emoteToAdd;
@@ -77,7 +77,7 @@ public class SevenTVAddCommand implements ICommand
         if (!channelName.equalsIgnoreCase(eventUserName) && !ownerIDs.contains(eventUserIID) && !isAllowedEditor)
         {
             sendChatMessage(channelID, "ManFeels You can't add emotes, because you aren't the broadcaster, 7tv editor or the broadcaster allowed user.");
-            return;
+            return false;
         }
 
         SevenTV sevenTV = SevenTVUtils.searchEmotes(emoteToAdd);
@@ -87,7 +87,7 @@ public class SevenTVAddCommand implements ICommand
         if (seventTVEmoteSearch == null)
         {
             sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToAdd}' found.");
-            return;
+            return false;
         }
 
         List<SevenTVEmote> sevenTVEmotes = seventTVEmoteSearch.getItems();
@@ -96,7 +96,7 @@ public class SevenTVAddCommand implements ICommand
         if (sevenTVEmotesFiltered.isEmpty())
         {
             sendChatMessage(channelID, STR."FeelsGoodMan No emote with name '\{emoteToAdd}' found.");
-            return;
+            return false;
         }
 
         SevenTVEmote sevenTVEmote = sevenTVEmotesFiltered.getFirst();
@@ -109,7 +109,7 @@ public class SevenTVAddCommand implements ICommand
 
         if (sevenTVTwitchUser == null)
         {
-            return;
+            return false;
         }
 
         SevenTVEmoteSet sevenTVEmoteSet = sevenTVTwitchUser.getCurrentEmoteSet();
@@ -117,7 +117,7 @@ public class SevenTVAddCommand implements ICommand
         if (sevenTVEmoteSet == null)
         {
             sendChatMessage(channelID, "FeelsGoodMan No emote active emote-set found.");
-            return;
+            return false;
         }
 
         String sevenTVEmoteSetID = sevenTVEmoteSet.getEmoteSetID();
@@ -128,9 +128,9 @@ public class SevenTVAddCommand implements ICommand
 
         if (SevenTVUtils.checkErrors(channelID, errors))
         {
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated})");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully added (7TV) emote \{emoteAlias} (Private: \{isPrivate}, Animated: \{isAnimated})");
     }
 }

@@ -39,7 +39,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class JoinCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
 
@@ -56,7 +56,7 @@ public class JoinCommand implements ICommand
         if (!isValidUsername(chatToJoin))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> chatsToJoin = retrieveUserList(client, chatToJoin);
@@ -64,7 +64,7 @@ public class JoinCommand implements ICommand
         if (chatsToJoin.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{chatToJoin}' found.");
-            return;
+            return false;
         }
 
         User user = chatsToJoin.getFirst();
@@ -87,7 +87,7 @@ public class JoinCommand implements ICommand
             if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
             {
                 sendChatMessage(channelID, "ManFeels Can't join channel, because you aren't broadcaster or mod at this channel.");
-                return;
+                return false;
             }
         }
 
@@ -102,7 +102,7 @@ public class JoinCommand implements ICommand
         if (isInChannel)
         {
             sendChatMessage(channelID, STR."CoolStoryBob Already joined \{chatToJoin}'s chat.");
-            return;
+            return false;
         }
 
         if (!hasSilentParameter)
@@ -112,7 +112,7 @@ public class JoinCommand implements ICommand
             if (!wasSent)
             {
                 sendChatMessage(channelID, STR."WAIT Something went wrong by sending a message to the chat of \{userDisplayName} (Am i banned/timeouted or are there any special chat settings activated?)");
-                return;
+                return false;
             }
         }
 
@@ -128,6 +128,6 @@ public class JoinCommand implements ICommand
 
         SQLite.onUpdate(STR."INSERT INTO chats(userID, userLogin, eventsEnabled) VALUES(\{userID}, '\{userLogin}', TRUE)");
 
-        sendChatMessage(channelID, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood If you want to disable event notifications use #ren false FeelsOkayMan By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg If you disagree with them, then use '#part' to remove the bot from your chat FeelsGoodMan");
+        return sendChatMessage(channelID, STR."MrDestructoid Successfully joined \{userDisplayName}'s chat SeemsGood If you want to disable event notifications use #ren false FeelsOkayMan By adding me to your chat, you agree with our Privacy Policy ( https://apujar.blockyjar.dev/legal/privacy-policy.html ) and our ToS ( https://apujar.blockyjar.dev/legal/terms-of-service.html ) Okayeg If you disagree with them, then use '#part' to remove the bot from your chat FeelsGoodMan");
     }
 }

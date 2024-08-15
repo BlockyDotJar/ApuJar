@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -271,38 +272,59 @@ public class TwitchUtils
 
         try
         {
-            ChatMessage chatMessage = new ChatMessage(channelID, "896181679", message, null);
+            List<String> messages = Collections.singletonList(message);
 
-            SentChatMessageWrapper wrapper = helix.sendChatMessage(null, chatMessage).execute();
-            SentChatMessage sentChatMessage = wrapper.get();
+            int messageLength = message.length();
 
-            ChatDropReason chatDropReason = sentChatMessage.getDropReason();
-
-            if (chatDropReason != null)
+            if (messageLength > 500)
             {
-                String dropReason = chatDropReason.getMessage();
-                String dropCode = chatDropReason.getCode();
-
-                if (dropCode.equals("msg_duplicate"))
-                {
-                    long currentTimeMillis = System.currentTimeMillis();
-                    ratelimitedChats.put(channelIID, currentTimeMillis);
-                    return false;
-                }
-
-                List<User> users = TwitchUtils.retrieveUserListByID(client, channelIID);
-
-                User user = users.getFirst();
-                String userDisplayName = user.getDisplayName();
-
-                String messageToSend = STR."\{userDisplayName} - Channel message dropped unexpectedly FeelsGoodMan '\{dropCode}' - \{dropReason}";
-                ChatMessage failedChatMessage = new ChatMessage("896181679", "896181679", messageToSend, null);
-
-                helix.sendChatMessage(null, failedChatMessage).execute();
-                return false;
+                messages = Pattern.compile(".{1,500}")
+                        .matcher(message)
+                        .results()
+                        .map(MatchResult::group)
+                        .toList();
             }
 
-            return sentChatMessage.isSent();
+            boolean successfullySentEveryMessage = true;
+
+            for (String msg : messages)
+            {
+                ChatMessage chatMessage = new ChatMessage(channelID, "896181679", msg, null);
+
+                SentChatMessageWrapper wrapper = helix.sendChatMessage(null, chatMessage).execute();
+                SentChatMessage sentChatMessage = wrapper.get();
+
+                ChatDropReason chatDropReason = sentChatMessage.getDropReason();
+
+                if (chatDropReason != null)
+                {
+                    String dropReason = chatDropReason.getMessage();
+                    String dropCode = chatDropReason.getCode();
+
+                    if (dropCode.equals("msg_duplicate"))
+                    {
+                        long currentTimeMillis = System.currentTimeMillis();
+                        ratelimitedChats.put(channelIID, currentTimeMillis);
+
+                        successfullySentEveryMessage = false;
+                        continue;
+                    }
+
+                    List<User> users = TwitchUtils.retrieveUserListByID(client, channelIID);
+
+                    User user = users.getFirst();
+                    String userDisplayName = user.getDisplayName();
+
+                    String messageToSend = STR."\{userDisplayName} - Channel message dropped unexpectedly FeelsGoodMan '\{dropCode}' - \{dropReason}";
+                    ChatMessage failedChatMessage = new ChatMessage("896181679", "896181679", messageToSend, null);
+
+                    helix.sendChatMessage(null, failedChatMessage).execute();
+
+                    successfullySentEveryMessage = false;
+                }
+            }
+
+            return successfullySentEveryMessage;
         }
         catch (HystrixRuntimeException | ContextedRuntimeException _)
         {
@@ -318,7 +340,8 @@ public class TwitchUtils
         helix.sendWhisper(null, "896181679", userID, message).execute();
     }
 
-    public static boolean checkChatSettings(@NonNull String[] messageParts, @NonNull String userLogin, @NonNull String userID, @NonNull String channelID) throws IOException
+    public static boolean checkChatSettings(@NonNull String[] messageParts, @NonNull String
+            userLogin, @NonNull String userID, @NonNull String channelID) throws IOException
     {
         ChatSettingsWrapper chatSettingsWrapper = helix.getChatSettings(null, userID, null).execute();
         ChatSettings chatSettings = chatSettingsWrapper.getChatSettings();
@@ -462,7 +485,8 @@ public class TwitchUtils
         return String.join(" | ", topTwitchChatter);
     }
 
-    public static void handleSlashCommands(int channelID, int eventUserID, int userID, @NonNull String[] messageParts, @NonNull List<Badge> badges, int index)
+    public static boolean handleSlashCommands(int channelID, int eventUserID, int userID,
+                                           @NonNull String[] messageParts, @NonNull List<Badge> badges, int index)
     {
         try
         {
@@ -489,7 +513,7 @@ public class TwitchUtils
             if (minArgs == -1)
             {
                 sendChatMessage(channelID, "FeelsDankMan You can only use timeout, untimeout, ban, unban, mod and unmod here.");
-                return;
+                return false;
             }
 
             int args = slashCommandParts.length - 1;
@@ -499,13 +523,13 @@ public class TwitchUtils
                 String realMaxArgs = maxArgs == Integer.MAX_VALUE ? "infinite" : String.valueOf(maxArgs);
 
                 sendChatMessage(channelID, STR."FeelsDankMan The command needs to have at least \{minArgs} arguments and can have a maxium of \{realMaxArgs} arguments.");
-                return;
+                return false;
             }
 
             if (command.matches("^((un)mod|w(hisper))$") && channelID != 896181679)
             {
                 sendChatMessage(channelID, "LULE You can only (un)mod/(un)vip users in my chat.");
-                return;
+                return false;
             }
 
             Map<Integer, String> owners = SQLUtils.getOwners();
@@ -514,13 +538,13 @@ public class TwitchUtils
             if (command.matches("^((un)mod|w(hisper))$") && !ownerIDs.contains(eventUserID))
             {
                 sendChatMessage(channelID, "DatSheffy You don't have permission to use these kinds of / (slash) commands through my account.");
-                return;
+                return false;
             }
 
             if (command.matches("^(un)mod$") && channelID != 896181679)
             {
                 sendChatMessage(channelID, "DatSheffy You can't mod someone in someone others chat.");
-                return;
+                return false;
             }
 
             List<ModCheckerUser> modCheckerMods = ServiceProvider.getModCheckerChannelMods(userID);
@@ -531,13 +555,13 @@ public class TwitchUtils
             if (!command.matches("^((un)mod|w(hisper))$") && !hasModeratorPerms && channelID != 896181679)
             {
                 sendChatMessage(channelID, "FeelsMan You don't have mod or broadcaster perms in the specified channel.");
-                return;
+                return false;
             }
 
             if (!command.matches("^((un)mod|w(hisper))$") && !selfModeratorPerms && channelID != 896181679)
             {
                 sendChatMessage(channelID, "FeelsMan I don't have mod or broadcaster perms in the specified channel.");
-                return;
+                return false;
             }
 
             String userToCheck = getUserAsString(slashCommandParts, 1);
@@ -545,7 +569,7 @@ public class TwitchUtils
             if (!isValidUsername(userToCheck))
             {
                 sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-                return;
+                return false;
             }
 
             List<User> usersToCheck = retrieveUserList(client, userToCheck);
@@ -553,7 +577,7 @@ public class TwitchUtils
             if (usersToCheck.isEmpty())
             {
                 sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
-                return;
+                return false;
             }
 
             User user = usersToCheck.getFirst();
@@ -569,7 +593,7 @@ public class TwitchUtils
                     if (userToCheckIID == 896181679)
                     {
                         sendChatMessage(channelID, "FeelsMan I can't dm myself.");
-                        return;
+                        return false;
                     }
 
                     String messageToSend = removeElements(slashCommandParts, 2);
@@ -602,7 +626,7 @@ public class TwitchUtils
                         if (!durationRaw.matches("^((\\d+[smhdw]){1,4})?\\d+[smhdw]$"))
                         {
                             sendChatMessage(channelID, "FeelsMan Specify a value that matches with the regex '^((\\d+[smhdw]){1,4})?\\d+[smhdw]$'.");
-                            return;
+                            return false;
                         }
 
                         String[] durationParts = durationRaw.split("(?<=\\D)(?=\\d)");
@@ -630,7 +654,7 @@ public class TwitchUtils
                         if (seconds > 1209600)
                         {
                             sendChatMessage(channelID, "FeelsMan The timeout can't be longer than 2 weeks.");
-                            return;
+                            return false;
                         }
 
                         duration = seconds;
@@ -651,7 +675,7 @@ public class TwitchUtils
                 case "unmod" -> helix.removeChannelModerator(null, "896181679", userToCheckID).execute();
             }
 
-            sendChatMessage(userID, "SeemsGood Successfully executed slash command.");
+            return sendChatMessage(userID, "SeemsGood Successfully executed slash command.");
         }
         catch (Exception e)
         {
@@ -666,7 +690,7 @@ public class TwitchUtils
             {
                 String errorMessage = (String) cre.getFirstContextValue("errorMessage");
                 sendChatMessage(userID, STR."FeelsGoodMan \{errorMessage}");
-                return;
+                return false;
             }
 
             List<User> users = retrieveUserListByID(client, channelID);
@@ -676,10 +700,13 @@ public class TwitchUtils
             sendChatMessage("896181679", STR."Channel: \{userLogin} Weird Error while trying to execute a slash command FeelsGoodMan \{error} (\{clazzName})");
 
             e.printStackTrace();
+
+            return false;
         }
     }
 
-    public static void handleNameChange(int userIID, @NonNull String oldLogin, @NonNull String newLogin) throws SQLException, IOException
+    public static void handleNameChange(int userIID, @NonNull String oldLogin, @NonNull String newLogin) throws
+            SQLException, IOException
     {
         TwitchChat chat = client.getChat();
 

@@ -39,7 +39,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ArtistsCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -49,7 +49,7 @@ public class ArtistsCommand implements ICommand
         if (!isValidUsername(userToGetTopArtistsFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetTopArtistsFrom = retrieveUserList(client, userToGetTopArtistsFrom);
@@ -57,7 +57,7 @@ public class ArtistsCommand implements ICommand
         if (usersToGetTopArtistsFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetTopArtistsFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetTopArtistsFrom.getFirst();
@@ -85,7 +85,7 @@ public class ArtistsCommand implements ICommand
         if (spotifyUser == null)
         {
             sendChatMessage(channelID, STR."ManFeels No user called '\{userDisplayName}' found in Spotify credential database FeelsDankMan The user needs to sign in here TriHard \uD83D\uDC49 https://apujar.blockyjar.dev/oauth2/spotify.html");
-            return;
+            return false;
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
@@ -110,6 +110,6 @@ public class ArtistsCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."FeelsOkayMan Here are \{userDisplayName}'s top 10 artists \uD83D\uDC49 \{topUserArtists}");
+        return sendChatMessage(channelID, STR."FeelsOkayMan Here are \{userDisplayName}'s top 10 artists \uD83D\uDC49 \{topUserArtists}");
     }
 }

@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class BibleInformationCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -43,7 +43,7 @@ public class BibleInformationCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a bible page.");
-            return;
+            return false;
         }
 
         String pageRaw = messageParts[1];
@@ -51,7 +51,7 @@ public class BibleInformationCommand implements ICommand
         if (!pageRaw.matches("^\\d+$"))
         {
             sendChatMessage(channelID, "oop Specified value isn't a number.");
-            return;
+            return false;
         }
 
         int page = Integer.parseInt(pageRaw);
@@ -59,14 +59,14 @@ public class BibleInformationCommand implements ICommand
         if (page <= 0)
         {
             sendChatMessage(channelID, "oop Number can't be equal to 0 or negative.");
-            return;
+            return false;
         }
 
         BlockyJarBibleEntry bibleEntry = ServiceProvider.getBibleEntry(channelIID, page);
 
         if (bibleEntry == null)
         {
-            return;
+            return false;
         }
 
         SimpleDateFormat formatter = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
@@ -90,6 +90,6 @@ public class BibleInformationCommand implements ICommand
 
         messageToSend += " FeelsOkayMan";
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -40,7 +40,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class PartCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         TwitchChat chat = client.getChat();
 
@@ -58,7 +58,7 @@ public class PartCommand implements ICommand
         if (chatToPart.equalsIgnoreCase("ApuJar") || ownerLogins.contains(chatToPart))
         {
             sendChatMessage(channelID, "TriHard \u270A I'll stay here.");
-            return;
+            return false;
         }
 
         List<User> chatsToPart = retrieveUserList(client, chatToPart);
@@ -79,7 +79,7 @@ public class PartCommand implements ICommand
             if (messageParts.length > 1 && (!hasModeratorPerms && !adminIDs.contains(eventUserIID) && !ownerIDs.contains(eventUserIID)))
             {
                 sendChatMessage(channelID, "ManFeels Can't leave channel, because you aren't broadcaster or mod at this channel.");
-                return;
+                return false;
             }
         }
 
@@ -94,7 +94,7 @@ public class PartCommand implements ICommand
         if (!isInChannel)
         {
             sendChatMessage(channelID, STR."CoolStoryBob I'm not even in \{chatToPart}'s chat.");
-            return;
+            return false;
         }
 
         IEventSubSocket eventSocket = client.getEventSocket();
@@ -109,7 +109,7 @@ public class PartCommand implements ICommand
 
         SQLite.onUpdate(STR."DELETE FROM chats WHERE userLogin = '\{chatToPart}'");
 
-        sendChatMessage(channelID, STR."MrDestructoid Successfully left from \{chatToPart}'s chat.");
+        return sendChatMessage(channelID, STR."MrDestructoid Successfully left from \{chatToPart}'s chat.");
     }
 }
 

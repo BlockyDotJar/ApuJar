@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class WordleCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -49,7 +49,7 @@ public class WordleCommand implements ICommand
             if (!wordleDay.matches("^\\d{2}\\.\\d{2}\\.\\d{4}$"))
             {
                 sendChatMessage(channelID, "no Date schema must match to DD.MM.YYYY (e.g. 21.04.2024)");
-                return;
+                return false;
             }
         }
 
@@ -69,13 +69,13 @@ public class WordleCommand implements ICommand
         if (wordleDate.isBefore(wordleRelease))
         {
             sendChatMessage(channelID, "LULE Wordle was released on 19.06.2021");
-            return;
+            return false;
         }
 
         if (wordleDate.isAfter(now))
         {
             sendChatMessage(channelID, "LULE That day lies in the future.");
-            return;
+            return false;
         }
 
         Wordle wordle = ServiceProvider.getWordle(yearRaw, monthRaw, dayRaw);
@@ -93,6 +93,6 @@ public class WordleCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, STR."Nerd Your needed wordle (\{id}) answer is '\{solution}'. (Added by \{editor} | \{daysSinceLaunch} days since launch)");
+        return sendChatMessage(channelID, STR."Nerd Your needed wordle (\{id}) answer is '\{solution}'. (Added by \{editor} | \{daysSinceLaunch} days since launch)");
     }
 }

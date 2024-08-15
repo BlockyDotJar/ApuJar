@@ -37,7 +37,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class CrossunbanCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -47,7 +47,7 @@ public class CrossunbanCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToUnban = getUserAsString(messageParts, 1);
@@ -55,7 +55,7 @@ public class CrossunbanCommand implements ICommand
         if (!isValidUsername(userToUnban))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToUnban = retrieveUserList(client, userToUnban);
@@ -63,7 +63,7 @@ public class CrossunbanCommand implements ICommand
         if (usersToUnban.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToUnban}' found.");
-            return;
+            return false;
         }
 
         User user = usersToUnban.getFirst();
@@ -73,7 +73,7 @@ public class CrossunbanCommand implements ICommand
         if (eventUserIID == userIID)
         {
             sendChatMessage(channelID, "FeelsDankMan You can't crossunban yourself.");
-            return;
+            return false;
         }
 
         Set<Chat> chats = SQLUtils.getChats();
@@ -110,9 +110,9 @@ public class CrossunbanCommand implements ICommand
         if (unbannedChats == 0)
         {
             sendChatMessage(channelID, STR."User '\{userToUnban}' isn't banned in any chat that i'm mod in NotLikeThis");
-            return;
+            return false;
         }
 
-        sendChatMessage(channelID, STR."Successfully crossunbanned '\{userToUnban}' from \{unbannedChats} chats LEL");
+        return sendChatMessage(channelID, STR."Successfully crossunbanned '\{userToUnban}' from \{unbannedChats} chats LEL");
     }
 }

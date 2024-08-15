@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteGlobalCommandCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -41,7 +41,7 @@ public class DeleteGlobalCommandCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a global command.");
-            return;
+            return false;
         }
 
         Prefix prefix = SQLUtils.getPrefix(channelIID);
@@ -65,11 +65,11 @@ public class DeleteGlobalCommandCommand implements ICommand
         if (!globalCommands.containsKey(gcName))
         {
             sendChatMessage(channelID, STR."CoolStoryBob Global command '\{gcName}' doesn't exist.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."DELETE FROM globalCommands WHERE name = '\{gcName}'");
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully deleted global command '\{gcName}'");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully deleted global command '\{gcName}'");
     }
 }

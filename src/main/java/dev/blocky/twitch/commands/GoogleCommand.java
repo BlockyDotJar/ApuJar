@@ -30,14 +30,14 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class GoogleCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a search query.");
-            return;
+            return false;
         }
 
         String googleSearchQuery = removeElements(messageParts, 1);
@@ -55,6 +55,6 @@ public class GoogleCommand implements ICommand
 
         String ascii = googleUri.toASCIIString();
 
-        sendChatMessage(channelID, STR."Chatting Here is your Google search query: \{ascii}");
+        return sendChatMessage(channelID, STR."Chatting Here is your Google search query: \{ascii}");
     }
 }

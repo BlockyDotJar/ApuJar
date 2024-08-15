@@ -30,7 +30,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendWhisper;
 public class DeleteSpotifyUserPrivateCommand implements IPrivateCommand
 {
     @Override
-    public void onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception
+    public boolean onPrivateCommand(@NonNull PrivateMessageEvent event, @NonNull String[] messageParts) throws Exception
     {
         EventUser eventUser = event.getUser();
         String eventUserID = eventUser.getId();
@@ -41,11 +41,12 @@ public class DeleteSpotifyUserPrivateCommand implements IPrivateCommand
         if (spotifyUser == null)
         {
             sendWhisper(eventUserID, "4Head No Spotify credentials found in the database with your id.");
-            return;
+            return false;
         }
 
         SQLite.onUpdate(STR."DELETE FROM spotifyCredentials WHERE userID = \{eventUserIID}");
 
         sendWhisper(eventUserID, "SeemsGood Successfully removed Spotify credentials.");
+        return true;
     }
 }

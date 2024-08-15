@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "dev.blocky.twitch"
-version = "3.3.0"
+version = "3.4.0"
 description = "A useful bot for Twitch with many cool utility features."
 
 repositories {

@@ -34,7 +34,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteOwnerCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -45,13 +45,13 @@ public class DeleteOwnerCommand implements ICommand
         if (eventUserIID != 755628467)
         {
             sendChatMessage(channelID, "oop You are not my founder.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         BidiMap<Integer, String> owners = SQLUtils.getOwners();
@@ -62,7 +62,7 @@ public class DeleteOwnerCommand implements ICommand
         if (!ownerLogins.contains(ownerToDemote))
         {
             sendChatMessage(channelID, STR."CoolStoryBob \{ownerToDemote} isn't even an owner.");
-            return;
+            return false;
         }
 
         int ownerID = owners.getKey(ownerToDemote);
@@ -70,6 +70,6 @@ public class DeleteOwnerCommand implements ICommand
 
         SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{ownerToDemote}'");
 
-        sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
+        return sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{ownerToDemote}.");
     }
 }

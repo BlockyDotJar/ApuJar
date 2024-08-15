@@ -35,7 +35,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class DeleteAdminCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -43,7 +43,7 @@ public class DeleteAdminCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         Map<Integer, String> owners = SQLUtils.getOwners();
@@ -57,13 +57,13 @@ public class DeleteAdminCommand implements ICommand
         if (ownerLogins.contains(adminToDemote))
         {
             sendChatMessage(channelID, "TriHard Won't demote an owner.");
-            return;
+            return false;
         }
 
         if (!adminLogins.contains(adminToDemote))
         {
             sendChatMessage(channelID, STR."CoolStoryBob \{adminToDemote} isn't even an admin.");
-            return;
+            return false;
         }
 
         int adminID = admins.getKey(adminToDemote);
@@ -71,6 +71,6 @@ public class DeleteAdminCommand implements ICommand
 
         SQLite.onUpdate(STR."DELETE FROM admins WHERE userLogin = '\{adminToDemote}'");
 
-        sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{adminToDemote}.");
+        return sendChatMessage(channelID, STR."BloodTrail Successfully demoted \{adminToDemote}.");
     }
 }

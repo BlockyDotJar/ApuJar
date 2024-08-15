@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class SevenTVDenyCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -44,7 +44,7 @@ public class SevenTVDenyCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a user.");
-            return;
+            return false;
         }
 
         String userToDeny = getUserAsString(messageParts, 1);
@@ -52,7 +52,7 @@ public class SevenTVDenyCommand implements ICommand
         if (!isValidUsername(userToDeny))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToDeny = retrieveUserList(client, userToDeny);
@@ -60,7 +60,7 @@ public class SevenTVDenyCommand implements ICommand
         if (usersToDeny.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToDeny}' found.");
-            return;
+            return false;
         }
 
         User user = usersToDeny.getFirst();
@@ -70,7 +70,7 @@ public class SevenTVDenyCommand implements ICommand
         if (!channelName.equals(eventUserName))
         {
             sendChatMessage(channelID, STR."NiceTry \{eventUserName} but you aren't the broadcaster of this channel.");
-            return;
+            return false;
         }
 
         Set<String> sevenTVAllowedUserIDs = SQLUtils.getSevenTVAllowedUserIDs(channelIID);
@@ -78,7 +78,7 @@ public class SevenTVDenyCommand implements ICommand
         if (sevenTVAllowedUserIDs == null)
         {
             sendChatMessage(channelID, "Danki Allowed (7TV) user database entry is empty.");
-            return;
+            return false;
         }
 
         List<String> newAllowedUserIDList = sevenTVAllowedUserIDs.stream()
@@ -88,20 +88,19 @@ public class SevenTVDenyCommand implements ICommand
         if (!sevenTVAllowedUserIDs.contains(userID))
         {
             sendChatMessage(channelID, STR."Danki \{userDisplayName} isn't even set as allowed user in the database.");
-            return;
+            return false;
         }
 
         if (newAllowedUserIDList.isEmpty())
         {
             SQLite.onUpdate(STR."DELETE FROM sevenTVUsers WHERE userID = \{channelIID}");
-            sendChatMessage(channelID, STR."MEGALUL Successfully removed \{userDisplayName}'s editor permissions.");
-            return;
+            return sendChatMessage(channelID, STR."MEGALUL Successfully removed \{userDisplayName}'s editor permissions.");
         }
 
         String newAllowedUserIDs = String.join(",", newAllowedUserIDList);
 
         SQLite.onUpdate(STR."UPDATE sevenTVUsers SET allowedUserIDs = '\{newAllowedUserIDs}' WHERE userID = \{channelIID}");
 
-        sendChatMessage(channelID, STR."MEGALUL Successfully removed \{userDisplayName}'s editor permissions.");
+        return sendChatMessage(channelID, STR."MEGALUL Successfully removed \{userDisplayName}'s editor permissions.");
     }
 }

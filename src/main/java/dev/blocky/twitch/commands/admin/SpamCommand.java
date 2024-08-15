@@ -39,7 +39,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class SpamCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -52,7 +52,7 @@ public class SpamCommand implements ICommand
         if (messageParts.length == 1)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a number of messages.");
-            return;
+            return false;
         }
         
         String spamCount = messageParts[1];
@@ -60,13 +60,13 @@ public class SpamCommand implements ICommand
         if (!StringUtils.isNumeric(spamCount))
         {
             sendChatMessage(channelID, "ManFeels The first parameter isn't an integer.");
-            return;
+            return false;
         }
 
         if (messageParts.length == 2)
         {
             sendChatMessage(channelID, "FeelsMan Please specify a message.");
-            return;
+            return false;
         }
 
         int messageCount = Integer.parseInt(spamCount);
@@ -77,7 +77,7 @@ public class SpamCommand implements ICommand
         if (messageCount > 100 && !ownerIDs.contains(eventUserIID))
         {
             sendChatMessage(channelID, "ManFeels Number can't be bigger than 100, because you aren't an owner.");
-            return;
+            return false;
         }
 
         String messageToSend = removeElements(messageParts, 2);
@@ -87,7 +87,7 @@ public class SpamCommand implements ICommand
             if (!ownerIDs.contains(eventUserIID))
             {
                 sendChatMessage(channelID, "DatSheffy You don't have permission to use any kind of / (slash) commands through my account.");
-                return;
+                return false;
             }
 
             List<Badge> badges = event.getBadges();
@@ -99,13 +99,13 @@ public class SpamCommand implements ICommand
             if (!channelName.equalsIgnoreCase(eventUserName) && !hasModeratorPerms)
             {
                 sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because you aren't the broadcaster or a moderator.");
-                return;
+                return false;
             }
 
             if (!selfModeratorPerms)
             {
                 sendChatMessage(channelID, "ManFeels You can't use / (slash) commands, because i'm not a moderator of this chat.");
-                return;
+                return false;
             }
         }
 
@@ -115,6 +115,6 @@ public class SpamCommand implements ICommand
             TimeUnit.MILLISECONDS.sleep(50);
         }
 
-        sendChatMessage(channelID, STR."SeemsGood Successfully spammed \{messageCount} messages.");
+        return sendChatMessage(channelID, STR."SeemsGood Successfully spammed \{messageCount} messages.");
     }
 }

@@ -31,7 +31,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.*;
 public class ChatIdentityCommand implements ICommand
 {
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts)
     {
         String eventUserName = event.getChatterUserName();
         String channelID = event.getBroadcasterUserId();
@@ -41,7 +41,7 @@ public class ChatIdentityCommand implements ICommand
         if (!isValidUsername(userToGetIdentityFrom))
         {
             sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
-            return;
+            return false;
         }
 
         List<User> usersToGetIdentityFrom = retrieveUserList(client, userToGetIdentityFrom);
@@ -49,7 +49,7 @@ public class ChatIdentityCommand implements ICommand
         if (usersToGetIdentityFrom.isEmpty())
         {
             sendChatMessage(channelID, STR.":| No user called '\{userToGetIdentityFrom}' found.");
-            return;
+            return false;
         }
 
         User user = usersToGetIdentityFrom.getFirst();
@@ -60,6 +60,6 @@ public class ChatIdentityCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        sendChatMessage(channelID, messageToSend);
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -34,7 +34,7 @@ public class ExitCommand implements ICommand
     private final Logger logger = LoggerFactory.getLogger(ExitCommand.class);
 
     @Override
-    public void onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
+    public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
 
@@ -61,5 +61,6 @@ public class ExitCommand implements ICommand
         SQLite.disconnect();
 
         System.exit(0);
+        return true;
     }
 }

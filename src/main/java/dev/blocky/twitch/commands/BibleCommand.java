@@ -33,7 +33,7 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class BibleCommand implements ICommand
 {
     @Override
-    public void onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
+    public boolean onCommand(@NotNull ChannelChatMessageEvent event, @NotNull TwitchClient client, @NotNull String[] prefixedMessageParts, @NotNull String[] messageParts) throws Exception
     {
         String channelID = event.getBroadcasterUserId();
         int channelIID = Integer.parseInt(channelID);
@@ -55,7 +55,7 @@ public class BibleCommand implements ICommand
             if (!pageRaw.matches("^\\d+$"))
             {
                 sendChatMessage(channelID, "oop Specified value isn't a number.");
-                return;
+                return false;
             }
 
             int page = Integer.parseInt(pageRaw);
@@ -63,7 +63,7 @@ public class BibleCommand implements ICommand
             if (page <= 0)
             {
                 sendChatMessage(channelID, "oop Number can't be equal to 0 or negative.");
-                return;
+                return false;
             }
 
             bibleEntry = ServiceProvider.getBibleEntry(channelIID, page);
@@ -79,7 +79,7 @@ public class BibleCommand implements ICommand
 
         if (bibleEntry == null)
         {
-            return;
+            return false;
         }
 
         int page = bibleEntry.getPage();
@@ -88,6 +88,6 @@ public class BibleCommand implements ICommand
         BlockyJarUser user = bibleEntry.getUser();
         String userLogin = user.getUserLogin();
 
-        sendChatMessage(channelID, STR."\{eventUserName} #\{page} added by \{userLogin} \uD83D\uDC49 \{entry}");
+        return sendChatMessage(channelID, STR."\{eventUserName} #\{page} added by \{userLogin} \uD83D\uDC49 \{entry}");
     }
 }
