@@ -26,10 +26,13 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
 import se.michaelthelin.spotify.model_objects.specification.Artist;
 import se.michaelthelin.spotify.model_objects.specification.Paging;
 import se.michaelthelin.spotify.requests.data.personalization.simplified.GetUsersTopArtistsRequest;
+import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -89,6 +92,23 @@ public class ArtistsCommand implements ICommand
         }
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
+
+        GetUsersAvailableDevicesRequest availableDevicesRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = availableDevicesRequest.execute();
+
+        if (devices.length == 0)
+        {
+            sendChatMessage(channelID, "ManFeels No current Spotify devices found.");
+            return false;
+        }
+
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels Can't execute request, you activated the web api restriction.");
+            return false;
+        }
 
         GetUsersTopArtistsRequest topArtistsRequest = spotifyAPI.getUsersTopArtists().limit(10).time_range(timeRange).build();
         Paging<Artist> topArtists = topArtistsRequest.execute();

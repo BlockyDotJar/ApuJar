@@ -26,9 +26,8 @@ import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
-import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
-import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
-import se.michaelthelin.spotify.model_objects.specification.Track;
+import se.michaelthelin.spotify.model_objects.specification.*;
+import se.michaelthelin.spotify.requests.data.episodes.GetEpisodeRequest;
 import se.michaelthelin.spotify.requests.data.player.AddItemToUsersPlaybackQueueRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
@@ -97,35 +96,72 @@ public class QueueCommand implements ICommand
             return false;
         }
 
-        GetTrackRequest trackRequest = spotifyAPI.getTrack(spotifyTrack).build();
-        Track track = trackRequest.execute();
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
 
-        if (track == null)
+        if (currentDevice.getIs_restricted())
         {
-            sendChatMessage(channelID, "ManFeels No track was found by the Spotify API.");
+            sendChatMessage(channelID, "ManFeels Can't execute request, you activated the web api restriction.");
             return false;
         }
 
-        String trackName = track.getName();
-        String trackID = track.getId();
+        String trackName = null;
+        String trackID = null;
 
-        AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyAPI.addItemToUsersPlaybackQueue(STR."spotify:track:\{spotifyTrack}").build();
-        addItemToPlaybackQueueRequest.execute();
+        String albumName = null;
+        String artists = null;
 
-        AlbumSimplified album = track.getAlbum();
-        String albumName = album.getName();
+        int DMS = -1;
 
-        ArtistSimplified[] artistsSimplified = track.getArtists();
+        GetTrackRequest trackRequest = spotifyAPI.getTrack(spotifyTrack).build();
+        Track track = trackRequest.execute();
 
-        CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
-                .map(ArtistSimplified::getName)
-                .toArray(CharSequence[]::new);
+        if (track != null)
+        {
+            trackName = track.getName();
+            trackID = track.getId();
 
-        String artists = String.join(", ", artistsRaw);
+            AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyAPI.addItemToUsersPlaybackQueue(STR."spotify:track:\{spotifyTrack}").build();
+            addItemToPlaybackQueueRequest.execute();
+
+            AlbumSimplified album = track.getAlbum();
+            albumName = album.getName();
+
+            ArtistSimplified[] artistsSimplified = track.getArtists();
+
+            CharSequence[] artistsRaw = Arrays.stream(artistsSimplified)
+                    .map(ArtistSimplified::getName)
+                    .toArray(CharSequence[]::new);
+
+            artists = String.join(", ", artistsRaw);
+
+            DMS = track.getDurationMs();
+        }
+
+        if (track == null)
+        {
+            GetEpisodeRequest episodeRequest = spotifyAPI.getEpisode(spotifyTrack).build();
+            Episode episode = episodeRequest.execute();
+
+            if (episode == null)
+            {
+                sendChatMessage(channelID, "ManFeels No track or episode was found by the Spotify API.");
+                return false;
+            }
+
+            AddItemToUsersPlaybackQueueRequest addItemToPlaybackQueueRequest = spotifyAPI.addItemToUsersPlaybackQueue(STR."spotify:episode:\{spotifyTrack}").build();
+            addItemToPlaybackQueueRequest.execute();
+
+            trackName = episode.getName();
+            trackID = episode.getId();
+
+            ShowSimplified show = episode.getShow();
+            albumName = show.getName();
+            artists = show.getPublisher();
+
+            DMS = episode.getDurationMs();
+        }
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
-
-        int DMS = track.getDurationMs();
 
         Duration duration = Duration.ofMillis(DMS);
 
@@ -135,8 +171,14 @@ public class QueueCommand implements ICommand
         String durationSeconds = decimalFormat.format(DSS);
         String durationMinutes = decimalFormat.format(DMM);
 
-        String queueItem = STR."\{eventUserName} notee Added '\{trackName}' by \{artists} from \{albumName} donkJAM (\{durationMinutes}:\{durationSeconds}) to \{eventUserName}'s queue https://open.spotify.com/track/\{trackID}";
+        String messageToSend = STR."\{eventUserName} notee Added '\{trackName}' by \{artists} from \{albumName} donkJAM (\{durationMinutes}:\{durationSeconds}) to \{eventUserName}'s queue https://open.spotify.com/track/\{trackID}";
 
-        return sendChatMessage(channelID, queueItem);
+        if (track == null)
+        {
+            messageToSend = STR."\{eventUserName} notee Added podcast episode '\{trackName}' by \{artists} from the '\{albumName}' podcast Listening (\{durationMinutes}:\{durationSeconds}) to \{eventUserName}'s queue https://open.spotify.com/episode/\{trackID}";
+            return sendChatMessage(channelID, messageToSend);
+        }
+
+        return sendChatMessage(channelID, messageToSend);
     }
 }

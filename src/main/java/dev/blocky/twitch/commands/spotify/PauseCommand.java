@@ -26,8 +26,12 @@ import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
+import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.PauseUsersPlaybackRequest;
+
+import java.util.Arrays;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
@@ -52,24 +56,41 @@ public class PauseCommand implements ICommand
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
 
+        GetUsersAvailableDevicesRequest availableDevicesRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = availableDevicesRequest.execute();
+
+        if (devices.length == 0)
+        {
+            sendChatMessage(channelID, "ManFeels No current Spotify devices found.");
+            return false;
+        }
+
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session())
+        {
+            sendChatMessage(channelID, "ManFeels Can't execute request, you activated the web api restriction.");
+            return false;
+        }
+
         GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
         CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
 
         if (currentlyPlaying == null)
         {
-            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song / episode.");
             return false;
         }
 
         if (!currentlyPlaying.getIs_playing())
         {
-            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} your song is already paused.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} your song or episode is already paused.");
             return false;
         }
 
         PauseUsersPlaybackRequest pauseRequest = spotifyAPI.pauseUsersPlayback().build();
         pauseRequest.execute();
 
-        return sendChatMessage(channelID, STR."jamm \{eventUserName} paused his/her song.");
+        return sendChatMessage(channelID, STR."jamm \{eventUserName} paused his/her song or episode.");
     }
 }

@@ -26,11 +26,13 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.enums.CurrentlyPlayingType;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
-import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
-import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
-import se.michaelthelin.spotify.model_objects.specification.Track;
+import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.model_objects.specification.*;
+import se.michaelthelin.spotify.requests.data.episodes.GetEpisodeRequest;
+import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.tracks.GetTrackRequest;
 
@@ -81,24 +83,51 @@ public class SongCommand implements ICommand
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(userIID);
 
-        GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
+        GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = deviceRequest.execute();
+
+        if (devices.length == 0)
+        {
+            sendChatMessage(channelID, "ManFeels No current Spotify devices found.");
+            return false;
+        }
+
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session() || currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels You are either in a private session or you activated the web api restriction.");
+            return false;
+        }
+
+        GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().additionalTypes("episode").build();
         CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
 
         if (currentlyPlaying == null)
         {
-            sendChatMessage(channelID, STR."AlienUnpleased \{userDisplayName} isn't listening to a song.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{userDisplayName} isn't listening to a song / episode.");
             return false;
         }
 
-        IPlaylistItem playlistItem = currentlyPlaying.getItem();
-        String itemName = playlistItem.getName();
-        String itemID = playlistItem.getId();
+        CurrentlyPlayingType currentlyPlayingType = currentlyPlaying.getCurrentlyPlayingType();
+        String playingType = currentlyPlayingType.getType();
 
         String trackID = null;
         String albumName = null;
         String artists = null;
 
-        if (itemID != null)
+        IPlaylistItem playlistItem = currentlyPlaying.getItem();
+
+        if (playlistItem == null)
+        {
+            sendChatMessage(channelID, "ManFeels Couldn't find any track or episode. Please check if you're banned on Spotify, or if your Spotify Premium license expired.");
+            return false;
+        }
+
+        String itemName = playlistItem.getName();
+        String itemID = playlistItem.getId();
+
+        if (playingType.equals("track") && itemID != null)
         {
             GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
             Track track = trackRequest.execute();
@@ -114,6 +143,18 @@ public class SongCommand implements ICommand
                     .toArray(CharSequence[]::new);
 
             artists = String.join(", ", artistsRaw);
+        }
+
+        if (playingType.equals("episode"))
+        {
+            GetEpisodeRequest episodeRequest = spotifyAPI.getEpisode(itemID).build();
+            Episode episode = episodeRequest.execute();
+
+            trackID = episode.getId();
+
+            ShowSimplified show = episode.getShow();
+            albumName = show.getName();
+            artists = show.getPublisher();
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
@@ -153,9 +194,16 @@ public class SongCommand implements ICommand
 
         channelID = getActualChannelID(channelToSend, channelID);
 
+        if (playingType.equals("episode"))
+        {
+            messageToSend = STR."\{beginEmote} \{userDisplayName} is currently listening to the podcast episode '\{itemName}' by \{artists} from the '\{albumName}' podcast Listening (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/episode/\{trackID}";
+            return sendChatMessage(channelID, messageToSend);
+        }
+
         if (trackID == null)
         {
             messageToSend = STR."\{beginEmote} \{userDisplayName} is currently listening to '\{itemName}' (local file) donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds})";
+            return sendChatMessage(channelID, messageToSend);
         }
 
         return sendChatMessage(channelID, messageToSend);

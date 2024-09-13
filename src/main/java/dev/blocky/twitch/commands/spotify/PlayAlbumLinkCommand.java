@@ -121,6 +121,14 @@ public class PlayAlbumLinkCommand implements ICommand
             return false;
         }
 
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session() || currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels You are either in a private session or you activated the web api restriction.");
+            return false;
+        }
+
         StartResumeUsersPlaybackRequest startRequest = spotifyAPI.startResumeUsersPlayback()
                 .context_uri(STR."spotify:album:\{spotifyAlbum}")
                 .build();
@@ -134,11 +142,18 @@ public class PlayAlbumLinkCommand implements ICommand
 
         if (currentlyPlaying == null)
         {
-            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song.");
+            sendChatMessage(channelID, "FeelsDankMan Something weird broke internally, please try again.");
             return false;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
+
+        if (playlistItem == null)
+        {
+            sendChatMessage(channelID, "ManFeels Couldn't find any track or episode. Please check if you're banned on Spotify, or if your Spotify Premium license expired.");
+            return false;
+        }
+
         String itemName = playlistItem.getName();
         String itemID = playlistItem.getId();
 
@@ -186,7 +201,7 @@ public class PlayAlbumLinkCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs / episodes range.");
                 return false;
             }
 

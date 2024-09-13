@@ -85,12 +85,18 @@ public class VolumeCommand implements ICommand
             return false;
         }
 
-        Device device = devices[0];
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
 
-        int volume = device.getVolume_percent();
+        if (currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels Can't execute request, you activated the web api restriction.");
+            return false;
+        }
+
+        int volume = currentDevice.getVolume_percent();
 
         channelID = getActualChannelID(channelToSend, channelID);
 
-        return sendChatMessage(channelID, STR."pepeBASS \{userDisplayName} is listening to a song with a volume of \{volume}% WAYTOODANK");
+        return sendChatMessage(channelID, STR."pepeBASS \{userDisplayName} is listening to a song or episode with a volume of \{volume}% WAYTOODANK");
     }
 }

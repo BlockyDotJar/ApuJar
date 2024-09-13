@@ -25,7 +25,9 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlayingContext;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.requests.data.player.GetInformationAboutUsersCurrentPlaybackRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.ToggleShuffleForUsersPlaybackRequest;
 
@@ -81,11 +83,29 @@ public class ShuffleCommand implements ICommand
             return false;
         }
 
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels Can't execute request, you activated the web api restriction.");
+            return false;
+        }
+
+        GetInformationAboutUsersCurrentPlaybackRequest playbackRequest = spotifyAPI.getInformationAboutUsersCurrentPlayback().build();
+        CurrentlyPlayingContext playback = playbackRequest.execute();
+        boolean isShuffled = playback.getShuffle_state();
+
+        String shuffleState = shuffleSongs ? "enabled" : "disabled";
+
+        if (isShuffled == shuffleSongs)
+        {
+            sendChatMessage(channelID, STR."ManFeels Your songs / episodes are already shuffle \{shuffleState}.");
+            return false;
+        }
+
         ToggleShuffleForUsersPlaybackRequest shuffleRequest = spotifyAPI.toggleShuffleForUsersPlayback(shuffleSongs).build();
         shuffleRequest.execute();
 
-        String shuffleState = shuffleSongs ? "Enabled" : "Disabled";
-
-        return sendChatMessage(channelID, STR."forsenAutismo \{shuffleState} shuffle for \{eventUserName}'s Spotify songs.");
+        return sendChatMessage(channelID, STR."forsenAutismo Successfully \{shuffleState} shuffle for \{eventUserName}'s Spotify songs / episodes.");
     }
 }

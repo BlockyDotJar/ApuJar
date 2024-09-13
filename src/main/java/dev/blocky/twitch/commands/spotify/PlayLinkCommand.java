@@ -118,6 +118,14 @@ public class PlayLinkCommand implements ICommand
             return false;
         }
 
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session() || currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels You are either in a private session or you activated the web api restriction.");
+            return false;
+        }
+
         GetTrackRequest trackRequest = spotifyAPI.getTrack(spotifyTrack).build();
         Track track = trackRequest.execute();
 
@@ -169,7 +177,7 @@ public class PlayLinkCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs / episodes range.");
                 return false;
             }
 

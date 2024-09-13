@@ -25,12 +25,12 @@ import dev.blocky.twitch.utils.SQLUtils;
 import dev.blocky.twitch.utils.SpotifyUtils;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
+import se.michaelthelin.spotify.enums.CurrentlyPlayingType;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
 import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
-import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
-import se.michaelthelin.spotify.model_objects.specification.ArtistSimplified;
-import se.michaelthelin.spotify.model_objects.specification.Track;
+import se.michaelthelin.spotify.model_objects.specification.*;
+import se.michaelthelin.spotify.requests.data.episodes.GetEpisodeRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.SeekToPositionInCurrentlyPlayingTrackRequest;
@@ -121,6 +121,14 @@ public class PlayPlaylistLinkCommand implements ICommand
             return false;
         }
 
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session() || currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels You are either in a private session or you activated the web api restriction.");
+            return false;
+        }
+
         StartResumeUsersPlaybackRequest startRequest = spotifyAPI.startResumeUsersPlayback()
                 .context_uri(STR."spotify:playlist:\{spotifyPlaylist}")
                 .build();
@@ -134,19 +142,29 @@ public class PlayPlaylistLinkCommand implements ICommand
 
         if (currentlyPlaying == null)
         {
-            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song.");
+            sendChatMessage(channelID, "FeelsDankMan Something weird broke internally, please try again.");
             return false;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
+
+        if (playlistItem == null)
+        {
+            sendChatMessage(channelID, "ManFeels Couldn't find any track or episode. Please check if you're banned on Spotify, or if your Spotify Premium license expired.");
+            return false;
+        }
+
         String itemName = playlistItem.getName();
         String itemID = playlistItem.getId();
+
+        CurrentlyPlayingType currentlyPlayingType = currentlyPlaying.getCurrentlyPlayingType();
+        String playingType = currentlyPlayingType.getType();
 
         String trackID = null;
         String albumName = null;
         String artists = null;
 
-        if (itemID != null)
+        if (playingType.equals("track"))
         {
             GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
             Track track = trackRequest.execute();
@@ -162,6 +180,18 @@ public class PlayPlaylistLinkCommand implements ICommand
                     .toArray(CharSequence[]::new);
 
             artists = String.join(", ", artistsRaw);
+        }
+
+        if (playingType.equals("episode"))
+        {
+            GetEpisodeRequest episodeRequest = spotifyAPI.getEpisode(itemID).build();
+            Episode episode = episodeRequest.execute();
+
+            trackID = episode.getId();
+
+            ShowSimplified show = episode.getShow();
+            albumName = show.getName();
+            artists = show.getPublisher();
         }
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
@@ -186,7 +216,7 @@ public class PlayPlaylistLinkCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs / episodes range.");
                 return false;
             }
 
@@ -201,6 +231,12 @@ public class PlayPlaylistLinkCommand implements ICommand
         }
 
         String messageToSend = STR."lebronJAM \{eventUserName} you're now listening to '\{itemName}' by \{artists} from \{albumName} donkJAM (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/track/\{trackID}";
+
+        if (playingType.equals("episode"))
+        {
+            messageToSend = STR."peepoTalk \{eventUserName} you're now listening to the podcast episode '\{itemName}' by \{artists} from the '\{albumName}' podcast Listening (\{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}) https://open.spotify.com/episode/\{trackID}";
+            return sendChatMessage(channelID, messageToSend);
+        }
 
         return sendChatMessage(channelID, messageToSend);
     }

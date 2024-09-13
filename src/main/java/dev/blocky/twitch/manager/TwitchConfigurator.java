@@ -52,7 +52,7 @@ public class TwitchConfigurator
 
         int chatCount = 0;
 
-        joinManager = new ChannelJoinManager(eventSocket, eventManager);
+        joinManager = new ChannelJoinManager(eventSocket, eventManager, chat);
 
         for (Chat ch : chats)
         {

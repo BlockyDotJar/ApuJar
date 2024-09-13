@@ -19,6 +19,7 @@ package dev.blocky.twitch.manager;
 
 import com.github.philippheuer.events4j.core.EventManager;
 import com.github.philippheuer.events4j.simple.SimpleEventHandler;
+import com.github.twitch4j.chat.TwitchChat;
 import com.github.twitch4j.chat.events.channel.ChannelNoticeEvent;
 import com.github.twitch4j.chat.events.channel.IRCMessageEvent;
 import com.github.twitch4j.common.events.domain.EventChannel;
@@ -35,10 +36,12 @@ import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 public class ChannelJoinManager
 {
     private final IEventSubSocket eventSocket;
+    private final TwitchChat twitchChat;
 
-    public ChannelJoinManager(@NonNull IEventSubSocket eventSocket, @NonNull EventManager eventManager)
+    public ChannelJoinManager(@NonNull IEventSubSocket eventSocket, @NonNull EventManager eventManager, @NonNull TwitchChat chat)
     {
         this.eventSocket = eventSocket;
+        this.twitchChat = chat;
 
         SimpleEventHandler eventHandler = eventManager.getEventHandler(SimpleEventHandler.class);
         eventHandler.onEvent(ChannelNoticeEvent.class, this::onChannelNotice);
@@ -49,15 +52,22 @@ public class ChannelJoinManager
     {
         EventChannel channel = event.getChannel();
         String channelName = channel.getName();
+        String channelID = channel.getId();
+        int channelIID = Integer.parseInt(channelID);
 
         try
         {
             String message = event.getMessage();
 
-            if (message.contains("banned"))
+            Chat chat = SQLUtils.getChat(channelID);
+
+            if (message.contains("banned") && chat != null)
             {
                 Set<Chat> chats = SQLUtils.getChats();
                 int chatCount = chats.size() - 1;
+
+                twitchChat.leaveChannel(channelName);
+                partChannel(channelIID);
 
                 SQLite.onUpdate(STR."DELETE FROM chats WHERE userLogin = '\{channelName}'");
                 sendChatMessage("896181679", STR."peepoLeave Left channel '\{channelName}' because i am now BANNED in it FicktEuchAlle Now active in \{chatCount} chats");
@@ -89,24 +99,32 @@ public class ChannelJoinManager
 
             String targetUserID = event.getTargetUserId();
 
-            if (targetUserID != null)
+            if (targetUserID == null)
             {
-                int targetUserIID = Integer.parseInt(targetUserID);
+                return;
+            }
 
-                EventChannel channel = event.getChannel();
-                String channelName = channel.getName();
-                String channelID = channel.getId();
+            int targetUserIID = Integer.parseInt(targetUserID);
 
-                String banDuration = event.getTagValue("ban-duration").orElse(null);
+            EventChannel channel = event.getChannel();
+            String channelName = channel.getName();
+            String channelID = channel.getId();
+            int channelIID = Integer.parseInt(channelID);
 
-                if (banDuration == null && targetUserIID == 896181679)
-                {
-                    Set<Chat> chats = SQLUtils.getChats();
-                    int chatCount = chats.size() - 1;
+            Chat chat = SQLUtils.getChat(channelID);
 
-                    SQLite.onUpdate(STR."DELETE FROM chats WHERE userID = \{channelID}");
-                    sendChatMessage("896181679", STR."peepoLeave Left channel '\{channelName}' because i am now BANNED in it FicktEuchAlle Now active in \{chatCount} chats");
-                }
+            String banDuration = event.getTagValue("ban-duration").orElse(null);
+
+            if (banDuration == null && targetUserIID == 896181679 && chat != null)
+            {
+                Set<Chat> chats = SQLUtils.getChats();
+                int chatCount = chats.size() - 1;
+
+                twitchChat.leaveChannel(channelName);
+                partChannel(channelIID);
+
+                SQLite.onUpdate(STR."DELETE FROM chats WHERE userID = \{channelID}");
+                sendChatMessage("896181679", STR."peepoLeave Left channel '\{channelName}' because i am now BANNED in it FicktEuchAlle Now active in \{chatCount} chats");
             }
         }
         catch (Exception e)
@@ -130,6 +148,17 @@ public class ChannelJoinManager
         String chatID = String.valueOf(userID);
 
         eventSocket.register(SubscriptionTypes.CHANNEL_CHAT_MESSAGE.prepareSubscription
+                (
+                        builder -> builder.broadcasterUserId(chatID).userId("896181679").build(),
+                        null
+                ));
+    }
+
+    public void partChannel(int userID)
+    {
+        String chatID = String.valueOf(userID);
+
+        eventSocket.unregister(SubscriptionTypes.CHANNEL_CHAT_MESSAGE.prepareSubscription
                 (
                         builder -> builder.broadcasterUserId(chatID).userId("896181679").build(),
                         null

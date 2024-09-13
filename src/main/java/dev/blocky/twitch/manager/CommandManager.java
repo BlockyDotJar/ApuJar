@@ -227,7 +227,7 @@ public class CommandManager
 
             if (error != null && error.equals("Player command failed: Restriction violated"))
             {
-                sendChatMessage(channelID, "FeelsDankMan Can't skip to previous song because of Spotify being weird.");
+                sendChatMessage(channelID, "FeelsDankMan Can't skip to previous / next song because there are no songs in your current Spotify queue cache.");
                 return;
             }
 

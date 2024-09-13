@@ -27,11 +27,14 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.miscellaneous.CurrentlyPlaying;
+import se.michaelthelin.spotify.model_objects.miscellaneous.Device;
+import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesRequest;
 import se.michaelthelin.spotify.requests.data.player.GetUsersCurrentlyPlayingTrackRequest;
 import se.michaelthelin.spotify.requests.data.player.SeekToPositionInCurrentlyPlayingTrackRequest;
 
 import java.text.DecimalFormat;
 import java.time.Duration;
+import java.util.Arrays;
 
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
@@ -77,16 +80,41 @@ public class SetProgressCommand implements ICommand
 
         SpotifyApi spotifyAPI = SpotifyUtils.getSpotifyAPI(eventUserIID);
 
+        GetUsersAvailableDevicesRequest deviceRequest = spotifyAPI.getUsersAvailableDevices().build();
+        Device[] devices = deviceRequest.execute();
+
+        boolean anyActiveDevice = Arrays.stream(devices).anyMatch(Device::getIs_active);
+
+        if (devices.length == 0 || !anyActiveDevice)
+        {
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't online on Spotify.");
+            return false;
+        }
+
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session() || currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels You are either in a private session or you activated the web api restriction.");
+            return false;
+        }
+
         GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
         CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
 
         if (currentlyPlaying == null)
         {
-            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song.");
+            sendChatMessage(channelID, STR."AlienUnpleased \{eventUserName} you aren't listening to a song / episode.");
             return false;
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
+
+        if (playlistItem == null)
+        {
+            sendChatMessage(channelID, "ManFeels Couldn't find any track or episode. Please check if you're banned on Spotify, or if your Spotify Premium license expired.");
+            return false;
+        }
 
         DecimalFormat decimalFormat = new DecimalFormat("00");
 
@@ -106,7 +134,7 @@ public class SetProgressCommand implements ICommand
 
         if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
         {
-            sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+            sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs / episodes range.");
             return false;
         }
 
@@ -118,7 +146,7 @@ public class SetProgressCommand implements ICommand
         SeekToPositionInCurrentlyPlayingTrackRequest seekPositionRequest = spotifyAPI.seekToPositionInCurrentlyPlayingTrack(PMS).build();
         seekPositionRequest.execute();
 
-        String messageToSend = STR."FeelsGoodMan Skipped \{eventUserName}'s song position to \{progressMinutes}:\{progressSeconds} (of \{durationMinutes}:\{durationSeconds}) pepeJAMJAM";
+        String messageToSend = STR."FeelsGoodMan Skipped \{eventUserName}'s song or episode position to \{progressMinutes}:\{progressSeconds} (of \{durationMinutes}:\{durationSeconds}) pepeJAMJAM";
 
         return sendChatMessage(channelID, messageToSend);
     }

@@ -92,12 +92,20 @@ public class ResumeCommand implements ICommand
             return false;
         }
 
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_private_session() || currentDevice.getIs_restricted())
+        {
+            sendChatMessage(channelID, "ManFeels You are either in a private session or you activated the web api restriction.");
+            return false;
+        }
+
         GetUsersCurrentlyPlayingTrackRequest currentlyPlayingRequest = spotifyAPI.getUsersCurrentlyPlayingTrack().build();
         CurrentlyPlaying currentlyPlaying = currentlyPlayingRequest.execute();
 
         if (currentlyPlaying != null && currentlyPlaying.getIs_playing())
         {
-            sendChatMessage(channelID, STR."AlienDance \{eventUserName} you're already listening to a song.");
+            sendChatMessage(channelID, STR."AlienDance \{eventUserName} you're already listening to a song / episode.");
             return false;
         }
 
@@ -110,6 +118,13 @@ public class ResumeCommand implements ICommand
         }
 
         IPlaylistItem playlistItem = currentlyPlaying.getItem();
+
+        if (playlistItem == null)
+        {
+            sendChatMessage(channelID, "ManFeels Couldn't find any track or episode. Please check if you're banned on Spotify, or if your Spotify Premium license expired.");
+            return false;
+        }
+
         String itemID = playlistItem.getId();
 
         GetTrackRequest trackRequest = spotifyAPI.getTrack(itemID).build();
@@ -147,7 +162,7 @@ public class ResumeCommand implements ICommand
 
             if ((PMM > DMM && PSS > DSS) || (PMM == DMM && PSS > DSS))
             {
-                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs range.");
+                sendChatMessage(channelID, "FeelsDankMan You can't skip to a position that is out of the songs / episodes range.");
                 return false;
             }
 
@@ -161,6 +176,6 @@ public class ResumeCommand implements ICommand
             seekPositionRequest.execute();
         }
 
-        return sendChatMessage(channelID, STR."jamm \{eventUserName} resumed his/her song at position \{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}.");
+        return sendChatMessage(channelID, STR."jamm \{eventUserName} resumed his/her song or episode at position \{progressMinutes}:\{progressSeconds}/\{durationMinutes}:\{durationSeconds}.");
     }
 }

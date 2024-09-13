@@ -87,6 +87,14 @@ public class SetVolumeCommand implements ICommand
             return false;
         }
 
+        Device currentDevice = Arrays.stream(devices).filter(Device::getIs_active).findFirst().orElse(devices[0]);
+
+        if (currentDevice.getIs_restricted() || !currentDevice.getSupports_volume())
+        {
+            sendChatMessage(channelID, "ManFeels You either activated the web api restriction or your current device doesn't allow volume changing.");
+            return false;
+        }
+
         SetVolumeForUsersPlaybackRequest volumeRequest = spotifyAPI.setVolumeForUsersPlayback(volume).build();
         volumeRequest.execute();
 
