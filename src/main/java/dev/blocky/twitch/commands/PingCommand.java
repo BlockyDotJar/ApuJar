@@ -30,7 +30,7 @@ import java.time.Duration;
 import java.util.Set;
 
 import static dev.blocky.twitch.Main.startedAt;
-import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.commands.admin.SayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.getActualChannelID;
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
@@ -60,7 +60,7 @@ public class PingCommand implements ICommand
         Set<Chat> chatLogins = SQLUtils.getChats();
         int realChats = chatLogins.size();
 
-        String messageToSend = STR."ppPong [v3.5.0] WICKED IRC-Ping: \{chatPing}ms EventSub-Ping: \{eventSubPing}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
+        String messageToSend = STR."ppPong [v3.5.1] WICKED IRC-Ping: \{chatPing}ms EventSub-Ping: \{eventSubPing}ms FeelsLateMan I'm active in \{realChats} chats Okay Uptime: \{DD}d \{HH}h \{MM}m \{SS}s FeelsOldMan";
         channelID = getActualChannelID(channelToSend, channelID);
 
         return sendChatMessage(channelID, messageToSend);

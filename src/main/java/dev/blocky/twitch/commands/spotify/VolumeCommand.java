@@ -32,7 +32,7 @@ import se.michaelthelin.spotify.requests.data.player.GetUsersAvailableDevicesReq
 import java.util.Arrays;
 import java.util.List;
 
-import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.commands.admin.SayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class VolumeCommand implements ICommand

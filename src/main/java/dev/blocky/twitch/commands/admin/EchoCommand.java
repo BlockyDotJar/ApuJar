@@ -15,50 +15,61 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package dev.blocky.twitch.commands.ivr;
+package dev.blocky.twitch.commands.admin;
 
 import com.github.twitch4j.TwitchClient;
+import com.github.twitch4j.eventsub.domain.chat.Badge;
 import com.github.twitch4j.eventsub.events.ChannelChatMessageEvent;
-import dev.blocky.api.ServiceProvider;
-import dev.blocky.api.entities.ivr.IVRUser;
 import dev.blocky.twitch.interfaces.ICommand;
 import edu.umd.cs.findbugs.annotations.NonNull;
 
 import java.util.List;
 
-import static dev.blocky.twitch.commands.admin.SayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
-public class FollowerCommand implements ICommand
+public class EchoCommand implements ICommand
 {
     @Override
     public boolean onCommand(@NonNull ChannelChatMessageEvent event, @NonNull TwitchClient client, @NonNull String[] prefixedMessageParts, @NonNull String[] messageParts) throws Exception
     {
-        String eventUserName = event.getChatterUserName();
+        String channelName = event.getBroadcasterUserName();
         String channelID = event.getBroadcasterUserId();
+        int channelIID = Integer.parseInt(channelID);
 
-        String userToCheck = getUserAsString(messageParts, eventUserName);
+        String eventUserID = event.getChatterUserId();
+        int eventUserIID = Integer.parseInt(eventUserID);
 
-        if (!isValidUsername(userToCheck))
+        if (messageParts.length == 1)
         {
-            sendChatMessage(channelID, "o_O Username doesn't match with RegEx R-)");
+            sendChatMessage(channelID, "FeelsMan Please specify a message.");
             return false;
         }
 
-        List<IVRUser> ivrUsers = ServiceProvider.getIVRUser(userToCheck);
+        String messageToSend = removeElements(messageParts, 1);
 
-        if (ivrUsers == null || ivrUsers.isEmpty())
+        if (messageToSend.startsWith("/") && !messageToSend.equals("/"))
         {
-            sendChatMessage(channelID, STR.":| No user called '\{userToCheck}' found.");
+            List<Badge> badges = event.getBadges();
+
+            boolean successfulExecution = handleSlashCommands(channelIID, eventUserIID, channelIID, messageParts, badges, 1);
+
+            if (successfulExecution)
+            {
+                sendChatMessage(channelID, "GIGACHAD Successfully executed slash command.");
+                return true;
+            }
+
+            sendChatMessage(channelID, "MONKA Slash command execution failed unexpectedly.");
             return false;
         }
 
-        IVRUser ivrUser = ivrUsers.getFirst();
-        String userDisplayName = ivrUser.getUserDisplayName();
-        int userFollowers = ivrUser.getUserFollowers();
+        boolean isSendable = checkChatSettings(messageParts, channelName, channelID, channelID);
 
-        channelID = getActualChannelID(channelToSend, channelID);
+        if (!isSendable)
+        {
+            return false;
+        }
 
-        return sendChatMessage(channelID, STR."peepoWow \{userDisplayName} has \{userFollowers} follower.");
+        return sendChatMessage(channelID, messageToSend);
     }
 }

@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.commands.admin.SayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class UserWeatherCommand implements ICommand

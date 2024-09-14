@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.commands.admin.SayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.*;
 
 public class TopEmotesCommand implements ICommand

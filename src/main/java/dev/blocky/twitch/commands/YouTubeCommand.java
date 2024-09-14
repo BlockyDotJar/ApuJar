@@ -29,7 +29,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static dev.blocky.twitch.commands.admin.UserSayCommand.channelToSend;
+import static dev.blocky.twitch.commands.admin.SayCommand.channelToSend;
 import static dev.blocky.twitch.utils.TwitchUtils.getActualChannelID;
 import static dev.blocky.twitch.utils.TwitchUtils.sendChatMessage;
 
