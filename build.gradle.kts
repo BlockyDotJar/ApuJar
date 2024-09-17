@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "dev.blocky.twitch"
-version = "3.5.1"
+version = "3.5.2"
 description = "A useful bot for Twitch with many cool utility features."
 
 repositories {
@@ -39,7 +39,7 @@ dependencies {
 
     api("io.github.cdimascio:dotenv-java:3.0.2")
 
-    api("joda-time:joda-time:2.12.7")
+    api("joda-time:joda-time:2.13.0")
     api("org.quartz-scheduler:quartz:2.3.2")
 
     api("org.apache.commons:commons-lang3:3.17.0")

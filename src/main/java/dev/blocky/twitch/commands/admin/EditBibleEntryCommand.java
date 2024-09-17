@@ -85,6 +85,6 @@ public class EditBibleEntryCommand implements ICommand
 
         SQLite.onUpdate(STR."UPDATE bible SET entry = '\{entry}', updatedAt = '\{now}' WHERE page = \{page}");
 
-        return sendChatMessage(channelID, STR."\{eventUserName} Successfully added entry #\{page} to our bible!");
+        return sendChatMessage(channelID, STR."\{eventUserName} Successfully edited entry #\{page} of our bible!");
     }
 }
